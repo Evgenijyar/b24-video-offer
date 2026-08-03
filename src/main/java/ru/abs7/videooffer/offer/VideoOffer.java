@@ -1,0 +1,43 @@
+package ru.abs7.videooffer.offer;
+
+import jakarta.persistence.*;
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
+@Entity
+@Table(name = "video_offer")
+public class VideoOffer {
+    @Id private UUID id;
+    @Column(name="public_token", nullable=false, unique=true, length=80) private String publicToken;
+    @Enumerated(EnumType.STRING) @Column(name="crm_entity_type", nullable=false, length=20) private CrmEntityType crmEntityType;
+    @Column(name="crm_entity_id", nullable=false) private Long crmEntityId;
+    @Column(name="bitrix_member_id", length=100) private String bitrixMemberId;
+    @Column(name="bitrix_user_id") private Long bitrixUserId;
+    @Column(name="source_recording_url", nullable=false, columnDefinition="text") private String sourceRecordingUrl;
+    @Column(name="recording_key", nullable=false, length=255) private String recordingKey;
+    @Column(name="accompanying_text", columnDefinition="text") private String accompanyingText;
+    @Enumerated(EnumType.STRING) @Column(nullable=false, length=30) private VideoOfferStatus status;
+    @Column(name="progress_percent", nullable=false) private Integer progressPercent;
+    @Column(name="video_file_path", columnDefinition="text") private String videoFilePath;
+    @Column(name="video_file_size") private Long videoFileSize;
+    @Column(name="video_quality", length=30) private String videoQuality;
+    @Column(name="error_message", columnDefinition="text") private String errorMessage;
+    @Column(name="created_at", nullable=false) private OffsetDateTime createdAt;
+    @Column(name="updated_at", nullable=false) private OffsetDateTime updatedAt;
+    @Column(name="ready_at") private OffsetDateTime readyAt;
+    @Column(name="expires_at") private OffsetDateTime expiresAt;
+
+    protected VideoOffer() {}
+    public static VideoOffer create(CrmEntityType type, long entityId, String memberId, Long userId, String url, String key, String text, int retentionDays) {
+        VideoOffer v = new VideoOffer();
+        v.id=UUID.randomUUID(); v.publicToken=UUID.randomUUID().toString().replace("-", "");
+        v.crmEntityType=type; v.crmEntityId=entityId; v.bitrixMemberId=memberId; v.bitrixUserId=userId;
+        v.sourceRecordingUrl=url; v.recordingKey=key; v.accompanyingText=text;
+        v.status=VideoOfferStatus.QUEUED; v.progressPercent=0; v.createdAt=OffsetDateTime.now(); v.updatedAt=v.createdAt;
+        v.expiresAt=v.createdAt.plusDays(retentionDays); return v;
+    }
+    public void markPreparing(int progress) { status=VideoOfferStatus.PREPARING; progressPercent=Math.max(0, Math.min(99, progress)); updatedAt=OffsetDateTime.now(); }
+    public void markReady(String path, long size, String quality) { status=VideoOfferStatus.READY; progressPercent=100; videoFilePath=path; videoFileSize=size; videoQuality=quality; readyAt=OffsetDateTime.now(); updatedAt=readyAt; errorMessage=null; }
+    public void markError(String message) { status=VideoOfferStatus.ERROR; errorMessage=message; updatedAt=OffsetDateTime.now(); }
+    public UUID getId(){return id;} public String getPublicToken(){return publicToken;} public CrmEntityType getCrmEntityType(){return crmEntityType;} public Long getCrmEntityId(){return crmEntityId;} public String getBitrixMemberId(){return bitrixMemberId;} public Long getBitrixUserId(){return bitrixUserId;} public String getSourceRecordingUrl(){return sourceRecordingUrl;} public String getRecordingKey(){return recordingKey;} public String getAccompanyingText(){return accompanyingText;} public VideoOfferStatus getStatus(){return status;} public Integer getProgressPercent(){return progressPercent;} public String getVideoFilePath(){return videoFilePath;} public Long getVideoFileSize(){return videoFileSize;} public String getVideoQuality(){return videoQuality;} public String getErrorMessage(){return errorMessage;} public OffsetDateTime getCreatedAt(){return createdAt;} public OffsetDateTime getUpdatedAt(){return updatedAt;} public OffsetDateTime getReadyAt(){return readyAt;} public OffsetDateTime getExpiresAt(){return expiresAt;}
+}

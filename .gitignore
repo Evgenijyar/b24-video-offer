@@ -1,0 +1,8 @@
+target/
+.idea/
+*.iml
+.env
+data/
+videos/
+logs/
+.DS_Store

@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: b24-video-offer
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      minimum-idle: 1
+      maximum-pool-size: 8
+      connection-timeout: 10000
+      validation-timeout: 3000
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+server:
+  port: 8080
+  forward-headers-strategy: framework
+app:
+  public-base-url: ${PUBLIC_BASE_URL:http://localhost:8080}
+  video:
+    storage-dir: ${VIDEO_STORAGE_DIR:./data/videos}
+    retention-days: ${VIDEO_RETENTION_DAYS:30}
+  talk:
+    api-url: ${TALK_API_URL}
+    api-token: ${TALK_API_TOKEN}
+  bitrix:
+    client-id: ${BITRIX_CLIENT_ID:}
+    client-secret: ${BITRIX_CLIENT_SECRET:}
+    redirect-uri: ${BITRIX_REDIRECT_URI:}
+logging:
+  level:
+    ru.abs7.videooffer: INFO
