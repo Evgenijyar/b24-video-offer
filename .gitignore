@@ -1,7 +1,6 @@
 target/
 .idea/
 *.iml
-.env
 data/
 videos/
 logs/

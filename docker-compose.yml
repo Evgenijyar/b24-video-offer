@@ -3,9 +3,8 @@ services:
     build: .
     container_name: b24-video-offer
     restart: unless-stopped
-    env_file: .env
     ports:
-      - "127.0.0.1:${APP_PORT:-8080}:8080"
+      - "127.0.0.1:8080:8080"
     volumes:
       - video_offer_data:/app/data
 

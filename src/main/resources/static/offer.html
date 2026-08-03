@@ -1,1 +1,31 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Персональная видеопрезентация</title><link rel="stylesheet" href="/assets/app.css"></head><body><main class="shell"><section class="card offer"><div class="brand">Персональная видеопрезентация</div><h1>Материалы по итогам разговора</h1><video id="video" controls playsinline preload="metadata"></video><p id="text" class="message"></p><div id="state" class="status"><span></span> Загружаем данные…</div></section></main><script>const token=location.pathname.split('/').filter(Boolean).pop();fetch('/api/public/offers/'+token).then(r=>r.json()).then(d=>{document.getElementById('text').textContent=d.text;if(d.ready){document.getElementById('video').src='/media/'+token;document.getElementById('state').innerHTML='<span></span> Видео готово к просмотру'}else{document.getElementById('state').textContent='Видео ещё подготавливается';}}).catch(()=>document.getElementById('state').textContent='Не удалось загрузить предложение');</script></body></html>
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Персональная видеопрезентация</title>
+    <link rel="stylesheet" href="/assets/app.css">
+</head>
+<body class="public-page">
+<main class="public-shell">
+    <section class="public-card">
+        <div class="public-brand"><span class="public-brand__mark">VO</span> Персональная видеопрезентация</div>
+        <h1>Материалы по итогам разговора</h1>
+        <p class="public-intro">Коротко показываем решение и важные детали, которые обсуждали с вами.</p>
+
+        <div class="video-frame">
+            <video id="video" controls playsinline preload="metadata"></video>
+            <div id="video-placeholder" class="video-placeholder">
+                <div class="loader"></div>
+                <strong id="placeholder-title">Подготавливаем видео</strong>
+                <span id="placeholder-text">Страница обновится автоматически</span>
+            </div>
+        </div>
+
+        <p id="text" class="public-message"></p>
+        <div id="state" class="public-status"><span></span> Загружаем данные…</div>
+    </section>
+</main>
+<script src="/assets/offer.js"></script>
+</body>
+</html>

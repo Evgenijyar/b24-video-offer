@@ -1,0 +1,6 @@
+git add .
+git commit -m "Описание изменений"
+git push
+
+CREATE USER b24_video_offer_user
+WITH PASSWORD 'Secret123IUGBhbjn87##gfreg224';

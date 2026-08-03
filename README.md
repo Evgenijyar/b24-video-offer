@@ -1,41 +1,75 @@
 # b24-video-offer
 
-Spring Boot application for creating personal video offers from Kontur.Talk recordings inside Bitrix24 CRM.
+Spring Boot-приложение для создания персональных видеоофферов из записей Контур.Толка внутри Bitrix24 CRM.
 
-## Supported CRM entities
+## Поддерживаемые сущности CRM
 
-- Deal (`DEAL`)
-- Lead (`LEAD`)
-- Contact (`CONTACT`)
+- Сделка (`DEAL`)
+- Лид (`LEAD`)
+- Контакт (`CONTACT`)
 
-## Local start in IntelliJ IDEA
+## Конфигурация
 
-1. Copy `.env.example` to `.env` and fill values.
-2. Configure IntelliJ run environment variables from `.env`.
-3. Run `B24VideoOfferApplication`.
-4. Open `http://localhost:8080` and `http://localhost:8080/api/health`.
+Все настройки находятся в одном файле:
 
-The PostgreSQL database must already exist on the external PostgreSQL server. Flyway creates tables automatically.
-
-## Create database on PostgreSQL server
-
-Run as a PostgreSQL administrator:
-
-```sql
-CREATE USER b24_video_offer_user WITH PASSWORD 'CHANGE_ME';
-CREATE DATABASE b24_video_offer OWNER b24_video_offer_user ENCODING 'UTF8';
-GRANT ALL PRIVILEGES ON DATABASE b24_video_offer TO b24_video_offer_user;
+```text
+src/main/resources/application.properties
 ```
 
-## Git workflow
+Файлы `.env` и `application.yml` проекту не нужны.
+
+## Первый локальный запуск в IntelliJ IDEA
+
+1. Открыть корневую папку проекта, где находится `pom.xml`.
+2. Выбрать JDK 21.
+3. Дождаться загрузки Maven-зависимостей.
+4. Запустить класс `ru.abs7.videooffer.B24VideoOfferApplication`.
+5. Проверить:
+   - `http://localhost:8080/`
+   - `http://localhost:8080/api/health`
+
+При первом запуске приложение подключится к уже созданной базе `b24_video_offer`, а Flyway автоматически создаст таблицы.
+
+## Проверка через Maven
+
+Windows PowerShell:
+
+```powershell
+.\mvnw.cmd test
+```
+
+Запуск без IntelliJ IDEA:
+
+```powershell
+.\mvnw.cmd spring-boot:run
+```
+
+## Git
+
+Первичная публикация:
+
+```bash
+git init
+git branch -M main
+git remote add origin https://github.com/Evgenijyar/b24-video-offer.git
+git add .
+git commit -m "Initial b24 video offer project"
+git push -u origin main
+```
+
+Обычные обновления:
 
 ```bash
 git add .
-git commit -m "Describe changes"
+git commit -m "Описание изменений"
 git push
 ```
 
-## Server update
+## Сервер
+
+Приложение использует внешний PostgreSQL. Docker Compose поднимает только Java-приложение и постоянный volume для видео.
+
+Обновление сервера:
 
 ```bash
 python3 deploy.py

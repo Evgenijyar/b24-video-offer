@@ -1,1 +1,100 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Видео-оффер</title><link rel="stylesheet" href="/assets/app.css"></head><body><main class="shell"><section class="card"><div class="badge">B24 VIDEO OFFER</div><h1>Сервис запущен</h1><p>Каркас приложения работает. Следующий этап — установка локального приложения и регистрация действий в карточках сделок, лидов и контактов.</p><div class="status"><span></span> Spring Boot доступен</div></section></main></body></html>
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Видео-оффер — тестирование</title>
+    <link rel="stylesheet" href="/assets/app.css">
+</head>
+<body class="app-page">
+<header class="topbar">
+    <div class="topbar__brand">
+        <div class="topbar__logo">VO</div>
+        <div>
+            <div class="topbar__title">Видео-оффер</div>
+            <div class="topbar__subtitle">Локальное тестирование основной механики</div>
+        </div>
+    </div>
+    <div class="health"><span class="health__dot"></span>Приложение запущено</div>
+</header>
+
+<main class="workspace">
+    <section class="panel">
+        <div class="panel__header">
+            <div>
+                <div class="eyebrow">НОВЫЙ ВИДЕООФФЕР</div>
+                <h1>Подготовить запись Контур.Толка</h1>
+                <p>Эта форма временно заменяет интерфейс Bitrix24 и проверяет весь путь до публичной страницы.</p>
+            </div>
+        </div>
+
+        <form id="offer-form" class="form-grid">
+            <label class="field">
+                <span>Тип карточки CRM</span>
+                <select id="entity-type" required>
+                    <option value="DEAL">Сделка</option>
+                    <option value="LEAD">Лид</option>
+                    <option value="CONTACT">Контакт</option>
+                </select>
+            </label>
+
+            <label class="field">
+                <span>ID карточки</span>
+                <input id="entity-id" type="number" min="1" value="1" required>
+            </label>
+
+            <label class="field field--wide">
+                <span>Ссылка на запись Контур.Толка</span>
+                <input id="recording-url" type="url" placeholder="https://.../recordings/..." required>
+            </label>
+
+            <label class="field field--wide">
+                <span>Сопроводительный текст</span>
+                <textarea id="accompanying-text" rows="5" placeholder="Например: Павел Георгиевич, направляю короткую презентацию по итогам нашего разговора."></textarea>
+            </label>
+
+            <div class="form-actions field--wide">
+                <button id="submit-button" class="button button--primary" type="submit">Сформировать видеооффер</button>
+                <div id="form-error" class="inline-error" hidden></div>
+            </div>
+        </form>
+
+        <div id="processing" class="processing" hidden>
+            <div class="processing__head">
+                <strong id="processing-title">Подготавливаем видео</strong>
+                <span id="processing-percent">0%</span>
+            </div>
+            <div class="progress"><div id="progress-bar" class="progress__bar"></div></div>
+            <div id="processing-status" class="processing__status">Создаём задачу…</div>
+        </div>
+
+        <div id="ready-result" class="result-card" hidden>
+            <div class="result-card__icon">✓</div>
+            <div class="result-card__content">
+                <strong>Видеооффер готов</strong>
+                <div class="result-card__links">
+                    <a id="local-link" class="button button--primary" target="_blank" rel="noopener">Открыть локально</a>
+                    <button id="copy-link" class="button button--secondary" type="button">Скопировать публичную ссылку</button>
+                </div>
+                <code id="public-url" class="public-url"></code>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel panel--compact">
+        <div class="section-title">
+            <div>
+                <div class="eyebrow">ИСТОРИЯ</div>
+                <h2>Последние видеоофферы</h2>
+            </div>
+            <button id="refresh-list" class="button button--ghost" type="button">Обновить</button>
+        </div>
+        <div id="offers-list" class="offers-list">
+            <div class="empty-state">Загружаем список…</div>
+        </div>
+    </section>
+</main>
+
+<script src="/assets/app.js"></script>
+</body>
+</html>
