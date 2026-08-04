@@ -1,0 +1,634 @@
+﻿Last login: Tue Aug  4 02:47:18 2026 from 216.57.105.22
+root@1590435-abs7host:~# export PAGER=cat
+root@1590435-abs7host:~# export SYSTEMD_PAGER=cat
+root@1590435-abs7host:~# export GIT_PAGER=cat
+root@1590435-abs7host:~# export LESS=-FRSX
+root@1590435-abs7host:~# export COMPOSE_PROGRESS=plain
+root@1590435-abs7host:~#
+root@1590435-abs7host:~# set -Eeuo pipefail
+root@1590435-abs7host:~#
+root@1590435-abs7host:~# APP_DIR="/opt/b24-video-offer"
+root@1590435-abs7host:~# REPO_URL="https://github.com/Evgenijyar/b24-video-offer.git"
+root@1590435-abs7host:~# BRANCH="main"
+root@1590435-abs7host:~#
+root@1590435-abs7host:~# on_error() {
+>   EXIT_CODE=$?
+>
+>   echo
+>   echo "============================================================"
+>   echo "DEPLOYMENT FAILED, EXIT CODE: ${EXIT_CODE}"
+>   echo "============================================================"
+>
+>   if [ -d "${APP_DIR}" ]; then
+>     cd "${APP_DIR}" || true
+>
+>     echo
+>     echo "--- Docker Compose status ---"
+>     docker compose ps 2>&1 || true
+>
+>     echo
+>     echo "--- Application logs ---"
+>     docker compose logs \
+>       --no-color \
+>       --tail=250 \
+>       app \
+>       2>&1 || true
+>   fi
+>
+>   echo
+>   echo "--- Current memory ---"
+>   free -h 2>&1 || true
+>
+>   echo
+>   echo "--- Current disk ---"
+>   df -hT / 2>&1 || true
+>
+>   exit "${EXIT_CODE}"
+> }
+root@1590435-abs7host:~#
+root@1590435-abs7host:~# trap on_error ERR
+root@1590435-abs7host:~#
+root@1590435-abs7host:~# section() {
+>   echo
+>   echo "============================================================"
+>   echo "$1"
+>   echo "============================================================"
+> }
+root@1590435-abs7host:~#
+root@1590435-abs7host:~# section "1. PREPARE APPLICATION DIRECTORY"
+
+============================================================
+1. PREPARE APPLICATION DIRECTORY
+============================================================
+root@1590435-abs7host:~#
+root@1590435-abs7host:~# mkdir -p /opt
+root@1590435-abs7host:~#
+root@1590435-abs7host:~# if [ -d "${APP_DIR}/.git" ]; then
+>   echo "Repository already exists. Updating it."
+>
+>   git -C "${APP_DIR}" remote set-url origin "${REPO_URL}"
+>   git -C "${APP_DIR}" fetch \
+>     --prune \
+>     --depth 1 \
+>     origin \
+>     "${BRANCH}"
+>
+>   git -C "${APP_DIR}" reset \
+>     --hard \
+>     "origin/${BRANCH}"
+> else
+>   echo "Cloning repository."
+>
+>   rm -rf "${APP_DIR}"
+>
+>   git clone \
+>     --depth 1 \
+>     --branch "${BRANCH}" \
+>     "${REPO_URL}" \
+>     "${APP_DIR}"
+> fi
+Cloning repository.
+Cloning into '/opt/b24-video-offer'...
+remote: Enumerating objects: 72, done.
+remote: Counting objects: 100% (72/72), done.
+remote: Compressing objects: 100% (58/58), done.
+remote: Total 72 (delta 2), reused 67 (delta 2), pack-reused 0 (from 0)
+Receiving objects: 100% (72/72), 37.66 KiB | 9.42 MiB/s, done.
+Resolving deltas: 100% (2/2), done.
+root@1590435-abs7host:~#
+root@1590435-abs7host:~# cd "${APP_DIR}"
+root@1590435-abs7host:/opt/b24-video-offer#
+root@1590435-abs7host:/opt/b24-video-offer# echo
+
+root@1590435-abs7host:/opt/b24-video-offer# echo "Application directory:"
+Application directory:
+root@1590435-abs7host:/opt/b24-video-offer# pwd
+/opt/b24-video-offer
+root@1590435-abs7host:/opt/b24-video-offer#
+root@1590435-abs7host:/opt/b24-video-offer# echo
+
+root@1590435-abs7host:/opt/b24-video-offer# echo "Current commit:"
+Current commit:
+root@1590435-abs7host:/opt/b24-video-offer# git rev-parse HEAD
+40cfc09d55518c54e67dbf389934958ea3d4714c
+root@1590435-abs7host:/opt/b24-video-offer#
+root@1590435-abs7host:/opt/b24-video-offer# echo
+
+root@1590435-abs7host:/opt/b24-video-offer# echo "Current branch:"
+Current branch:
+root@1590435-abs7host:/opt/b24-video-offer# git branch --show-current
+main
+root@1590435-abs7host:/opt/b24-video-offer#
+root@1590435-abs7host:/opt/b24-video-offer# section "2. CREATE SERVER-SPECIFIC DOCKER OVERRIDE"
+
+============================================================
+2. CREATE SERVER-SPECIFIC DOCKER OVERRIDE
+============================================================
+root@1590435-abs7host:/opt/b24-video-offer#
+root@1590435-abs7host:/opt/b24-video-offer# cat > docker-compose.override.yml <<'EOF'
+> services:
+>   app:
+>     environment:
+>       JAVA_TOOL_OPTIONS: >-
+>         -Xms64m
+>         -Xmx256m
+>         -XX:MaxMetaspaceSize=128m
+>         -XX:+UseSerialGC
+>         -Djava.security.egd=file:/dev/./urandom
+>     mem_limit: 448m
+>     cpus: "0.80"
+> EOF
+root@1590435-abs7host:/opt/b24-video-offer#
+root@1590435-abs7host:/opt/b24-video-offer# echo "--- docker-compose.override.yml ---"
+--- docker-compose.override.yml ---
+root@1590435-abs7host:/opt/b24-video-offer# cat docker-compose.override.yml
+services:
+  app:
+    environment:
+      JAVA_TOOL_OPTIONS: >-
+        -Xms64m
+        -Xmx256m
+        -XX:MaxMetaspaceSize=128m
+        -XX:+UseSerialGC
+        -Djava.security.egd=file:/dev/./urandom
+    mem_limit: 448m
+    cpus: "0.80"
+root@1590435-abs7host:/opt/b24-video-offer#
+root@1590435-abs7host:/opt/b24-video-offer# section "3. CHECK EFFECTIVE DOCKER CONFIGURATION"
+
+============================================================
+3. CHECK EFFECTIVE DOCKER CONFIGURATION
+============================================================
+root@1590435-abs7host:/opt/b24-video-offer#
+root@1590435-abs7host:/opt/b24-video-offer# docker compose config
+name: b24-video-offer
+services:
+  app:
+    build:
+      context: /opt/b24-video-offer
+      dockerfile: Dockerfile
+    cpus: 0.8
+    container_name: b24-video-offer
+    environment:
+      JAVA_TOOL_OPTIONS: -Xms64m -Xmx256m -XX:MaxMetaspaceSize=128m -XX:+UseSerialGC -Djava.security
+.egd=file:/dev/./urandom
+    mem_limit: "469762048"
+    networks:
+      default: null
+    ports:
+      - mode: ingress
+        host_ip: 127.0.0.1
+        target: 8080
+        published: "8080"
+        protocol: tcp
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: video_offer_data
+        target: /app/data
+        volume: {}
+networks:
+  default:
+    name: b24-video-offer_default
+volumes:
+  video_offer_data:
+    name: b24-video-offer_video_offer_data
+root@1590435-abs7host:/opt/b24-video-offer#
+root@1590435-abs7host:/opt/b24-video-offer# section "4. STOP PREVIOUS VIDEO-OFFER CONTAINER IF PRESE
+NT"
+
+============================================================
+4. STOP PREVIOUS VIDEO-OFFER CONTAINER IF PRESENT
+============================================================
+root@1590435-abs7host:/opt/b24-video-offer#
+root@1590435-abs7host:/opt/b24-video-offer# docker compose down \
+>   --remove-orphans \
+>   2>&1 || true
+root@1590435-abs7host:/opt/b24-video-offer#
+root@1590435-abs7host:/opt/b24-video-offer# docker rm \
+>   -f \
+>   b24-video-offer \
+>   2>/dev/null || true
+root@1590435-abs7host:/opt/b24-video-offer#
+root@1590435-abs7host:/opt/b24-video-offer# section "5. BUILD APPLICATION IMAGE"
+
+============================================================
+5. BUILD APPLICATION IMAGE
+============================================================
+root@1590435-abs7host:/opt/b24-video-offer#
+root@1590435-abs7host:/opt/b24-video-offer# docker compose build \
+>   --pull
+ Image b24-video-offer-app Building
+#1 [internal] load local bake definitions
+#1 reading from stdin 516B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 410B 0.0s done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/maven:3.9.16-eclipse-temurin-21
+#3 DONE 1.7s
+
+#4 [internal] load metadata for docker.io/library/eclipse-temurin:21-jre
+#4 DONE 1.8s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [stage-1 1/4] FROM docker.io/library/eclipse-temurin:21-jre@sha256:273396ed5998598ed1091e8d72711c
+2d36980a0e65103859c55a4e977a41ffd3
+#6 resolve docker.io/library/eclipse-temurin:21-jre@sha256:273396ed5998598ed1091e8d72711c2d36980a0e6
+5103859c55a4e977a41ffd3 0.0s done
+#6 ...
+
+#7 [internal] load build context
+#7 transferring context: 84.03kB 0.1s done
+#7 DONE 0.1s
+
+#6 [stage-1 1/4] FROM docker.io/library/eclipse-temurin:21-jre@sha256:273396ed5998598ed1091e8d72711c
+2d36980a0e65103859c55a4e977a41ffd3
+#6 sha256:273396ed5998598ed1091e8d72711c2d36980a0e65103859c55a4e977a41ffd3 5.92kB / 5.92kB done
+#6 sha256:45262a7ae83795d5ae65e1480ea0485283f04d162672cc3f1a80440e0ae79adb 9.00kB / 9.00kB done
+#6 sha256:b60266963794b5187cfe4bb634b816f98ffb597691d6a5b0b1818dcf7e65c265 2.13kB / 2.13kB done
+#6 ...
+
+#8 [build 1/6] FROM docker.io/library/maven:3.9.16-eclipse-temurin-21@sha256:2b4496088e7b80ae10a8c9f
+74e574ea21380325a006ec684532ad6bad5bc7273
+#8 resolve docker.io/library/maven:3.9.16-eclipse-temurin-21@sha256:2b4496088e7b80ae10a8c9f74e574ea2
+1380325a006ec684532ad6bad5bc7273 0.0s done
+#8 sha256:2b4496088e7b80ae10a8c9f74e574ea21380325a006ec684532ad6bad5bc7273 6.65kB / 6.65kB done
+#8 sha256:649ffaf4ca822eca972dfb68bce8ef29182e2ab451847daf09360918bdb8356b 9.25kB / 9.25kB done
+#8 sha256:f55c6b566db012d556e9bfd6be4c87a9982106f3bfb9e2b5b069c2995ae29695 41.94MB / 158.17MB 5.0s
+#8 sha256:0bef3f122ac7c0928b2fbcdf444f98cbd2db0ef7a1193bfa121cd70fa22221ef 2.73kB / 2.73kB done
+#8 sha256:ca2678b20700c15185707964d9211b1a6406196114bf675f568b6025d37b3888 29.74MB / 29.74MB 4.0s do
+ne
+#8 sha256:f0b722184a7b5cd41d88fcfe6715ae56de236481a707a2996078170bc0ffd7ff 22.93MB / 22.93MB 3.7s do
+ne
+#8 sha256:f3203fa21b480c1257312dea0e6e7f0af55f7a0fa1c72b7fedbda4e5514c522b 158B / 158B 3.8s done
+#8 sha256:9cda2e1bab1def689538dc788de29713a5ae061975dd3bbe89de89e7035b9536 2.28kB / 2.28kB 4.0s done
+#8 sha256:9f2f6b5a0f335e9292c7c3fb15e5eac8df7a40c54cca6151bbe57194184f4a2c 5.24MB / 24.95MB 5.0s
+#8 sha256:46f53307f145fa97c89252d562bc4dcc803e9187b42c03a1cf3b2c7f1b449b6d 2.10MB / 9.36MB 5.0s
+#8 extracting sha256:ca2678b20700c15185707964d9211b1a6406196114bf675f568b6025d37b3888 0.9s
+#8 sha256:46f53307f145fa97c89252d562bc4dcc803e9187b42c03a1cf3b2c7f1b449b6d 3.15MB / 9.36MB 5.1s
+#8 sha256:9f2f6b5a0f335e9292c7c3fb15e5eac8df7a40c54cca6151bbe57194184f4a2c 7.34MB / 24.95MB 5.3s
+#8 sha256:46f53307f145fa97c89252d562bc4dcc803e9187b42c03a1cf3b2c7f1b449b6d 4.19MB / 9.36MB 5.5s
+#8 sha256:9f2f6b5a0f335e9292c7c3fb15e5eac8df7a40c54cca6151bbe57194184f4a2c 9.44MB / 24.95MB 5.6s
+#8 sha256:f55c6b566db012d556e9bfd6be4c87a9982106f3bfb9e2b5b069c2995ae29695 50.33MB / 158.17MB 5.7s
+#8 sha256:46f53307f145fa97c89252d562bc4dcc803e9187b42c03a1cf3b2c7f1b449b6d 5.24MB / 9.36MB 5.7s
+#8 sha256:9f2f6b5a0f335e9292c7c3fb15e5eac8df7a40c54cca6151bbe57194184f4a2c 12.58MB / 24.95MB 6.0s
+#8 sha256:46f53307f145fa97c89252d562bc4dcc803e9187b42c03a1cf3b2c7f1b449b6d 6.29MB / 9.36MB 6.0s
+#8 sha256:46f53307f145fa97c89252d562bc4dcc803e9187b42c03a1cf3b2c7f1b449b6d 7.34MB / 9.36MB 6.2s
+#8 extracting sha256:ca2678b20700c15185707964d9211b1a6406196114bf675f568b6025d37b3888 1.9s done
+#8 sha256:9f2f6b5a0f335e9292c7c3fb15e5eac8df7a40c54cca6151bbe57194184f4a2c 14.68MB / 24.95MB 6.3s
+#8 extracting sha256:f0b722184a7b5cd41d88fcfe6715ae56de236481a707a2996078170bc0ffd7ff
+#8 sha256:f55c6b566db012d556e9bfd6be4c87a9982106f3bfb9e2b5b069c2995ae29695 58.72MB / 158.17MB 6.4s
+#8 sha256:46f53307f145fa97c89252d562bc4dcc803e9187b42c03a1cf3b2c7f1b449b6d 8.39MB / 9.36MB 6.5s
+#8 sha256:9f2f6b5a0f335e9292c7c3fb15e5eac8df7a40c54cca6151bbe57194184f4a2c 16.78MB / 24.95MB 6.6s
+#8 sha256:46f53307f145fa97c89252d562bc4dcc803e9187b42c03a1cf3b2c7f1b449b6d 9.36MB / 9.36MB 6.7s done
+#8 sha256:39bd7d79a71081c646aadfa0604f7a29367aa6eb6034c4b30cc92bf5a5cf621b 0B / 853B 6.7s
+#8 sha256:9f2f6b5a0f335e9292c7c3fb15e5eac8df7a40c54cca6151bbe57194184f4a2c 19.92MB / 24.95MB 6.9s
+#8 sha256:39bd7d79a71081c646aadfa0604f7a29367aa6eb6034c4b30cc92bf5a5cf621b 853B / 853B 6.9s done
+#8 sha256:764996f01d6f25c8fab2ee3732ca6fb511662b261669a0a71f7040bb84793beb 0B / 155B 7.0s
+#8 sha256:f55c6b566db012d556e9bfd6be4c87a9982106f3bfb9e2b5b069c2995ae29695 68.16MB / 158.17MB 7.1s
+#8 sha256:9f2f6b5a0f335e9292c7c3fb15e5eac8df7a40c54cca6151bbe57194184f4a2c 22.02MB / 24.95MB 7.2s
+#8 sha256:764996f01d6f25c8fab2ee3732ca6fb511662b261669a0a71f7040bb84793beb 155B / 155B 7.1s done
+#8 sha256:9f2f6b5a0f335e9292c7c3fb15e5eac8df7a40c54cca6151bbe57194184f4a2c 24.95MB / 24.95MB 7.5s
+#8 sha256:f55c6b566db012d556e9bfd6be4c87a9982106f3bfb9e2b5b069c2995ae29695 76.55MB / 158.17MB 7.7s
+#8 sha256:9f2f6b5a0f335e9292c7c3fb15e5eac8df7a40c54cca6151bbe57194184f4a2c 24.95MB / 24.95MB 7.5s do
+ne
+#8 extracting sha256:f0b722184a7b5cd41d88fcfe6715ae56de236481a707a2996078170bc0ffd7ff 1.4s done
+#8 sha256:f55c6b566db012d556e9bfd6be4c87a9982106f3bfb9e2b5b069c2995ae29695 85.98MB / 158.17MB 8.4s
+#8 sha256:f55c6b566db012d556e9bfd6be4c87a9982106f3bfb9e2b5b069c2995ae29695 94.37MB / 158.17MB 10.7s
+#8 sha256:f55c6b566db012d556e9bfd6be4c87a9982106f3bfb9e2b5b069c2995ae29695 102.76MB / 158.17MB 12.5s
+#8 sha256:f55c6b566db012d556e9bfd6be4c87a9982106f3bfb9e2b5b069c2995ae29695 112.20MB / 158.17MB 13.4s
+#8 sha256:f55c6b566db012d556e9bfd6be4c87a9982106f3bfb9e2b5b069c2995ae29695 120.59MB / 158.17MB 13.8s
+#8 sha256:f55c6b566db012d556e9bfd6be4c87a9982106f3bfb9e2b5b069c2995ae29695 128.97MB / 158.17MB 14.2s
+#8 sha256:f55c6b566db012d556e9bfd6be4c87a9982106f3bfb9e2b5b069c2995ae29695 138.41MB / 158.17MB 14.7s
+#8 sha256:f55c6b566db012d556e9bfd6be4c87a9982106f3bfb9e2b5b069c2995ae29695 146.80MB / 158.17MB 15.1s
+#8 sha256:f55c6b566db012d556e9bfd6be4c87a9982106f3bfb9e2b5b069c2995ae29695 157.29MB / 158.17MB 15.7s
+#8 sha256:f55c6b566db012d556e9bfd6be4c87a9982106f3bfb9e2b5b069c2995ae29695 158.17MB / 158.17MB 15.7s
+ done
+#8 extracting sha256:f55c6b566db012d556e9bfd6be4c87a9982106f3bfb9e2b5b069c2995ae29695
+#8 ...
+
+#6 [stage-1 1/4] FROM docker.io/library/eclipse-temurin:21-jre@sha256:273396ed5998598ed1091e8d72711c
+2d36980a0e65103859c55a4e977a41ffd3
+#6 sha256:ed819469700fe2cd94f44a7c218a84e40cda16dd2e7e5238cbdef33e6153d536 41.58MB / 41.58MB 16.0s d
+one
+#6 sha256:a3679419df184857c0d317d7cdaad6187f6c0f0b68dd2ed58becf174e28f4c1b 393B / 393B 7.9s done
+#6 sha256:820c33f1b1afa9cdcb7dab800f87af0a725dc9881b30f5d96a5156a31a900565 20.12MB / 20.12MB 9.4s do
+ne
+#6 sha256:d7c3a38c1a14a0b4011b18c66436b3911759bc1f45f05cd6f80619a29236b991 53.12MB / 53.12MB 13.3s d
+one
+#6 sha256:f1b04ce3f9e77fd6b1f4d45b7eeed34a40ecdf902eef54f050ccc304d0b3af81 160B / 160B 13.4s done
+#6 sha256:18afba83028d78fab1a12a4b288fd7d3033f98f61938e648ecf85efba8b04b23 2.28kB / 2.28kB 13.6s don
+e
+#6 extracting sha256:ed819469700fe2cd94f44a7c218a84e40cda16dd2e7e5238cbdef33e6153d536 1.0s
+#6 ...
+
+#8 [build 1/6] FROM docker.io/library/maven:3.9.16-eclipse-temurin-21@sha256:2b4496088e7b80ae10a8c9f
+74e574ea21380325a006ec684532ad6bad5bc7273
+#8 extracting sha256:f55c6b566db012d556e9bfd6be4c87a9982106f3bfb9e2b5b069c2995ae29695 5.0s
+#8 extracting sha256:f55c6b566db012d556e9bfd6be4c87a9982106f3bfb9e2b5b069c2995ae29695 8.3s done
+#8 extracting sha256:f3203fa21b480c1257312dea0e6e7f0af55f7a0fa1c72b7fedbda4e5514c522b done
+#8 extracting sha256:9cda2e1bab1def689538dc788de29713a5ae061975dd3bbe89de89e7035b9536 done
+#8 extracting sha256:9f2f6b5a0f335e9292c7c3fb15e5eac8df7a40c54cca6151bbe57194184f4a2c
+#8 ...
+
+#6 [stage-1 1/4] FROM docker.io/library/eclipse-temurin:21-jre@sha256:273396ed5998598ed1091e8d72711c
+2d36980a0e65103859c55a4e977a41ffd3
+#6 extracting sha256:ed819469700fe2cd94f44a7c218a84e40cda16dd2e7e5238cbdef33e6153d536 3.6s done
+#6 extracting sha256:a3679419df184857c0d317d7cdaad6187f6c0f0b68dd2ed58becf174e28f4c1b done
+#6 extracting sha256:820c33f1b1afa9cdcb7dab800f87af0a725dc9881b30f5d96a5156a31a900565 1.3s done
+#6 extracting sha256:d7c3a38c1a14a0b4011b18c66436b3911759bc1f45f05cd6f80619a29236b991 3.5s done
+#6 extracting sha256:f1b04ce3f9e77fd6b1f4d45b7eeed34a40ecdf902eef54f050ccc304d0b3af81 done
+#6 extracting sha256:18afba83028d78fab1a12a4b288fd7d3033f98f61938e648ecf85efba8b04b23 done
+#6 DONE 25.2s
+
+#8 [build 1/6] FROM docker.io/library/maven:3.9.16-eclipse-temurin-21@sha256:2b4496088e7b80ae10a8c9f
+74e574ea21380325a006ec684532ad6bad5bc7273
+#8 ...
+
+#9 [stage-1 2/4] WORKDIR /app
+#9 DONE 0.1s
+
+#8 [build 1/6] FROM docker.io/library/maven:3.9.16-eclipse-temurin-21@sha256:2b4496088e7b80ae10a8c9f
+74e574ea21380325a006ec684532ad6bad5bc7273
+#8 extracting sha256:9f2f6b5a0f335e9292c7c3fb15e5eac8df7a40c54cca6151bbe57194184f4a2c 1.7s done
+#8 extracting sha256:46f53307f145fa97c89252d562bc4dcc803e9187b42c03a1cf3b2c7f1b449b6d 0.1s
+#8 extracting sha256:46f53307f145fa97c89252d562bc4dcc803e9187b42c03a1cf3b2c7f1b449b6d 0.2s done
+#8 extracting sha256:39bd7d79a71081c646aadfa0604f7a29367aa6eb6034c4b30cc92bf5a5cf621b done
+#8 extracting sha256:764996f01d6f25c8fab2ee3732ca6fb511662b261669a0a71f7040bb84793beb done
+#8 DONE 26.3s
+
+#10 [build 2/6] WORKDIR /workspace
+#10 DONE 0.1s
+
+#11 [build 3/6] COPY pom.xml pom.xml
+#11 DONE 0.0s
+
+#12 [build 4/6] RUN mvn -q -DskipTests dependency:go-offline
+#12 DONE 39.4s
+
+#13 [build 5/6] COPY src src
+#13 DONE 0.3s
+
+#14 [build 6/6] RUN mvn -q -DskipTests package
+#14 DONE 12.9s
+
+#15 [stage-1 3/4] COPY --from=build /workspace/target/b24-video-offer-*.jar app.jar
+#15 DONE 0.3s
+
+#16 [stage-1 4/4] RUN mkdir -p /app/data/videos
+#16 DONE 0.4s
+
+#17 exporting to image
+#17 exporting layers
+#17 exporting layers 0.2s done
+#17 writing image sha256:8e821a6fabee002712aae4c8c3abcef8dd83d2f4d70c8007079c926f82962081
+#17 writing image sha256:8e821a6fabee002712aae4c8c3abcef8dd83d2f4d70c8007079c926f82962081 done
+#17 naming to docker.io/library/b24-video-offer-app done
+#17 DONE 0.2s
+
+#18 resolving provenance for metadata file
+#18 DONE 0.0s
+ Image b24-video-offer-app Built
+root@1590435-abs7host:/opt/b24-video-offer#
+root@1590435-abs7host:/opt/b24-video-offer# section "6. START APPLICATION"
+
+============================================================
+6. START APPLICATION
+============================================================
+root@1590435-abs7host:/opt/b24-video-offer#
+root@1590435-abs7host:/opt/b24-video-offer# docker compose up \
+>   -d \
+>   --remove-orphans
+ Network b24-video-offer_default Creating
+ Network b24-video-offer_default Created
+ Volume b24-video-offer_video_offer_data Creating
+ Volume b24-video-offer_video_offer_data Created
+ Container b24-video-offer Creating
+ Container b24-video-offer Created
+ Container b24-video-offer Starting
+ Container b24-video-offer Started
+root@1590435-abs7host:/opt/b24-video-offer#
+root@1590435-abs7host:/opt/b24-video-offer# section "7. WAIT FOR LOCAL HEALTHCHECK"
+
+============================================================
+7. WAIT FOR LOCAL HEALTHCHECK
+============================================================
+root@1590435-abs7host:/opt/b24-video-offer#
+root@1590435-abs7host:/opt/b24-video-offer# HEALTH_OK=0
+root@1590435-abs7host:/opt/b24-video-offer#
+root@1590435-abs7host:/opt/b24-video-offer# for ATTEMPT in $(seq 1 90); do
+>   echo "Healthcheck attempt ${ATTEMPT}/90"
+>
+>   if curl \
+>     --fail \
+>     --silent \
+>     --show-error \
+>     --max-time 5 \
+>     http://127.0.0.1:8080/api/health
+>   then
+>     echo
+>     HEALTH_OK=1
+>     break
+>   fi
+>
+>   sleep 2
+> done
+Healthcheck attempt 1/90
+curl: (56) Recv failure: Connection reset by peer
+Healthcheck attempt 2/90
+curl: (56) Recv failure: Connection reset by peer
+Healthcheck attempt 3/90
+curl: (52) Empty reply from server
+Healthcheck attempt 4/90
+curl: (52) Empty reply from server
+Healthcheck attempt 5/90
+curl: (52) Empty reply from server
+Healthcheck attempt 6/90
+curl: (56) Recv failure: Connection reset by peer
+Healthcheck attempt 7/90
+curl: (52) Empty reply from server
+Healthcheck attempt 8/90
+curl: (56) Recv failure: Connection reset by peer
+Healthcheck attempt 9/90
+curl: (52) Empty reply from server
+Healthcheck attempt 10/90
+curl: (56) Recv failure: Connection reset by peer
+Healthcheck attempt 11/90
+curl: (52) Empty reply from server
+Healthcheck attempt 12/90
+{"service":"b24-video-offer","time":"2026-08-03T23:52:31.081899011Z","status":"UP"}
+root@1590435-abs7host:/opt/b24-video-offer#
+root@1590435-abs7host:/opt/b24-video-offer# if [ "${HEALTH_OK}" -ne 1 ]; then
+>   echo "Application did not become healthy."
+>   false
+> fi
+root@1590435-abs7host:/opt/b24-video-offer#
+root@1590435-abs7host:/opt/b24-video-offer# section "8. CHECK APPLICATION PAGE"
+
+============================================================
+8. CHECK APPLICATION PAGE
+============================================================
+root@1590435-abs7host:/opt/b24-video-offer#
+root@1590435-abs7host:/opt/b24-video-offer# curl \
+>   --silent \
+>   --show-error \
+>   --max-time 10 \
+>   http://127.0.0.1:8080/ \
+>   | head -n 40
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Видео-оффер — тестирование</title>
+    <link rel="stylesheet" href="/assets/app.css">
+</head>
+<body class="app-page">
+<header class="topbar">
+    <div class="topbar__brand">
+        <div class="topbar__logo">VO</div>
+        <div>
+            <div class="topbar__title">Видео-оффер</div>
+            <div class="topbar__subtitle">Локальное тестирование основной механики</div>
+        </div>
+    </div>
+    <div class="health"><span class="health__dot"></span>Приложение запущено</div>
+</header>
+
+<main class="workspace">
+    <section class="panel">
+        <div class="panel__header">
+            <div>
+                <div class="eyebrow">НОВЫЙ ВИДЕООФФЕР</div>
+                <h1>Подготовить запись Контур.Толка</h1>
+                <p>Эта форма временно заменяет интерфейс Bitrix24 и проверяет весь путь до публичной
+ страницы.</p>
+            </div>
+        </div>
+
+        <form id="offer-form" class="form-grid">
+            <label class="field">
+                <span>Тип карточки CRM</span>
+                <select id="entity-type" required>
+                    <option value="DEAL">Сделка</option>
+                    <option value="LEAD">Лид</option>
+                    <option value="CONTACT">Контакт</option>
+                </select>
+            </label>
+
+curl: (23) Failed writing body
+
+============================================================
+DEPLOYMENT FAILED, EXIT CODE: 23
+============================================================
+
+--- Docker Compose status ---
+NAME              IMAGE                 COMMAND                  SERVICE   CREATED          STATUS
+        PORTS
+b24-video-offer   b24-video-offer-app   "java -jar /app/app.…"   app       23 seconds ago   Up 23 se
+conds   127.0.0.1:8080->8080/tcp
+
+--- Application logs ---
+b24-video-offer  | Picked up JAVA_TOOL_OPTIONS: -Xms64m -Xmx256m -XX:MaxMetaspaceSize=128m -XX:+UseS
+erialGC -Djava.security.egd=file:/dev/./urandom
+b24-video-offer  |
+b24-video-offer  |   .   ____          _            __ _ _
+b24-video-offer  |  /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+b24-video-offer  | ( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+b24-video-offer  |  \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+b24-video-offer  |   '  |____| .__|_| |_|_| |_\__, | / / / /
+b24-video-offer  |  =========|_|==============|___/=/_/_/_/
+b24-video-offer  |
+b24-video-offer  |  :: Spring Boot ::                (v4.0.5)
+b24-video-offer  |
+b24-video-offer  | 2026-08-03T23:52:11.701Z  INFO 1 --- [b24-video-offer] [           main] r.a.vide
+ooffer.B24VideoOfferApplication  : Starting B24VideoOfferApplication v0.1.0-SNAPSHOT using Java 21.0
+.11 with PID 1 (/app/app.jar started by root in /app)
+b24-video-offer  | 2026-08-03T23:52:11.713Z  INFO 1 --- [b24-video-offer] [           main] r.a.vide
+ooffer.B24VideoOfferApplication  : No active profile set, falling back to 1 default profile: "defaul
+t"
+b24-video-offer  | 2026-08-03T23:52:13.718Z  INFO 1 --- [b24-video-offer] [           main] .s.d.r.c
+.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+b24-video-offer  | 2026-08-03T23:52:13.893Z  INFO 1 --- [b24-video-offer] [           main] .s.d.r.c
+.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 135 ms. Found 2 JPA r
+epository interfaces.
+b24-video-offer  | 2026-08-03T23:52:15.800Z  INFO 1 --- [b24-video-offer] [           main] o.s.boot
+.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+b24-video-offer  | 2026-08-03T23:52:15.832Z  INFO 1 --- [b24-video-offer] [           main] o.apache
+.catalina.core.StandardService   : Starting service [Tomcat]
+b24-video-offer  | 2026-08-03T23:52:15.832Z  INFO 1 --- [b24-video-offer] [           main] o.apache
+.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.20]
+b24-video-offer  | 2026-08-03T23:52:16.085Z  INFO 1 --- [b24-video-offer] [           main] b.w.c.s.
+WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 4186 ms
+b24-video-offer  | 2026-08-03T23:52:17.806Z  INFO 1 --- [b24-video-offer] [           main] com.zaxx
+er.hikari.HikariDataSource       : HikariPool-1 - Starting...
+b24-video-offer  | 2026-08-03T23:52:19.325Z  INFO 1 --- [b24-video-offer] [           main] com.zaxx
+er.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@
+40b31a16
+b24-video-offer  | 2026-08-03T23:52:19.327Z  INFO 1 --- [b24-video-offer] [           main] com.zaxx
+er.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+b24-video-offer  | 2026-08-03T23:52:19.486Z  INFO 1 --- [b24-video-offer] [           main] org.flyw
+aydb.core.FlywayExecutor         : Database: jdbc:postgresql://45.11.92.142:5433/b24_video_offer (Po
+stgreSQL 16.14)
+b24-video-offer  | 2026-08-03T23:52:20.331Z  INFO 1 --- [b24-video-offer] [           main] o.f.core
+.internal.command.DbValidate     : Successfully validated 1 migration (execution time 00:00.275s)
+b24-video-offer  | 2026-08-03T23:52:21.025Z  INFO 1 --- [b24-video-offer] [           main] o.f.core
+.internal.command.DbMigrate      : Current version of schema "public": 1
+b24-video-offer  | 2026-08-03T23:52:21.085Z  INFO 1 --- [b24-video-offer] [           main] o.f.core
+.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+b24-video-offer  | 2026-08-03T23:52:21.676Z  INFO 1 --- [b24-video-offer] [           main] org.hibe
+rnate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+b24-video-offer  | 2026-08-03T23:52:21.870Z  INFO 1 --- [b24-video-offer] [           main] org.hibe
+rnate.orm.core                   : HHH000001: Hibernate ORM core version 7.2.7.Final
+b24-video-offer  | 2026-08-03T23:52:23.268Z  INFO 1 --- [b24-video-offer] [           main] o.s.o.j.
+p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+b24-video-offer  | 2026-08-03T23:52:23.743Z  INFO 1 --- [b24-video-offer] [           main] org.hibe
+rnate.orm.connections.pooling    : HHH10001005: Database info:
+b24-video-offer  |      Database JDBC URL [jdbc:postgresql://45.11.92.142:5433/b24_video_offer]
+b24-video-offer  |      Database driver: PostgreSQL JDBC Driver
+b24-video-offer  |      Database dialect: PostgreSQLDialect
+b24-video-offer  |      Database version: 16.14
+b24-video-offer  |      Default catalog/schema: b24_video_offer/public
+b24-video-offer  |      Autocommit mode: undefined/unknown
+b24-video-offer  |      Isolation level: READ_COMMITTED [default READ_COMMITTED]
+b24-video-offer  |      JDBC fetch size: none
+b24-video-offer  |      Pool: DataSourceConnectionProvider
+b24-video-offer  |      Minimum pool size: undefined/unknown
+b24-video-offer  |      Maximum pool size: undefined/unknown
+b24-video-offer  | 2026-08-03T23:52:26.428Z  INFO 1 --- [b24-video-offer] [           main] org.hibe
+rnate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.
+jta.platform' to enable JTA platform integration)
+b24-video-offer  | 2026-08-03T23:52:26.722Z  INFO 1 --- [b24-video-offer] [           main] j.LocalC
+ontainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'defaul
+t'
+b24-video-offer  | 2026-08-03T23:52:27.005Z  INFO 1 --- [b24-video-offer] [           main] o.s.d.j.
+r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used
+.
+b24-video-offer  | 2026-08-03T23:52:28.216Z  INFO 1 --- [b24-video-offer] [           main] o.s.b.w.
+a.WelcomePageHandlerMapping      : Adding welcome page: class path resource [static/index.html]
+b24-video-offer  | 2026-08-03T23:52:29.367Z  INFO 1 --- [b24-video-offer] [           main] o.s.boot
+.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+b24-video-offer  | 2026-08-03T23:52:29.392Z  INFO 1 --- [b24-video-offer] [           main] r.a.vide
+ooffer.B24VideoOfferApplication  : Started B24VideoOfferApplication in 18.932 seconds (process runni
+ng for 20.735)
+b24-video-offer  | 2026-08-03T23:52:30.988Z  INFO 1 --- [b24-video-offer] [nio-8080-exec-1] o.a.c.c.
+C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+b24-video-offer  | 2026-08-03T23:52:30.992Z  INFO 1 --- [b24-video-offer] [nio-8080-exec-1] o.s.web.
+servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+b24-video-offer  | 2026-08-03T23:52:30.997Z  INFO 1 --- [b24-video-offer] [nio-8080-exec-1] o.s.web.
+servlet.DispatcherServlet        : Completed initialization in 1 ms
+
+--- Current memory ---
+               total        used        free      shared  buff/cache   available
+Mem:           957Mi       730Mi        74Mi       0.0Ki       152Mi        83Mi
+Swap:          2.0Gi       844Mi       1.2Gi
+
+--- Current disk ---
+Filesystem     Type  Size  Used Avail Use% Mounted on
+/dev/vda1      ext4   15G   11G  3.8G  75% /

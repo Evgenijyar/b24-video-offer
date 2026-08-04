@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Сформировать видеооффер</title>
+    <link rel="stylesheet" href="/assets/bitrix-widget.css">
+    <script src="//api.bitrix24.com/api/v1/"></script>
+</head>
+<body>
+<main class="widget-shell">
+    <header class="widget-header">
+        <div>
+            <div class="eyebrow">ПЕРСОНАЛЬНЫЙ ВИДЕООФФЕР</div>
+            <h1>Сформировать видеооффер</h1>
+        </div>
+        <div class="entity-badge">{{ENTITY_LABEL}} №{{ENTITY_ID}}</div>
+    </header>
+
+    <p class="lead">
+        Бэкенд уже определил карточку Bitrix24. После подготовки ссылка автоматически появится
+        в таймлайне этой карточки.
+    </p>
+
+    <form id="bitrix-offer-form">
+        <input id="context-token" type="hidden" value="{{CONTEXT_TOKEN}}">
+        <input id="entity-type" type="hidden" value="{{ENTITY_TYPE}}">
+
+        <label class="field">
+            <span>Ссылка на запись Контур.Толка</span>
+            <input id="recording-url" type="url" required
+                   placeholder="https://.../recordings/..." autocomplete="off">
+        </label>
+
+        <label class="field">
+            <span>Сопроводительный текст для клиентской страницы</span>
+            <textarea id="accompanying-text" rows="5"
+                      placeholder="Например: направляю короткую презентацию по итогам разговора."></textarea>
+        </label>
+
+        <div id="form-error" class="message message--error" hidden></div>
+
+        <button id="submit-button" class="primary-button" type="submit">
+            Сформировать видеооффер
+        </button>
+    </form>
+
+    <section id="processing" class="processing-card" hidden>
+        <div class="processing-head">
+            <strong id="processing-status">Подготавливаем видео</strong>
+            <span id="processing-percent">0%</span>
+        </div>
+        <div class="progress"><div id="progress-bar"></div></div>
+        <div id="delivery-status" class="delivery-status"></div>
+    </section>
+
+    <section id="ready-result" class="ready-card" hidden>
+        <div class="ready-icon">✓</div>
+        <div>
+            <strong>Видеооффер готов</strong>
+            <p id="ready-message">Ссылка добавлена в карточку Bitrix24.</p>
+            <a id="public-link" class="secondary-button" target="_blank" rel="noopener">
+                Открыть публичную страницу
+            </a>
+        </div>
+    </section>
+</main>
+<script src="/assets/bitrix-widget.js"></script>
+</body>
+</html>

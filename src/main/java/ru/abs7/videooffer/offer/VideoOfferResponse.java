@@ -14,6 +14,9 @@ public record VideoOfferResponse(
         String videoQuality,
         Long videoFileSize,
         String errorMessage,
+        String bitrixDeliveryStatus,
+        String bitrixDeliveryError,
+        OffsetDateTime bitrixDeliveredAt,
         OffsetDateTime createdAt,
         OffsetDateTime readyAt) {
 
@@ -30,6 +33,9 @@ public record VideoOfferResponse(
                 offer.getVideoQuality(),
                 offer.getVideoFileSize(),
                 offer.getErrorMessage(),
+                offer.getBitrixDeliveryStatus(),
+                offer.getBitrixDeliveryError(),
+                offer.getBitrixDeliveredAt(),
                 offer.getCreatedAt(),
                 offer.getReadyAt());
     }

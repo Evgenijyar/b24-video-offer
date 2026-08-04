@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import ru.abs7.videooffer.bitrix.BitrixTimelineService;
 import ru.abs7.videooffer.kontur.KonturVideoDownloader;
 
 import java.util.UUID;
@@ -15,10 +16,15 @@ public class VideoOfferProcessor {
 
     private final VideoOfferRepository repository;
     private final KonturVideoDownloader downloader;
+    private final BitrixTimelineService bitrixTimelineService;
 
-    public VideoOfferProcessor(VideoOfferRepository repository, KonturVideoDownloader downloader) {
+    public VideoOfferProcessor(
+            VideoOfferRepository repository,
+            KonturVideoDownloader downloader,
+            BitrixTimelineService bitrixTimelineService) {
         this.repository = repository;
         this.downloader = downloader;
+        this.bitrixTimelineService = bitrixTimelineService;
     }
 
     @Async
@@ -50,7 +56,12 @@ public class VideoOfferProcessor {
             VideoOffer current = repository.findById(id).orElseThrow();
             current.markReady(result.path().toString(), result.size(), result.quality());
             repository.saveAndFlush(current);
-            log.info("Видеооффер {} подготовлен, publicToken={}", id, current.getPublicToken());
+
+            bitrixTimelineService.publishReadyLink(current);
+            repository.saveAndFlush(current);
+
+            log.info("Видеооффер {} подготовлен, publicToken={}, bitrixDelivery={}",
+                    id, current.getPublicToken(), current.getBitrixDeliveryStatus());
         } catch (Exception error) {
             String message = rootMessage(error);
             repository.findById(id).ifPresent(current -> {

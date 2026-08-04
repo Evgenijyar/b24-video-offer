@@ -1,0 +1,542 @@
+﻿Last login: Tue Aug  4 02:58:57 2026 from 216.57.105.22
+root@1590435-abs7host:~# cd /root
+root@1590435-abs7host:~#
+root@1590435-abs7host:~# export PAGER=cat
+root@1590435-abs7host:~# export SYSTEMD_PAGER=cat
+root@1590435-abs7host:~# export GIT_PAGER=cat
+root@1590435-abs7host:~# export LESS=-FRSX
+root@1590435-abs7host:~# export COMPOSE_PROGRESS=plain
+root@1590435-abs7host:~#
+root@1590435-abs7host:~# set -Eeuo pipefail
+root@1590435-abs7host:~#
+root@1590435-abs7host:~# echo
+
+root@1590435-abs7host:~# echo "============================================================"
+============================================================
+root@1590435-abs7host:~# echo "1. CURRENT CERTIFICATE"
+1. CURRENT CERTIFICATE
+root@1590435-abs7host:~# echo "============================================================"
+============================================================
+root@1590435-abs7host:~#
+root@1590435-abs7host:~# echo | openssl s_client \
+>   -4 \
+>   -connect offer.abs7.ru:443 \
+>   -servername offer.abs7.ru \
+>   2>/dev/null \
+>   | openssl x509 \
+>       -noout \
+>       -subject \
+>       -issuer \
+>       -dates \
+>       -ext subjectAltName
+")
+
+    override = PROJECT_DIR / "docker-compose.override.yml"
+
+    override.write_text(
+        """services:
+  app:
+    environment:
+      JAVA_TOOL_OPTIONS: >-
+        -Xms64m
+        -Xmx256m
+        -XX:MaxMetaspaceSize=128m
+        -XX:+UseSerialGC
+        -Djava.security.egd=file:/dev/./urandom
+    mem_limit: 448m
+    cpus: "0.80"
+""",
+        encoding="utf-8",
+    )
+
+    print(override.read_text(encoding="utf-8"), flush=True)
+
+
+def build_and_start():
+    print_section("BUILD APPLICATION IMAGE")
+
+    run([
+        "dockesubject=CN = offer.abs7.ru
+issuer=C = US, O = Let's Encrypt, CN = YR2
+notBefore=Aug  3 23:00:35 2026 GMT
+notAfter=Nov  1 23:00:34 2026 GMT
+X509v3 Subject Alternative Name:
+    DNS:offer.abs7.ru
+root@1590435-abs7host:~#
+root@1590435-abs7host:~# echo
+
+root@1590435-abs7host:~# echo "============================================================"
+============================================================
+root@1590435-abs7host:~# echo "2. CREATE /root/deploy.py"
+2. CREATE /root/deploy.py
+root@1590435-abs7host:~# echo "============================================================"
+============================================================
+root@1590435-abs7host:~#
+root@1590435-abs7host:~# cat > /root/deploy.py <<'PYTHON'
+> #!/usr/bin/env python3
+>
+> import fcntl
+> import os
+> from pathlib import Path
+> import shlex
+> import shutil
+> import subprocess
+> import sys
+> import time
+>
+>
+> PROJECT_DIR = Path("/opt/b24-video-offer")
+> REPO_URL = "https://github.com/Evgenijyar/b24-video-offer.git"
+> BRANCH = "main"
+>
+> CONTAINER_NAME = "b24-video-offer"
+> LOCK_FILE = Path("/var/lock/b24-video-offer-deploy.lock")
+>
+> LOCAL_HEALTH_URL = "http://127.0.0.1:8080/api/health"
+> PUBLIC_HEALTH_URL = "https://offer.abs7.ru/api/health"
+>
+>
+> def command_text(command):
+>     return " ".join(shlex.quote(str(part)) for part in command)
+>
+>
+> def run(command, *, check=True, capture=False):
+>     command = [str(part) for part in command]
+>     print(f"+ {command_text(command)}", flush=True)
+>
+>     result = subprocess.run(
+>         command,
+>         text=True,
+>         stdout=subprocess.PIPE if capture else None,
+>         stderr=subprocess.PIPE if capture else None,
+>         env={
+>             **os.environ,
+>             "PAGER": "cat",
+>             "SYSTEMD_PAGER": "cat",
+>             "GIT_PAGER": "cat",
+>             "LESS": "-FRSX",
+>             "COMPOSE_PROGRESS": "plain",
+>         },
+>     )
+>
+>     if check and result.returncode != 0:
+>         if capture:
+>             if result.stdout:
+>                 print(result.stdout, end="", file=sys.stderr)
+>             if result.stderr:
+>                 print(result.stderr, end="", file=sys.stderr)
+>
+>         raise subprocess.CalledProcessError(
+>             result.returncode,
+>             command,
+>         )
+>
+>     return result
+>
+>
+> def command_exists(name):
+>     return shutil.which(name) is not None
+>
+>
+> def print_section(title):
+>     print()
+>     print("=" * 60)
+>     print(title)
+>     print("=" * 60)
+>
+>
+> def ensure_prerequisites():
+>     if os.geteuid() != 0:
+>         raise SystemExit("Deploy must be run as root.")
+>
+>     for command in ("git", "docker", "curl"):
+>         if not command_exists(command):
+>             raise SystemExit(
+>                 f"Required command is missing: {command}"
+>             )
+>
+>     run(["docker", "info"], capture=True)
+>
+>
+> def update_repository():
+>     print_section("UPDATE GITHUB REPOSITORY")
+>
+>     if (PROJECT_DIR / ".git").is_dir():
+>         run([
+>             "git",
+>             "-C",
+>             PROJECT_DIR,
+>             "remote",
+>             "set-url",
+>             "origin",
+>             REPO_URL,
+>         ])
+>
+>         run([
+>             "git",
+>             "-C",
+>             PROJECT_DIR,
+>             "fetch",
+>             "--prune",
+>             "--depth",
+>             "1",
+>             "origin",
+>             BRANCH,
+>         ])
+>
+>         run([
+>             "git",
+>             "-C",
+>             PROJECT_DIR,
+>             "reset",
+>             "--hard",
+>             f"origin/{BRANCH}",
+>         ])
+>     else:
+>         if PROJECT_DIR.exists():
+>             shutil.rmtree(PROJECT_DIR)
+>
+>         PROJECT_DIR.parent.mkdir(
+>             parents=True,
+>             exist_ok=True,
+>         )
+>
+>         run([
+>             "git",
+>             "clone",
+>             "--depth",
+>             "1",
+>             "--branch",
+>             BRANCH,
+>             REPO_URL,
+>             PROJECT_DIR,
+>         ])
+>
+>     commit = run(
+>         [
+>             "git",
+>             "-C",
+>             PROJECT_DIR,
+>             "rev-parse",
+>             "HEAD",
+>         ],
+>         capture=True,
+>     ).stdout.strip()
+>
+>     print(f"Deploying commit: {commit}", flush=True)
+>
+>
+> def write_server_override():
+>     print_section("WRITE SERVER DOCKER OVERRIDE")
+>
+>     override = PROJECT_DIR / "docker-compose.override.yml"
+>
+>     override.write_text(
+>         """services:
+>   app:
+>     environment:
+>       JAVA_TOOL_OPTIONS: >-
+>         -Xms64m
+>         -Xmx256m
+>         -XX:MaxMetaspaceSize=128m
+>         -XX:+UseSerialGC
+>         -Djava.security.egd=file:/dev/./urandom
+>     mem_limit: 448m
+>     cpus: "0.80"
+> """,
+>         encoding="utf-8",
+>     )
+>
+>     print(override.read_text(encoding="utf-8"), flush=True)
+>
+>
+> def build_and_start():
+>     print_section("BUILD APPLICATION IMAGE")
+>
+>     run([
+>         "docker",
+>         "compose",
+>         "-f",
+>         PROJECT_DIR / "docker-compose.yml",
+>         "-f",
+>         PROJECT_DIR / "docker-compose.override.yml",
+>         "build",
+>         "--pull",
+>     ])
+>
+>     print_section("START APPLICATION")
+>
+>     run([
+>         "docker",
+>         "compose",
+>         "-f",
+>         PROJECT_DIR / "docker-compose.yml",
+>         "-f",
+>         PROJECT_DIR / "docker-compose.override.yml",
+>         "up",
+>         "-d",
+>         "--remove-orphans",
+>     ])
+>
+>
+> def wait_for_health():
+>     print_section("WAIT FOR LOCAL HEALTHCHECK")
+>
+>     for attempt in range(1, 91):
+>         print(
+>             f"Healthcheck attempt {attempt}/90",
+>             flush=True,
+>         )
+>
+>         result = subprocess.run(
+>             [
+>                 "curl",
+>                 "--fail",
+>                 "--silent",
+>                 "--show-error",
+>                 "--max-time",
+>                 "5",
+>                 LOCAL_HEALTH_URL,
+>             ],
+>             text=True,
+>             stdout=subprocess.PIPE,
+>             stderr=subprocess.PIPE,
+>         )
+>
+>         if result.returncode == 0:
+>             print(result.stdout, flush=True)
+>             return
+>
+>         if result.stderr:
+>             print(result.stderr.strip(), flush=True)
+>
+>         time.sleep(2)
+>
+>     raise RuntimeError(
+>         "Application did not become healthy."
+>     )
+>
+>
+> def verify_public_url():
+>     print_section("VERIFY PUBLIC HTTPS")
+>
+>     run([
+>         "curl",
+>         "--fail",
+>         "--silent",
+>         "--show-error",
+>         "--max-time",
+>         "15",
+>         PUBLIC_HEALTH_URL,
+>     ])
+>
+>     print()
+>
+>
+> def print_status():
+>     print_section("CONTAINER STATUS")
+>
+>     run([
+>         "docker",
+>         "ps",
+>         "--filter",
+>         f"name={CONTAINER_NAME}",
+>         "--no-trunc",
+>     ])
+>
+>     print_section("APPLICATION LOGS")
+>
+>     run([
+>         "docker",
+>         "logs",
+>         "--tail",
+>         "120",
+>         CONTAINER_NAME,
+>     ])
+>
+>     print_section("SERVER RESOURCES")
+>
+>     run(["free", "-h"])
+>     run(["df", "-hT", "/"])
+>
+>     print_section("CLEAN DANGLING IMAGES")
+>
+>     run(
+>         [
+>             "docker",
+>             "image",
+>             "prune",
+>             "-f",
+>         ],
+>         check=False,
+>     )
+>
+>
+> def print_failure_information():
+>     print()
+>     print("=" * 60)
+>     print("DEPLOYMENT FAILED")
+>     print("=" * 60)
+>
+>     subprocess.run([
+>         "docker",
+>         "ps",
+>         "-a",
+>         "--filter",
+>         f"name={CONTAINER_NAME}",
+>         "--no-trunc",
+>     ])
+>
+>     subprocess.run([
+>         "docker",
+>         "logs",
+>         "--tail",
+>         "250",
+>         CONTAINER_NAME,
+>     ])
+>
+>     subprocess.run(["free", "-h"])
+>     subprocess.run(["df", "-hT", "/"])
+>
+>
+> def main():
+>     ensure_prerequisites()
+>
+>     LOCK_FILE.parent.mkdir(
+>         parents=True,
+>         exist_ok=True,
+>     )
+>
+>     with LOCK_FILE.open("w", encoding="utf-8") as lock:
+>         try:
+>             fcntl.flock(
+>                 lock.fileno(),
+>                 fcntl.LOCK_EX | fcntl.LOCK_NB,
+>             )
+>         except BlockingIOError:
+>             raise SystemExit(
+>                 "Another deployment is already running."
+>             )
+>
+>         update_repository()
+>         write_server_override()
+>         build_and_start()
+>         wait_for_health()
+>         verify_public_url()
+>         print_status()
+>
+>     print()
+>     print("=" * 60)
+>     print("DEPLOYMENT COMPLETED SUCCESSFULLY")
+>     print("=" * 60)
+>     print(f"Application: https://offer.abs7.ru/")
+>     print(f"Health: {PUBLIC_HEALTH_URL}")
+>
+>
+> if __name__ == "__main__":
+>     try:
+>         main()
+>     except KeyboardInterrupt:
+>         print_failure_information()
+>         raise SystemExit(130)
+>     except Exception as error:
+>         print_failure_information()
+>         print(
+>             f"Error: {type(error).__name__}: {error}",
+>             file=sys.stderr,
+>         )
+>         raise SystemExit(1)
+> PYTHON
+root@1590435-abs7host:~#
+root@1590435-abs7host:~# chmod 700 /root/deploy.py
+root@1590435-abs7host:~#
+root@1590435-abs7host:~# python3 -m py_compile /root/deploy.py
+root@1590435-abs7host:~#
+root@1590435-abs7host:~# echo "deploy.py created successfully:"
+deploy.py created successfully:
+root@1590435-abs7host:~# ls -l /root/deploy.py
+-rwx------ 1 root root 7664 Aug  4 03:01 /root/deploy.py
+root@1590435-abs7host:~#
+root@1590435-abs7host:~# echo
+
+root@1590435-abs7host:~# echo "============================================================"
+============================================================
+root@1590435-abs7host:~# echo "3. VERIFY DEPLOY SCRIPT WITHOUT REDEPLOY"
+3. VERIFY DEPLOY SCRIPT WITHOUT REDEPLOY
+root@1590435-abs7host:~# echo "============================================================"
+============================================================
+root@1590435-abs7host:~#
+root@1590435-abs7host:~# grep -n \
+>   --color=never \
+>   -E 'PROJECT_DIR|REPO_URL|PUBLIC_HEALTH_URL|LOCAL_HEALTH_URL' \
+>   /root/deploy.py
+13:PROJECT_DIR = Path("/opt/b24-video-offer")
+14:REPO_URL = "https://github.com/Evgenijyar/b24-video-offer.git"
+20:LOCAL_HEALTH_URL = "http://127.0.0.1:8080/api/health"
+21:PUBLIC_HEALTH_URL = "https://offer.abs7.ru/api/health"
+89:    if (PROJECT_DIR / ".git").is_dir():
+93:            PROJECT_DIR,
+97:            REPO_URL,
+103:            PROJECT_DIR,
+115:            PROJECT_DIR,
+121:        if PROJECT_DIR.exists():
+122:            shutil.rmtree(PROJECT_DIR)
+124:        PROJECT_DIR.parent.mkdir(
+136:            REPO_URL,
+137:            PROJECT_DIR,
+144:            PROJECT_DIR,
+157:    override = PROJECT_DIR / "docker-compose.override.yml"
+185:        PROJECT_DIR / "docker-compose.yml",
+187:        PROJECT_DIR / "docker-compose.override.yml",
+198:        PROJECT_DIR / "docker-compose.yml",
+200:        PROJECT_DIR / "docker-compose.override.yml",
+224:                LOCAL_HEALTH_URL,
+255:        PUBLIC_HEALTH_URL,
+358:    print(f"Health: {PUBLIC_HEALTH_URL}")
+root@1590435-abs7host:~#
+root@1590435-abs7host:~# echo
+
+root@1590435-abs7host:~# echo "============================================================"
+============================================================
+root@1590435-abs7host:~# echo "4. VERIFY CURRENT APPLICATION"
+4. VERIFY CURRENT APPLICATION
+root@1590435-abs7host:~# echo "============================================================"
+============================================================
+root@1590435-abs7host:~#
+root@1590435-abs7host:~# curl \
+>   --fail \
+>   --silent \
+>   --show-error \
+>   --max-time 15 \
+>   https://offer.abs7.ru/api/health
+{"service":"b24-video-offer","time":"2026-08-04T00:01:00.564754008Z","status":"UP"}root@1590435-abs7
+host:~#
+root@1590435-abs7host:~# echo
+
+root@1590435-abs7host:~#
+root@1590435-abs7host:~# docker ps \
+>   --filter name=b24-video-offer \
+>   --no-trunc
+CONTAINER ID                                                       IMAGE                 COMMAND
+                CREATED         STATUS         PORTS                      NAMES
+ef27c9e388ddaab2772e6d791a0c003f60251002226b3ae55c81f66b7044b77b   b24-video-offer-app   "java -jar
+/app/app.jar"   8 minutes ago   Up 8 minutes   127.0.0.1:8080->8080/tcp   b24-video-offer
+root@1590435-abs7host:~#
+root@1590435-abs7host:~# echo
+
+root@1590435-abs7host:~# echo "============================================================"
+============================================================
+root@1590435-abs7host:~# echo "5. RESULT"
+5. RESULT
+root@1590435-abs7host:~# echo "============================================================"
+============================================================
+root@1590435-abs7host:~#
+root@1590435-abs7host:~# echo "Permanent deployment command:"
+Permanent deployment command:
+root@1590435-abs7host:~# echo "cd /root && python3 deploy.py"
+cd /root && python3 deploy.py
+root@1590435-abs7host:~# echo
+
+root@1590435-abs7host:~# echo "DEPLOY SCRIPT INSTALLATION COMPLETED"
+DEPLOY SCRIPT INSTALLATION COMPLETED
+root@1590435-abs7host:~#

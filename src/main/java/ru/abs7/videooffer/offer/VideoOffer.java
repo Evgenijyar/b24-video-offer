@@ -26,6 +26,10 @@ public class VideoOffer {
     @Column(name="updated_at", nullable=false) private OffsetDateTime updatedAt;
     @Column(name="ready_at") private OffsetDateTime readyAt;
     @Column(name="expires_at") private OffsetDateTime expiresAt;
+    @Column(name="bitrix_delivery_status", nullable=false, length=30) private String bitrixDeliveryStatus;
+    @Column(name="bitrix_timeline_comment_id") private Long bitrixTimelineCommentId;
+    @Column(name="bitrix_delivery_error", columnDefinition="text") private String bitrixDeliveryError;
+    @Column(name="bitrix_delivered_at") private OffsetDateTime bitrixDeliveredAt;
 
     protected VideoOffer() {}
     public static VideoOffer create(CrmEntityType type, long entityId, String memberId, Long userId, String url, String key, String text, int retentionDays) {
@@ -34,10 +38,15 @@ public class VideoOffer {
         v.crmEntityType=type; v.crmEntityId=entityId; v.bitrixMemberId=memberId; v.bitrixUserId=userId;
         v.sourceRecordingUrl=url; v.recordingKey=key; v.accompanyingText=text;
         v.status=VideoOfferStatus.QUEUED; v.progressPercent=0; v.createdAt=OffsetDateTime.now(); v.updatedAt=v.createdAt;
-        v.expiresAt=v.createdAt.plusDays(retentionDays); return v;
+        v.expiresAt=v.createdAt.plusDays(retentionDays);
+        v.bitrixDeliveryStatus = memberId == null || memberId.isBlank() ? "NOT_REQUIRED" : "PENDING";
+        return v;
     }
     public void markPreparing(int progress) { status=VideoOfferStatus.PREPARING; progressPercent=Math.max(0, Math.min(99, progress)); updatedAt=OffsetDateTime.now(); }
     public void markReady(String path, long size, String quality) { status=VideoOfferStatus.READY; progressPercent=100; videoFilePath=path; videoFileSize=size; videoQuality=quality; readyAt=OffsetDateTime.now(); updatedAt=readyAt; errorMessage=null; }
     public void markError(String message) { status=VideoOfferStatus.ERROR; errorMessage=message; updatedAt=OffsetDateTime.now(); }
-    public UUID getId(){return id;} public String getPublicToken(){return publicToken;} public CrmEntityType getCrmEntityType(){return crmEntityType;} public Long getCrmEntityId(){return crmEntityId;} public String getBitrixMemberId(){return bitrixMemberId;} public Long getBitrixUserId(){return bitrixUserId;} public String getSourceRecordingUrl(){return sourceRecordingUrl;} public String getRecordingKey(){return recordingKey;} public String getAccompanyingText(){return accompanyingText;} public VideoOfferStatus getStatus(){return status;} public Integer getProgressPercent(){return progressPercent;} public String getVideoFilePath(){return videoFilePath;} public Long getVideoFileSize(){return videoFileSize;} public String getVideoQuality(){return videoQuality;} public String getErrorMessage(){return errorMessage;} public OffsetDateTime getCreatedAt(){return createdAt;} public OffsetDateTime getUpdatedAt(){return updatedAt;} public OffsetDateTime getReadyAt(){return readyAt;} public OffsetDateTime getExpiresAt(){return expiresAt;}
+    public void markBitrixDelivered(Long commentId) { bitrixDeliveryStatus="DELIVERED"; bitrixTimelineCommentId=commentId; bitrixDeliveryError=null; bitrixDeliveredAt=OffsetDateTime.now(); updatedAt=bitrixDeliveredAt; }
+    public void markBitrixDeliveryError(String message) { bitrixDeliveryStatus="ERROR"; bitrixDeliveryError=message; updatedAt=OffsetDateTime.now(); }
+    public void markBitrixDeliveryNotRequired() { bitrixDeliveryStatus="NOT_REQUIRED"; bitrixDeliveryError=null; updatedAt=OffsetDateTime.now(); }
+    public UUID getId(){return id;} public String getPublicToken(){return publicToken;} public CrmEntityType getCrmEntityType(){return crmEntityType;} public Long getCrmEntityId(){return crmEntityId;} public String getBitrixMemberId(){return bitrixMemberId;} public Long getBitrixUserId(){return bitrixUserId;} public String getSourceRecordingUrl(){return sourceRecordingUrl;} public String getRecordingKey(){return recordingKey;} public String getAccompanyingText(){return accompanyingText;} public VideoOfferStatus getStatus(){return status;} public Integer getProgressPercent(){return progressPercent;} public String getVideoFilePath(){return videoFilePath;} public Long getVideoFileSize(){return videoFileSize;} public String getVideoQuality(){return videoQuality;} public String getErrorMessage(){return errorMessage;} public OffsetDateTime getCreatedAt(){return createdAt;} public OffsetDateTime getUpdatedAt(){return updatedAt;} public OffsetDateTime getReadyAt(){return readyAt;} public OffsetDateTime getExpiresAt(){return expiresAt;} public String getBitrixDeliveryStatus(){return bitrixDeliveryStatus;} public Long getBitrixTimelineCommentId(){return bitrixTimelineCommentId;} public String getBitrixDeliveryError(){return bitrixDeliveryError;} public OffsetDateTime getBitrixDeliveredAt(){return bitrixDeliveredAt;}
 }
