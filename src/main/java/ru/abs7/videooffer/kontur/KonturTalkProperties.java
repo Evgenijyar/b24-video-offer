@@ -10,7 +10,8 @@ public record KonturTalkProperties(
         Integer readTimeoutSeconds,
         Integer stallWarningSeconds,
         Integer progressLogStepPercent,
-        Integer progressLogIntervalSeconds) {
+        Integer progressLogIntervalSeconds,
+        ProxySettings proxy) {
 
     public int connectTimeoutSecondsOrDefault() {
         return positiveOrDefault(connectTimeoutSeconds, 15);
@@ -32,7 +33,37 @@ public record KonturTalkProperties(
         return positiveOrDefault(progressLogIntervalSeconds, 20);
     }
 
+    public ProxySettings proxyOrDefault() {
+        return proxy == null
+                ? new ProxySettings(false, null, null, null, null)
+                : proxy;
+    }
+
     private int positiveOrDefault(Integer value, int fallback) {
         return value == null || value <= 0 ? fallback : value;
+    }
+
+    public record ProxySettings(
+            Boolean enabled,
+            String host,
+            Integer port,
+            String username,
+            String password) {
+
+        public boolean enabledOrDefault() {
+            return Boolean.TRUE.equals(enabled);
+        }
+
+        public boolean usernameConfigured() {
+            return username != null && !username.isBlank();
+        }
+
+        public boolean passwordConfigured() {
+            return password != null && !password.isBlank();
+        }
+
+        public boolean authenticationConfigured() {
+            return usernameConfigured() && passwordConfigured();
+        }
     }
 }

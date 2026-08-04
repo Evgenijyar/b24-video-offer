@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -12,6 +13,11 @@ import org.springframework.web.client.RestClient;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.net.Authenticator;
+import java.net.InetSocketAddress;
+import java.net.PasswordAuthentication;
+import java.net.ProxySelector;
+import java.net.http.HttpClient;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.AtomicMoveNotSupportedException;
@@ -68,18 +74,11 @@ public class KonturVideoDownloader {
         this.progressLogStepPercent = properties.progressLogStepPercentOrDefault();
         this.progressLogIntervalSeconds = properties.progressLogIntervalSecondsOrDefault();
 
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(Duration.ofSeconds(connectTimeoutSeconds));
-        requestFactory.setReadTimeout(Duration.ofSeconds(readTimeoutSeconds));
-
         String baseUrl = properties.apiUrl().endsWith("/")
                 ? properties.apiUrl()
                 : properties.apiUrl() + "/";
-        this.client = RestClient.builder()
-                .baseUrl(baseUrl)
-                .requestFactory(requestFactory)
-                .defaultHeader("X-Auth-Token", properties.apiToken())
-                .build();
+        KonturTalkProperties.ProxySettings proxy = properties.proxyOrDefault();
+        this.client = buildRestClient(properties, proxy, baseUrl);
         this.storageDir = Path.of(storageDir).toAbsolutePath().normalize();
         this.rangeExecutor = Executors.newFixedThreadPool(
                 MAX_PARALLEL_PARTS,
@@ -89,14 +88,82 @@ public class KonturVideoDownloader {
 
         log.info("Kontur downloader initialized: baseUrl={}, storageDir={}, connectTimeoutSeconds={}, "
                         + "readTimeoutSeconds={}, stallWarningSeconds={}, maxParallelParts={}, "
-                        + "parallelThresholdBytes={}",
+                        + "parallelThresholdBytes={}, proxyEnabled={}, proxyHost={}, proxyPort={}, "
+                        + "proxyAuthenticationConfigured={}",
                 baseUrl,
                 storageDir,
                 connectTimeoutSeconds,
                 readTimeoutSeconds,
                 stallWarningSeconds,
                 MAX_PARALLEL_PARTS,
-                PARALLEL_DOWNLOAD_THRESHOLD_BYTES);
+                PARALLEL_DOWNLOAD_THRESHOLD_BYTES,
+                proxy.enabledOrDefault(),
+                proxy.enabledOrDefault() ? proxy.host() : "direct",
+                proxy.enabledOrDefault() ? proxy.port() : null,
+                proxy.authenticationConfigured());
+    }
+
+
+    private RestClient buildRestClient(
+            KonturTalkProperties properties,
+            KonturTalkProperties.ProxySettings proxy,
+            String baseUrl) {
+        RestClient.Builder builder = RestClient.builder()
+                .baseUrl(baseUrl)
+                .defaultHeader("X-Auth-Token", properties.apiToken());
+
+        if (!proxy.enabledOrDefault()) {
+            SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+            requestFactory.setConnectTimeout(Duration.ofSeconds(connectTimeoutSeconds));
+            requestFactory.setReadTimeout(Duration.ofSeconds(readTimeoutSeconds));
+            log.info("Kontur HTTP transport configured: mode=DIRECT, connectTimeoutSeconds={}, readTimeoutSeconds={}",
+                    connectTimeoutSeconds, readTimeoutSeconds);
+            return builder.requestFactory(requestFactory).build();
+        }
+
+        enableJdkProxyAuthenticationSchemes();
+        InetSocketAddress proxyAddress = InetSocketAddress.createUnresolved(proxy.host().trim(), proxy.port());
+        HttpClient.Builder httpClientBuilder = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(connectTimeoutSeconds))
+                .followRedirects(HttpClient.Redirect.ALWAYS)
+                .version(HttpClient.Version.HTTP_1_1)
+                .proxy(ProxySelector.of(proxyAddress));
+
+        if (proxy.authenticationConfigured()) {
+            String username = proxy.username();
+            char[] password = proxy.password().toCharArray();
+            httpClientBuilder.authenticator(new Authenticator() {
+                @Override
+                protected PasswordAuthentication getPasswordAuthentication() {
+                    if (getRequestorType() == RequestorType.PROXY) {
+                        log.debug("Kontur proxy requested authentication: proxyHost={}, proxyPort={}, scheme={}, prompt={}",
+                                getRequestingHost(), getRequestingPort(), getRequestingScheme(), getRequestingPrompt());
+                        return new PasswordAuthentication(username, password);
+                    }
+                    return null;
+                }
+            });
+        }
+
+        JdkClientHttpRequestFactory requestFactory =
+                new JdkClientHttpRequestFactory(httpClientBuilder.build());
+        requestFactory.setReadTimeout(Duration.ofSeconds(readTimeoutSeconds));
+
+        log.info("Kontur HTTP transport configured: mode=HTTP_PROXY, proxyHost={}, proxyPort={}, "
+                        + "authenticationConfigured={}, connectTimeoutSeconds={}, readTimeoutSeconds={}",
+                proxy.host(),
+                proxy.port(),
+                proxy.authenticationConfigured(),
+                connectTimeoutSeconds,
+                readTimeoutSeconds);
+        return builder.requestFactory(requestFactory).build();
+    }
+
+    private void enableJdkProxyAuthenticationSchemes() {
+        // Java may disable Basic authentication for HTTPS CONNECT by default.
+        // Empty values allow the per-client Authenticator above to answer a proxy challenge.
+        System.setProperty("jdk.http.auth.tunneling.disabledSchemes", "");
+        System.setProperty("jdk.http.auth.proxying.disabledSchemes", "");
     }
 
     @PreDestroy
@@ -633,6 +700,21 @@ public class KonturVideoDownloader {
         }
         if (properties.apiToken() == null || properties.apiToken().isBlank()) {
             throw new IllegalStateException("app.talk.api-token не настроен");
+        }
+
+        KonturTalkProperties.ProxySettings proxy = properties.proxyOrDefault();
+        if (!proxy.enabledOrDefault()) {
+            return;
+        }
+        if (proxy.host() == null || proxy.host().isBlank()) {
+            throw new IllegalStateException("app.talk.proxy.host не настроен при включённом прокси");
+        }
+        if (proxy.port() == null || proxy.port() <= 0 || proxy.port() > 65535) {
+            throw new IllegalStateException("app.talk.proxy.port должен быть в диапазоне 1..65535");
+        }
+        if (proxy.usernameConfigured() != proxy.passwordConfigured()) {
+            throw new IllegalStateException(
+                    "app.talk.proxy.username и app.talk.proxy.password должны быть заполнены одновременно");
         }
     }
 
