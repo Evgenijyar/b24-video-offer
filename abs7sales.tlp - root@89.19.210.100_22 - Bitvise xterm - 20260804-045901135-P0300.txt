@@ -1,0 +1,1710 @@
+﻿Last login: Tue Aug  4 04:34:32 2026 from 216.57.105.22
+root@1590435-abs7host:~# cd /opt/b24-video-offer && python3 deploy.py
++ git fetch origin
+remote: Enumerating objects: 37, done.
+remote: Counting objects: 100% (37/37), done.
+remote: Compressing objects: 100% (5/5), done.
+remote: Total 20 (delta 12), reused 20 (delta 12), pack-reused 0 (from 0)
+Unpacking objects: 100% (20/20), 20.85 KiB | 1.60 MiB/s, done.
+From https://github.com/Evgenijyar/b24-video-offer
+   ef5262d..27cbce4  main       -> origin/main
++ git reset --hard origin/main
+HEAD is now at 27cbce4 Fix Bitrix token refresh and timeline delivery
++ docker compose build --pull
+[+] Building 22.6s (18/18) FINISHED
+ => [internal] load local bake definitions                                                                     0.0s
+ => => reading from stdin 516B                                                                                 0.0s
+ => [internal] load build definition from Dockerfile                                                           0.0s
+ => => transferring dockerfile: 410B                                                                           0.0s
+ => [internal] load metadata for docker.io/library/eclipse-temurin:21-jre                                      1.1s
+ => [internal] load metadata for docker.io/library/maven:3.9.16-eclipse-temurin-21                             1.1s
+ => [internal] load .dockerignore                                                                              0.0s
+ => => transferring context: 2B                                                                                0.0s
+ => [build 1/6] FROM docker.io/library/maven:3.9.16-eclipse-temurin-21@sha256:2b4496088e7b80ae10a8c9f74e574ea  0.0s
+ => [stage-1 1/4] FROM docker.io/library/eclipse-temurin:21-jre@sha256:273396ed5998598ed1091e8d72711c2d36980a  0.0s
+ => [internal] load build context                                                                              0.0s
+ => => transferring context: 75.53kB                                                                           0.0s
+ => CACHED [build 2/6] WORKDIR /workspace                                                                      0.0s
+ => CACHED [build 3/6] COPY pom.xml pom.xml                                                                    0.0s
+ => CACHED [build 4/6] RUN mvn -q -DskipTests dependency:go-offline                                            0.0s
+ => [build 5/6] COPY src src                                                                                   0.2s
+ => [build 6/6] RUN mvn -q -DskipTests package                                                                17.5s
+ => CACHED [stage-1 2/4] WORKDIR /app                                                                          0.0s
+ => [stage-1 3/4] COPY --from=build /workspace/target/b24-video-offer-*.jar app.jar                            0.3s
+ => [stage-1 4/4] RUN mkdir -p /app/data/videos                                                                0.4s
+ => exporting to image                                                                                         0.3s
+ => => exporting layers                                                                                        0.3s
+ => => writing image sha256:5d8869d00073d9dc8998a70214f58c5c868261c611f704c972bf5017052f8fd4                   0.0s
+ => => naming to docker.io/library/b24-video-offer-app                                                         0.0s
+ => resolving provenance for metadata file                                                                     0.0s
+[+] build 1/1
+ ✔ Image b24-video-offer-app Built                                                                             22.7s
++ docker compose up -d --remove-orphans
+[+] up 1/1
+ ✔ Container b24-video-offer Recreated                                                                          1.7s
+Deployment completed successfully.
++ docker compose ps
+NAME              IMAGE                 COMMAND                  SERVICE   CREATED          STATUS          PORTS
+b24-video-offer   b24-video-offer-app   "java -jar /app/app.…"   app       27 seconds ago   Up 24 seconds   127.0.0.
+1:8080->8080/tcp
+root@1590435-abs7host:/opt/b24-video-offer# docker logs -f --tail=200 b24-video-offer
+Picked up JAVA_TOOL_OPTIONS: -Xms64m -Xmx256m -XX:MaxMetaspaceSize=128m -XX:+UseSerialGC -Djava.security.egd=file:/d
+ev/./urandom
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.0.5)
+
+2026-08-04T01:57:06.369Z INFO  [main] [requestId=] ru.abs7.videooffer.B24VideoOfferApplication - Starting B24VideoOf
+ferApplication v0.1.0-SNAPSHOT using Java 21.0.11 with PID 1 (/app/app.jar started by root in /app)
+2026-08-04T01:57:06.379Z INFO  [main] [requestId=] ru.abs7.videooffer.B24VideoOfferApplication - No active profile s
+et, falling back to 1 default profile: "default"
+2026-08-04T01:57:08.535Z INFO  [main] [requestId=] o.s.d.r.config.RepositoryConfigurationDelegate - Bootstrapping Sp
+ring Data JPA repositories in DEFAULT mode.
+2026-08-04T01:57:08.716Z INFO  [main] [requestId=] o.s.d.r.config.RepositoryConfigurationDelegate - Finished Spring
+Data repository scanning in 131 ms. Found 4 JPA repository interfaces.
+2026-08-04T01:57:10.599Z INFO  [main] [requestId=] org.springframework.boot.tomcat.TomcatWebServer - Tomcat initiali
+zed with port 8080 (http)
+2026-08-04T01:57:10.634Z INFO  [main] [requestId=] org.apache.catalina.core.StandardService - Starting service [Tomc
+at]
+2026-08-04T01:57:10.634Z INFO  [main] [requestId=] org.apache.catalina.core.StandardEngine - Starting Servlet engine
+: [Apache Tomcat/11.0.20]
+2026-08-04T01:57:10.856Z INFO  [main] [requestId=] o.s.b.w.c.s.WebApplicationContextInitializer - Root WebApplicatio
+nContext: initialization completed in 4273 ms
+2026-08-04T01:57:12.626Z INFO  [main] [requestId=] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-08-04T01:57:14.174Z INFO  [main] [requestId=] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connecti
+on org.postgresql.jdbc.PgConnection@393ae7a0
+2026-08-04T01:57:14.176Z INFO  [main] [requestId=] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start complet
+ed.
+2026-08-04T01:57:14.341Z INFO  [main] [requestId=] org.flywaydb.core.FlywayExecutor - Database: jdbc:postgresql://45
+.11.92.142:5433/b24_video_offer (PostgreSQL 16.14)
+2026-08-04T01:57:15.157Z INFO  [main] [requestId=] org.flywaydb.core.internal.command.DbValidate - Successfully vali
+dated 3 migrations (execution time 00:00.274s)
+2026-08-04T01:57:15.821Z INFO  [main] [requestId=] org.flywaydb.core.internal.command.DbMigrate - Current version of
+ schema "public": 3
+2026-08-04T01:57:15.877Z INFO  [main] [requestId=] org.flywaydb.core.internal.command.DbMigrate - Schema "public" is
+ up to date. No migration necessary.
+2026-08-04T01:57:16.504Z INFO  [main] [requestId=] org.hibernate.orm.jpa - HHH008540: Processing PersistenceUnitInfo
+ [name: default]
+2026-08-04T01:57:16.695Z INFO  [main] [requestId=] org.hibernate.orm.core - HHH000001: Hibernate ORM core version 7.
+2.7.Final
+2026-08-04T01:57:17.928Z INFO  [main] [requestId=] o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ig
+noring JPA class transformer
+2026-08-04T01:57:18.365Z INFO  [main] [requestId=] org.hibernate.orm.connections.pooling - HHH10001005: Database inf
+o:
+        Database JDBC URL [jdbc:postgresql://45.11.92.142:5433/b24_video_offer]
+        Database driver: PostgreSQL JDBC Driver
+        Database dialect: PostgreSQLDialect
+        Database version: 16.14
+        Default catalog/schema: b24_video_offer/public
+        Autocommit mode: undefined/unknown
+        Isolation level: READ_COMMITTED [default READ_COMMITTED]
+        JDBC fetch size: none
+        Pool: DataSourceConnectionProvider
+        Minimum pool size: undefined/unknown
+        Maximum pool size: undefined/unknown
+2026-08-04T01:57:21.107Z INFO  [main] [requestId=] org.hibernate.orm.core - HHH000489: No JTA platform available (se
+t 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-08-04T01:57:21.416Z INFO  [main] [requestId=] o.s.o.jpa.LocalContainerEntityManagerFactoryBean - Initialized JP
+A EntityManagerFactory for persistence unit 'default'
+2026-08-04T01:57:21.682Z INFO  [main] [requestId=] o.s.d.j.repository.query.QueryEnhancerFactories - Hibernate is in
+ classpath; If applicable, HQL parser will be used.
+2026-08-04T01:57:24.230Z INFO  [main] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur HTTP tra
+nsport configured: mode=HTTP_PROXY, proxyHost=216.57.105.22, proxyPort=31289, authenticationConfigured=true, connect
+TimeoutSeconds=15, readTimeoutSeconds=120
+2026-08-04T01:57:24.269Z INFO  [main] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur download
+er initialized: baseUrl=https://rko7.ktalk.ru/, storageDir=./data/videos, connectTimeoutSeconds=15, readTimeoutSecon
+ds=120, stallWarningSeconds=30, maxParallelParts=8, parallelThresholdBytes=33554432, proxyEnabled=true, proxyHost=21
+6.57.105.22, proxyPort=31289, proxyAuthenticationConfigured=true
+2026-08-04T01:57:24.357Z INFO  [main] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix HTTP transpor
+t configured: connectTimeoutSeconds=10, readTimeoutSeconds=30, proactiveRefreshAheadSeconds=120
+2026-08-04T01:57:24.518Z INFO  [main] [requestId=] ru.abs7.videooffer.offer.VideoOfferService - VideoOfferService in
+itialized: publicBaseUrl=https://offer.abs7.ru, retentionDays=7
+2026-08-04T01:57:24.899Z INFO  [main] [requestId=] o.s.b.w.autoconfigure.WelcomePageHandlerMapping - Adding welcome
+page: class path resource [static/index.html]
+2026-08-04T01:57:25.958Z INFO  [main] [requestId=] org.springframework.boot.tomcat.TomcatWebServer - Tomcat started
+on port 8080 (http) with context path '/'
+2026-08-04T01:57:25.981Z INFO  [main] [requestId=] ru.abs7.videooffer.B24VideoOfferApplication - Started B24VideoOff
+erApplication in 21.265 seconds (process running for 23.293)
+2026-08-04T01:57:25.985Z INFO  [main] [requestId=] r.a.videooffer.offer.VideoOfferLifecycleService - Checking interr
+upted video offers after application startup
+2026-08-04T01:57:26.580Z INFO  [main] [requestId=] ru.abs7.videooffer.offer.VideoOfferService - Pending video offers
+ selected for recovery: count=0
+2026-08-04T01:57:26.896Z INFO  [http-nio-8080-exec-1] [requestId=] o.a.c.c.ContainerBase.[Tomcat].[localhost].[/] -
+Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-08-04T01:57:26.897Z INFO  [http-nio-8080-exec-1] [requestId=] o.springframework.web.servlet.DispatcherServlet -
+ Initializing Servlet 'dispatcherServlet'
+2026-08-04T01:57:26.900Z INFO  [http-nio-8080-exec-1] [requestId=] o.springframework.web.servlet.DispatcherServlet -
+ Completed initialization in 2 ms
+2026-08-04T01:57:26.911Z INFO  [http-nio-8080-exec-1] [requestId=ce714c2e-497b-4e5a-a7e0-77242cf8017e] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/health, remoteAddress=172.19.0.1, us
+erAgent=Python-urllib/3.10
+2026-08-04T01:57:27.069Z INFO  [http-nio-8080-exec-1] [requestId=ce714c2e-497b-4e5a-a7e0-77242cf8017e] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/health, status=200, durationMs=158
+2026-08-04T01:57:41.271Z INFO  [scheduling-1] [requestId=] r.a.v.bitrix.BitrixReadyLinkDeliveryService - Retrying Bi
+trix ready-link deliveries: count=5
+2026-08-04T01:57:41.542Z INFO  [scheduling-1] [requestId=] r.a.v.bitrix.BitrixReadyLinkDeliveryService - Bitrix read
+y-link delivery claimed: offerId=54c09eec-d1db-4d16-8d8b-65f25b7c4a50, entityType=LEAD, entityId=25752
+2026-08-04T01:57:41.543Z INFO  [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixTimelineService - Bitrix
+timeline publication started: offerId=54c09eec-d1db-4d16-8d8b-65f25b7c4a50, memberId=419222a0c1725a38175958981810edd
+7, entityType=LEAD, entityId=25752
+2026-08-04T01:57:41.544Z INFO  [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixTimelineService - Calling
+ crm.timeline.comment.add: offerId=54c09eec-d1db-4d16-8d8b-65f25b7c4a50, entityType=lead, entityId=25752, publicUrl=
+https://offer.abs7.ru/o/384a27721b2e4de0aa8333d8a381d43d
+2026-08-04T01:57:41.544Z INFO  [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST
+call started: memberId=419222a0c1725a38175958981810edd7, method=crm.timeline.comment.add, parameterNames=[fields]
+2026-08-04T01:57:41.613Z INFO  [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bi
+trix REST request: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.ru, method=crm.timeline.comment.a
+dd, endpoint=https://abs7.bitrix24.ru/rest/crm.timeline.comment.add.json, tokenExpiresAt=2026-08-04T02:33:32Z
+2026-08-04T01:57:51.771Z ERROR [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix HTTP
+request failed or timed out: memberId=419222a0c1725a38175958981810edd7, method=crm.timeline.comment.add, endpoint=ht
+tps://abs7.bitrix24.ru/rest/crm.timeline.comment.add.json, durationMs=10158, error=Connect timed out
+
+org.springframework.web.client.ResourceAccessException: I/O error on POST request for "https://abs7.bitrix24.ru/rest
+/crm.timeline.comment.add.json": Connect timed out
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.createResourceAccessException(
+DefaultRestClient.java:776) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeInternal(DefaultRestCl
+ient.java:624) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(DefaultRestClient.jav
+a:572) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747) ~[spring-web-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(DefaultRestClient.
+java:921) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClient.java:844) ~[s
+pring-web-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:128) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:74) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixTimelineService.publishReadyLink(BitrixTimelineService.java:40) ~[!/:0.1.
+0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService.deliver(BitrixReadyLinkDeliveryService.java:44)
+~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService.retryPendingDeliveries(BitrixReadyLinkDeliverySe
+rvice.java:65) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.offer.VideoOfferLifecycleService.retryBitrixReadyLinks(VideoOfferLifecycleService.java
+:46) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.runInternal(ScheduledMethodRunnable.java:1
+28) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.lambda$run$1(ScheduledMethodRunnable.java:
+122) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at io.micrometer.observation.Observation.observe(Observation.java:569) ~[micrometer-observation-1.16.4.jar!/
+:1.16.4]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.run(ScheduledMethodRunnable.java:122) ~[sp
+ring-context-7.0.6.jar!/:7.0.6]
+        at org.springframework.scheduling.config.Task$OutcomeTrackingRunnable.run(Task.java:88) ~[spring-context-7.0
+.6.jar!/:7.0.6]
+        at org.springframework.scheduling.support.DelegatingErrorHandlingRunnable.run(DelegatingErrorHandlingRunnabl
+e.java:54) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.FutureTask.runAndReset(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(Unknown Source) ~[na:n
+a]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+Caused by: java.net.SocketTimeoutException: Connect timed out
+        at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(Unknown Source) ~[na:na]
+        at java.base/sun.nio.ch.NioSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/java.net.SocksSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/java.net.Socket.connect(Unknown Source) ~[na:na]
+        at java.base/sun.security.ssl.SSLSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/sun.net.NetworkClient.doConnect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.http.HttpClient.openServer(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.http.HttpClient.openServer(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsClient.<init>(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsClient.New(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.getNewHttpClient(Unknown Source)
+~[na:na]
+        at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect0(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.connect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsURLConnectionImpl.connect(Unknown Source) ~[na:na]
+        at org.springframework.http.client.SimpleClientHttpRequest.executeInternal(SimpleClientHttpRequest.java:80)
+~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.http.client.AbstractStreamingClientHttpRequest.executeInternal(AbstractStreamingClien
+tHttpRequest.java:87) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.http.client.AbstractClientHttpRequest.execute(AbstractClientHttpRequest.java:80) ~[sp
+ring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeInternal(DefaultRestCl
+ient.java:614) ~[spring-web-7.0.6.jar!/:7.0.6]
+        ... 24 common frames omitted
+
+2026-08-04T01:57:51.817Z ERROR [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixTimelineService - Не удал
+ось добавить ссылку видеооффера 54c09eec-d1db-4d16-8d8b-65f25b7c4a50 в Bitrix24: Connect timed out
+
+org.springframework.web.client.ResourceAccessException: I/O error on POST request for "https://abs7.bitrix24.ru/rest
+/crm.timeline.comment.add.json": Connect timed out
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.createResourceAccessException(
+DefaultRestClient.java:776) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeInternal(DefaultRestCl
+ient.java:624) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(DefaultRestClient.jav
+a:572) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747) ~[spring-web-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(DefaultRestClient.
+java:921) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClient.java:844) ~[s
+pring-web-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:128) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:74) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixTimelineService.publishReadyLink(BitrixTimelineService.java:40) ~[!/:0.1.
+0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService.deliver(BitrixReadyLinkDeliveryService.java:44)
+~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService.retryPendingDeliveries(BitrixReadyLinkDeliverySe
+rvice.java:65) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.offer.VideoOfferLifecycleService.retryBitrixReadyLinks(VideoOfferLifecycleService.java
+:46) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.runInternal(ScheduledMethodRunnable.java:1
+28) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.lambda$run$1(ScheduledMethodRunnable.java:
+122) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at io.micrometer.observation.Observation.observe(Observation.java:569) ~[micrometer-observation-1.16.4.jar!/
+:1.16.4]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.run(ScheduledMethodRunnable.java:122) ~[sp
+ring-context-7.0.6.jar!/:7.0.6]
+        at org.springframework.scheduling.config.Task$OutcomeTrackingRunnable.run(Task.java:88) ~[spring-context-7.0
+.6.jar!/:7.0.6]
+        at org.springframework.scheduling.support.DelegatingErrorHandlingRunnable.run(DelegatingErrorHandlingRunnabl
+e.java:54) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.FutureTask.runAndReset(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(Unknown Source) ~[na:n
+a]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+Caused by: java.net.SocketTimeoutException: Connect timed out
+        at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(Unknown Source) ~[na:na]
+        at java.base/sun.nio.ch.NioSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/java.net.SocksSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/java.net.Socket.connect(Unknown Source) ~[na:na]
+        at java.base/sun.security.ssl.SSLSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/sun.net.NetworkClient.doConnect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.http.HttpClient.openServer(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.http.HttpClient.openServer(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsClient.<init>(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsClient.New(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.getNewHttpClient(Unknown Source)
+~[na:na]
+        at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect0(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.connect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsURLConnectionImpl.connect(Unknown Source) ~[na:na]
+        at org.springframework.http.client.SimpleClientHttpRequest.executeInternal(SimpleClientHttpRequest.java:80)
+~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.http.client.AbstractStreamingClientHttpRequest.executeInternal(AbstractStreamingClien
+tHttpRequest.java:87) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.http.client.AbstractClientHttpRequest.execute(AbstractClientHttpRequest.java:80) ~[sp
+ring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeInternal(DefaultRestCl
+ient.java:614) ~[spring-web-7.0.6.jar!/:7.0.6]
+        ... 24 common frames omitted
+
+2026-08-04T01:57:52.044Z INFO  [scheduling-1] [requestId=] r.a.v.bitrix.BitrixReadyLinkDeliveryService - Bitrix read
+y-link delivery finished: offerId=54c09eec-d1db-4d16-8d8b-65f25b7c4a50, status=ERROR, commentId=null, error=Connect
+timed out
+2026-08-04T01:57:52.206Z INFO  [scheduling-1] [requestId=] r.a.v.bitrix.BitrixReadyLinkDeliveryService - Bitrix read
+y-link delivery claimed: offerId=0883aa34-ff89-4391-89aa-9d2d6a4e6b79, entityType=LEAD, entityId=25752
+2026-08-04T01:57:52.212Z INFO  [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixTimelineService - Bitrix
+timeline publication started: offerId=0883aa34-ff89-4391-89aa-9d2d6a4e6b79, memberId=419222a0c1725a38175958981810edd
+7, entityType=LEAD, entityId=25752
+2026-08-04T01:57:52.227Z INFO  [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixTimelineService - Calling
+ crm.timeline.comment.add: offerId=0883aa34-ff89-4391-89aa-9d2d6a4e6b79, entityType=lead, entityId=25752, publicUrl=
+https://offer.abs7.ru/o/f1f78bf7fc3545c29a036ad85ad3aa4c
+2026-08-04T01:57:52.229Z INFO  [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST
+call started: memberId=419222a0c1725a38175958981810edd7, method=crm.timeline.comment.add, parameterNames=[fields]
+2026-08-04T01:57:52.281Z INFO  [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bi
+trix REST request: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.ru, method=crm.timeline.comment.a
+dd, endpoint=https://abs7.bitrix24.ru/rest/crm.timeline.comment.add.json, tokenExpiresAt=2026-08-04T02:33:32Z
+2026-08-04T01:58:02.292Z ERROR [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix HTTP
+request failed or timed out: memberId=419222a0c1725a38175958981810edd7, method=crm.timeline.comment.add, endpoint=ht
+tps://abs7.bitrix24.ru/rest/crm.timeline.comment.add.json, durationMs=10010, error=Connect timed out
+
+org.springframework.web.client.ResourceAccessException: I/O error on POST request for "https://abs7.bitrix24.ru/rest
+/crm.timeline.comment.add.json": Connect timed out
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.createResourceAccessException(
+DefaultRestClient.java:776) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeInternal(DefaultRestCl
+ient.java:624) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(DefaultRestClient.jav
+a:572) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747) ~[spring-web-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(DefaultRestClient.
+java:921) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClient.java:844) ~[s
+pring-web-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:128) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:74) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixTimelineService.publishReadyLink(BitrixTimelineService.java:40) ~[!/:0.1.
+0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService.deliver(BitrixReadyLinkDeliveryService.java:44)
+~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService.retryPendingDeliveries(BitrixReadyLinkDeliverySe
+rvice.java:65) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.offer.VideoOfferLifecycleService.retryBitrixReadyLinks(VideoOfferLifecycleService.java
+:46) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.runInternal(ScheduledMethodRunnable.java:1
+28) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.lambda$run$1(ScheduledMethodRunnable.java:
+122) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at io.micrometer.observation.Observation.observe(Observation.java:569) ~[micrometer-observation-1.16.4.jar!/
+:1.16.4]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.run(ScheduledMethodRunnable.java:122) ~[sp
+ring-context-7.0.6.jar!/:7.0.6]
+        at org.springframework.scheduling.config.Task$OutcomeTrackingRunnable.run(Task.java:88) ~[spring-context-7.0
+.6.jar!/:7.0.6]
+        at org.springframework.scheduling.support.DelegatingErrorHandlingRunnable.run(DelegatingErrorHandlingRunnabl
+e.java:54) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.FutureTask.runAndReset(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(Unknown Source) ~[na:n
+a]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+Caused by: java.net.SocketTimeoutException: Connect timed out
+        at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(Unknown Source) ~[na:na]
+        at java.base/sun.nio.ch.NioSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/java.net.SocksSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/java.net.Socket.connect(Unknown Source) ~[na:na]
+        at java.base/sun.security.ssl.SSLSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/sun.net.NetworkClient.doConnect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.http.HttpClient.openServer(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.http.HttpClient.openServer(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsClient.<init>(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsClient.New(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.getNewHttpClient(Unknown Source)
+~[na:na]
+        at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect0(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.connect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsURLConnectionImpl.connect(Unknown Source) ~[na:na]
+        at org.springframework.http.client.SimpleClientHttpRequest.executeInternal(SimpleClientHttpRequest.java:80)
+~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.http.client.AbstractStreamingClientHttpRequest.executeInternal(AbstractStreamingClien
+tHttpRequest.java:87) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.http.client.AbstractClientHttpRequest.execute(AbstractClientHttpRequest.java:80) ~[sp
+ring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeInternal(DefaultRestCl
+ient.java:614) ~[spring-web-7.0.6.jar!/:7.0.6]
+        ... 24 common frames omitted
+
+2026-08-04T01:58:02.315Z ERROR [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixTimelineService - Не удал
+ось добавить ссылку видеооффера 0883aa34-ff89-4391-89aa-9d2d6a4e6b79 в Bitrix24: Connect timed out
+
+org.springframework.web.client.ResourceAccessException: I/O error on POST request for "https://abs7.bitrix24.ru/rest
+/crm.timeline.comment.add.json": Connect timed out
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.createResourceAccessException(
+DefaultRestClient.java:776) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeInternal(DefaultRestCl
+ient.java:624) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(DefaultRestClient.jav
+a:572) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747) ~[spring-web-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(DefaultRestClient.
+java:921) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClient.java:844) ~[s
+pring-web-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:128) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:74) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixTimelineService.publishReadyLink(BitrixTimelineService.java:40) ~[!/:0.1.
+0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService.deliver(BitrixReadyLinkDeliveryService.java:44)
+~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService.retryPendingDeliveries(BitrixReadyLinkDeliverySe
+rvice.java:65) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.offer.VideoOfferLifecycleService.retryBitrixReadyLinks(VideoOfferLifecycleService.java
+:46) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.runInternal(ScheduledMethodRunnable.java:1
+28) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.lambda$run$1(ScheduledMethodRunnable.java:
+122) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at io.micrometer.observation.Observation.observe(Observation.java:569) ~[micrometer-observation-1.16.4.jar!/
+:1.16.4]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.run(ScheduledMethodRunnable.java:122) ~[sp
+ring-context-7.0.6.jar!/:7.0.6]
+        at org.springframework.scheduling.config.Task$OutcomeTrackingRunnable.run(Task.java:88) ~[spring-context-7.0
+.6.jar!/:7.0.6]
+        at org.springframework.scheduling.support.DelegatingErrorHandlingRunnable.run(DelegatingErrorHandlingRunnabl
+e.java:54) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.FutureTask.runAndReset(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(Unknown Source) ~[na:n
+a]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+Caused by: java.net.SocketTimeoutException: Connect timed out
+        at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(Unknown Source) ~[na:na]
+        at java.base/sun.nio.ch.NioSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/java.net.SocksSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/java.net.Socket.connect(Unknown Source) ~[na:na]
+        at java.base/sun.security.ssl.SSLSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/sun.net.NetworkClient.doConnect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.http.HttpClient.openServer(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.http.HttpClient.openServer(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsClient.<init>(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsClient.New(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.getNewHttpClient(Unknown Source)
+~[na:na]
+        at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect0(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.connect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsURLConnectionImpl.connect(Unknown Source) ~[na:na]
+        at org.springframework.http.client.SimpleClientHttpRequest.executeInternal(SimpleClientHttpRequest.java:80)
+~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.http.client.AbstractStreamingClientHttpRequest.executeInternal(AbstractStreamingClien
+tHttpRequest.java:87) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.http.client.AbstractClientHttpRequest.execute(AbstractClientHttpRequest.java:80) ~[sp
+ring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeInternal(DefaultRestCl
+ient.java:614) ~[spring-web-7.0.6.jar!/:7.0.6]
+        ... 24 common frames omitted
+
+2026-08-04T01:58:02.543Z INFO  [scheduling-1] [requestId=] r.a.v.bitrix.BitrixReadyLinkDeliveryService - Bitrix read
+y-link delivery finished: offerId=0883aa34-ff89-4391-89aa-9d2d6a4e6b79, status=ERROR, commentId=null, error=Connect
+timed out
+2026-08-04T01:58:02.764Z INFO  [scheduling-1] [requestId=] r.a.v.bitrix.BitrixReadyLinkDeliveryService - Bitrix read
+y-link delivery claimed: offerId=77b63c57-8574-4987-896c-37618887541f, entityType=LEAD, entityId=64634
+2026-08-04T01:58:02.765Z INFO  [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixTimelineService - Bitrix
+timeline publication started: offerId=77b63c57-8574-4987-896c-37618887541f, memberId=419222a0c1725a38175958981810edd
+7, entityType=LEAD, entityId=64634
+2026-08-04T01:58:02.766Z INFO  [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixTimelineService - Calling
+ crm.timeline.comment.add: offerId=77b63c57-8574-4987-896c-37618887541f, entityType=lead, entityId=64634, publicUrl=
+https://offer.abs7.ru/o/16e94678070e4217b0cf1caf81b46610
+2026-08-04T01:58:02.766Z INFO  [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST
+call started: memberId=419222a0c1725a38175958981810edd7, method=crm.timeline.comment.add, parameterNames=[fields]
+2026-08-04T01:58:02.822Z INFO  [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bi
+trix REST request: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.ru, method=crm.timeline.comment.a
+dd, endpoint=https://abs7.bitrix24.ru/rest/crm.timeline.comment.add.json, tokenExpiresAt=2026-08-04T02:33:32Z
+2026-08-04T01:58:12.834Z ERROR [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix HTTP
+request failed or timed out: memberId=419222a0c1725a38175958981810edd7, method=crm.timeline.comment.add, endpoint=ht
+tps://abs7.bitrix24.ru/rest/crm.timeline.comment.add.json, durationMs=10012, error=Connect timed out
+
+org.springframework.web.client.ResourceAccessException: I/O error on POST request for "https://abs7.bitrix24.ru/rest
+/crm.timeline.comment.add.json": Connect timed out
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.createResourceAccessException(
+DefaultRestClient.java:776) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeInternal(DefaultRestCl
+ient.java:624) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(DefaultRestClient.jav
+a:572) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747) ~[spring-web-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(DefaultRestClient.
+java:921) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClient.java:844) ~[s
+pring-web-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:128) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:74) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixTimelineService.publishReadyLink(BitrixTimelineService.java:40) ~[!/:0.1.
+0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService.deliver(BitrixReadyLinkDeliveryService.java:44)
+~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService.retryPendingDeliveries(BitrixReadyLinkDeliverySe
+rvice.java:65) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.offer.VideoOfferLifecycleService.retryBitrixReadyLinks(VideoOfferLifecycleService.java
+:46) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.runInternal(ScheduledMethodRunnable.java:1
+28) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.lambda$run$1(ScheduledMethodRunnable.java:
+122) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at io.micrometer.observation.Observation.observe(Observation.java:569) ~[micrometer-observation-1.16.4.jar!/
+:1.16.4]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.run(ScheduledMethodRunnable.java:122) ~[sp
+ring-context-7.0.6.jar!/:7.0.6]
+        at org.springframework.scheduling.config.Task$OutcomeTrackingRunnable.run(Task.java:88) ~[spring-context-7.0
+.6.jar!/:7.0.6]
+        at org.springframework.scheduling.support.DelegatingErrorHandlingRunnable.run(DelegatingErrorHandlingRunnabl
+e.java:54) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.FutureTask.runAndReset(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(Unknown Source) ~[na:n
+a]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+Caused by: java.net.SocketTimeoutException: Connect timed out
+        at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(Unknown Source) ~[na:na]
+        at java.base/sun.nio.ch.NioSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/java.net.SocksSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/java.net.Socket.connect(Unknown Source) ~[na:na]
+        at java.base/sun.security.ssl.SSLSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/sun.net.NetworkClient.doConnect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.http.HttpClient.openServer(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.http.HttpClient.openServer(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsClient.<init>(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsClient.New(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.getNewHttpClient(Unknown Source)
+~[na:na]
+        at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect0(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.connect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsURLConnectionImpl.connect(Unknown Source) ~[na:na]
+        at org.springframework.http.client.SimpleClientHttpRequest.executeInternal(SimpleClientHttpRequest.java:80)
+~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.http.client.AbstractStreamingClientHttpRequest.executeInternal(AbstractStreamingClien
+tHttpRequest.java:87) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.http.client.AbstractClientHttpRequest.execute(AbstractClientHttpRequest.java:80) ~[sp
+ring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeInternal(DefaultRestCl
+ient.java:614) ~[spring-web-7.0.6.jar!/:7.0.6]
+        ... 24 common frames omitted
+
+2026-08-04T01:58:12.839Z ERROR [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixTimelineService - Не удал
+ось добавить ссылку видеооффера 77b63c57-8574-4987-896c-37618887541f в Bitrix24: Connect timed out
+
+org.springframework.web.client.ResourceAccessException: I/O error on POST request for "https://abs7.bitrix24.ru/rest
+/crm.timeline.comment.add.json": Connect timed out
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.createResourceAccessException(
+DefaultRestClient.java:776) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeInternal(DefaultRestCl
+ient.java:624) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(DefaultRestClient.jav
+a:572) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747) ~[spring-web-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(DefaultRestClient.
+java:921) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClient.java:844) ~[s
+pring-web-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:128) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:74) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixTimelineService.publishReadyLink(BitrixTimelineService.java:40) ~[!/:0.1.
+0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService.deliver(BitrixReadyLinkDeliveryService.java:44)
+~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService.retryPendingDeliveries(BitrixReadyLinkDeliverySe
+rvice.java:65) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.offer.VideoOfferLifecycleService.retryBitrixReadyLinks(VideoOfferLifecycleService.java
+:46) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.runInternal(ScheduledMethodRunnable.java:1
+28) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.lambda$run$1(ScheduledMethodRunnable.java:
+122) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at io.micrometer.observation.Observation.observe(Observation.java:569) ~[micrometer-observation-1.16.4.jar!/
+:1.16.4]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.run(ScheduledMethodRunnable.java:122) ~[sp
+ring-context-7.0.6.jar!/:7.0.6]
+        at org.springframework.scheduling.config.Task$OutcomeTrackingRunnable.run(Task.java:88) ~[spring-context-7.0
+.6.jar!/:7.0.6]
+        at org.springframework.scheduling.support.DelegatingErrorHandlingRunnable.run(DelegatingErrorHandlingRunnabl
+e.java:54) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.FutureTask.runAndReset(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(Unknown Source) ~[na:n
+a]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+Caused by: java.net.SocketTimeoutException: Connect timed out
+        at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(Unknown Source) ~[na:na]
+        at java.base/sun.nio.ch.NioSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/java.net.SocksSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/java.net.Socket.connect(Unknown Source) ~[na:na]
+        at java.base/sun.security.ssl.SSLSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/sun.net.NetworkClient.doConnect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.http.HttpClient.openServer(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.http.HttpClient.openServer(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsClient.<init>(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsClient.New(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.getNewHttpClient(Unknown Source)
+~[na:na]
+        at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect0(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.connect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsURLConnectionImpl.connect(Unknown Source) ~[na:na]
+        at org.springframework.http.client.SimpleClientHttpRequest.executeInternal(SimpleClientHttpRequest.java:80)
+~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.http.client.AbstractStreamingClientHttpRequest.executeInternal(AbstractStreamingClien
+tHttpRequest.java:87) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.http.client.AbstractClientHttpRequest.execute(AbstractClientHttpRequest.java:80) ~[sp
+ring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeInternal(DefaultRestCl
+ient.java:614) ~[spring-web-7.0.6.jar!/:7.0.6]
+        ... 24 common frames omitted
+
+2026-08-04T01:58:13.062Z INFO  [scheduling-1] [requestId=] r.a.v.bitrix.BitrixReadyLinkDeliveryService - Bitrix read
+y-link delivery finished: offerId=77b63c57-8574-4987-896c-37618887541f, status=ERROR, commentId=null, error=Connect
+timed out
+2026-08-04T01:58:13.220Z INFO  [scheduling-1] [requestId=] r.a.v.bitrix.BitrixReadyLinkDeliveryService - Bitrix read
+y-link delivery claimed: offerId=eb2d402d-ac73-480d-b923-37be7cbe92d4, entityType=LEAD, entityId=25752
+2026-08-04T01:58:13.221Z INFO  [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixTimelineService - Bitrix
+timeline publication started: offerId=eb2d402d-ac73-480d-b923-37be7cbe92d4, memberId=419222a0c1725a38175958981810edd
+7, entityType=LEAD, entityId=25752
+2026-08-04T01:58:13.221Z INFO  [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixTimelineService - Calling
+ crm.timeline.comment.add: offerId=eb2d402d-ac73-480d-b923-37be7cbe92d4, entityType=lead, entityId=25752, publicUrl=
+https://offer.abs7.ru/o/0ce6635f8a99455c80e6a807d2ac12c6
+2026-08-04T01:58:13.222Z INFO  [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST
+call started: memberId=419222a0c1725a38175958981810edd7, method=crm.timeline.comment.add, parameterNames=[fields]
+2026-08-04T01:58:13.273Z INFO  [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bi
+trix REST request: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.ru, method=crm.timeline.comment.a
+dd, endpoint=https://abs7.bitrix24.ru/rest/crm.timeline.comment.add.json, tokenExpiresAt=2026-08-04T02:33:32Z
+2026-08-04T01:58:14.758Z INFO  [http-nio-8080-exec-2] [requestId=da5b9a5a-2cfb-430d-b26d-4429cfb45505] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/bitrix/widget, remoteAddress=216.57.105
+.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.11
+4 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:58:14.773Z INFO  [http-nio-8080-exec-2] [requestId=da5b9a5a-2cfb-430d-b26d-4429cfb45505] ru.abs7.video
+offer.bitrix.BitrixController - Bitrix widget callback received: parameterNames=[DOMAIN, PROTOCOL, LANG, APP_SID, AU
+TH_ID, AUTH_EXPIRES, REFRESH_ID, SERVER_ENDPOINT, APPLICATION_TOKEN, APPLICATION_SCOPE, member_id, status, PLACEMENT
+, PLACEMENT_OPTIONS]
+2026-08-04T01:58:15.031Z INFO  [http-nio-8080-exec-2] [requestId=da5b9a5a-2cfb-430d-b26d-4429cfb45505] r.a.videooffe
+r.bitrix.BitrixInstallationService - Fresh Bitrix authorization synchronized from widget callback: memberId=419222a0
+c1725a38175958981810edd7, domain=abs7.bitrix24.ru, expiresAt=2026-08-04T02:58:14.774703355Z, tokenChanged=true
+2026-08-04T01:58:15.032Z INFO  [http-nio-8080-exec-2] [requestId=da5b9a5a-2cfb-430d-b26d-4429cfb45505] ru.abs7.video
+offer.bitrix.BitrixController - Bitrix widget context resolved: placement=CRM_LEAD_DETAIL_ACTIVITY, memberId=419222a
+0c1725a38175958981810edd7, entityType=LEAD, entityId=72066
+2026-08-04T01:58:15.037Z INFO  [http-nio-8080-exec-2] [requestId=da5b9a5a-2cfb-430d-b26d-4429cfb45505] ru.abs7.video
+offer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a38175958981810edd7, entityType=LEAD
+, entityId=72066, version=v2, nonExpiring=true
+2026-08-04T01:58:15.040Z INFO  [http-nio-8080-exec-2] [requestId=da5b9a5a-2cfb-430d-b26d-4429cfb45505] ru.abs7.video
+offer.bitrix.BitrixController - Bitrix widget HTML generated: entityType=LEAD, entityId=72066, htmlBytes=3925
+2026-08-04T01:58:15.051Z INFO  [http-nio-8080-exec-2] [requestId=da5b9a5a-2cfb-430d-b26d-4429cfb45505] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/bitrix/widget, status=200, durationMs
+=293
+2026-08-04T01:58:15.124Z INFO  [http-nio-8080-exec-4] [requestId=171a78d5-28e6-4644-8409-d1619ba56b19] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/assets/bitrix-widget.js, remoteAddress=2
+16.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.
+0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:58:15.126Z INFO  [http-nio-8080-exec-3] [requestId=4a066d16-e096-4493-b4bc-a4e8110b5ee1] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/assets/bitrix-widget.css, remoteAddress=
+216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145
+.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:58:15.143Z INFO  [http-nio-8080-exec-4] [requestId=171a78d5-28e6-4644-8409-d1619ba56b19] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/assets/bitrix-widget.js, status=200, d
+urationMs=19
+2026-08-04T01:58:15.144Z INFO  [http-nio-8080-exec-3] [requestId=4a066d16-e096-4493-b4bc-a4e8110b5ee1] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/assets/bitrix-widget.css, status=200,
+durationMs=18
+2026-08-04T01:58:23.245Z INFO  [http-nio-8080-exec-5] [requestId=97ebd674-a407-4ed4-bb50-a4da89abd3ac] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/bitrix/video-offers, remoteAddress=216.
+57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7
+632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:58:23.340Z ERROR [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix HTTP
+request failed or timed out: memberId=419222a0c1725a38175958981810edd7, method=crm.timeline.comment.add, endpoint=ht
+tps://abs7.bitrix24.ru/rest/crm.timeline.comment.add.json, durationMs=10066, error=Connect timed out
+
+org.springframework.web.client.ResourceAccessException: I/O error on POST request for "https://abs7.bitrix24.ru/rest
+/crm.timeline.comment.add.json": Connect timed out
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.createResourceAccessException(
+DefaultRestClient.java:776) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeInternal(DefaultRestCl
+ient.java:624) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(DefaultRestClient.jav
+a:572) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747) ~[spring-web-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(DefaultRestClient.
+java:921) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClient.java:844) ~[s
+pring-web-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:128) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:74) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixTimelineService.publishReadyLink(BitrixTimelineService.java:40) ~[!/:0.1.
+0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService.deliver(BitrixReadyLinkDeliveryService.java:44)
+~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService.retryPendingDeliveries(BitrixReadyLinkDeliverySe
+rvice.java:65) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.offer.VideoOfferLifecycleService.retryBitrixReadyLinks(VideoOfferLifecycleService.java
+:46) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.runInternal(ScheduledMethodRunnable.java:1
+28) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.lambda$run$1(ScheduledMethodRunnable.java:
+122) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at io.micrometer.observation.Observation.observe(Observation.java:569) ~[micrometer-observation-1.16.4.jar!/
+:1.16.4]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.run(ScheduledMethodRunnable.java:122) ~[sp
+ring-context-7.0.6.jar!/:7.0.6]
+        at org.springframework.scheduling.config.Task$OutcomeTrackingRunnable.run(Task.java:88) ~[spring-context-7.0
+.6.jar!/:7.0.6]
+        at org.springframework.scheduling.support.DelegatingErrorHandlingRunnable.run(DelegatingErrorHandlingRunnabl
+e.java:54) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.FutureTask.runAndReset(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(Unknown Source) ~[na:n
+a]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+Caused by: java.net.SocketTimeoutException: Connect timed out
+        at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(Unknown Source) ~[na:na]
+        at java.base/sun.nio.ch.NioSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/java.net.SocksSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/java.net.Socket.connect(Unknown Source) ~[na:na]
+        at java.base/sun.security.ssl.SSLSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/sun.net.NetworkClient.doConnect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.http.HttpClient.openServer(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.http.HttpClient.openServer(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsClient.<init>(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsClient.New(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.getNewHttpClient(Unknown Source)
+~[na:na]
+        at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect0(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.connect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsURLConnectionImpl.connect(Unknown Source) ~[na:na]
+        at org.springframework.http.client.SimpleClientHttpRequest.executeInternal(SimpleClientHttpRequest.java:80)
+~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.http.client.AbstractStreamingClientHttpRequest.executeInternal(AbstractStreamingClien
+tHttpRequest.java:87) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.http.client.AbstractClientHttpRequest.execute(AbstractClientHttpRequest.java:80) ~[sp
+ring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeInternal(DefaultRestCl
+ient.java:614) ~[spring-web-7.0.6.jar!/:7.0.6]
+        ... 24 common frames omitted
+
+2026-08-04T01:58:23.347Z ERROR [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixTimelineService - Не удал
+ось добавить ссылку видеооффера eb2d402d-ac73-480d-b923-37be7cbe92d4 в Bitrix24: Connect timed out
+
+org.springframework.web.client.ResourceAccessException: I/O error on POST request for "https://abs7.bitrix24.ru/rest
+/crm.timeline.comment.add.json": Connect timed out
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.createResourceAccessException(
+DefaultRestClient.java:776) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeInternal(DefaultRestCl
+ient.java:624) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(DefaultRestClient.jav
+a:572) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747) ~[spring-web-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(DefaultRestClient.
+java:921) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClient.java:844) ~[s
+pring-web-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:128) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:74) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixTimelineService.publishReadyLink(BitrixTimelineService.java:40) ~[!/:0.1.
+0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService.deliver(BitrixReadyLinkDeliveryService.java:44)
+~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService.retryPendingDeliveries(BitrixReadyLinkDeliverySe
+rvice.java:65) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.offer.VideoOfferLifecycleService.retryBitrixReadyLinks(VideoOfferLifecycleService.java
+:46) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.runInternal(ScheduledMethodRunnable.java:1
+28) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.lambda$run$1(ScheduledMethodRunnable.java:
+122) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at io.micrometer.observation.Observation.observe(Observation.java:569) ~[micrometer-observation-1.16.4.jar!/
+:1.16.4]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.run(ScheduledMethodRunnable.java:122) ~[sp
+ring-context-7.0.6.jar!/:7.0.6]
+        at org.springframework.scheduling.config.Task$OutcomeTrackingRunnable.run(Task.java:88) ~[spring-context-7.0
+.6.jar!/:7.0.6]
+        at org.springframework.scheduling.support.DelegatingErrorHandlingRunnable.run(DelegatingErrorHandlingRunnabl
+e.java:54) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.FutureTask.runAndReset(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(Unknown Source) ~[na:n
+a]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+Caused by: java.net.SocketTimeoutException: Connect timed out
+        at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(Unknown Source) ~[na:na]
+        at java.base/sun.nio.ch.NioSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/java.net.SocksSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/java.net.Socket.connect(Unknown Source) ~[na:na]
+        at java.base/sun.security.ssl.SSLSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/sun.net.NetworkClient.doConnect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.http.HttpClient.openServer(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.http.HttpClient.openServer(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsClient.<init>(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsClient.New(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.getNewHttpClient(Unknown Source)
+~[na:na]
+        at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect0(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.connect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsURLConnectionImpl.connect(Unknown Source) ~[na:na]
+        at org.springframework.http.client.SimpleClientHttpRequest.executeInternal(SimpleClientHttpRequest.java:80)
+~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.http.client.AbstractStreamingClientHttpRequest.executeInternal(AbstractStreamingClien
+tHttpRequest.java:87) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.http.client.AbstractClientHttpRequest.execute(AbstractClientHttpRequest.java:80) ~[sp
+ring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeInternal(DefaultRestCl
+ient.java:614) ~[spring-web-7.0.6.jar!/:7.0.6]
+        ... 24 common frames omitted
+
+2026-08-04T01:58:23.440Z INFO  [http-nio-8080-exec-5] [requestId=97ebd674-a407-4ed4-bb50-a4da89abd3ac] ru.abs7.video
+offer.bitrix.BitrixController - Bitrix video offer creation requested: recordingUrlPresent=true, accompanyingTextLen
+gth=10, viewNotificationGoal=ONE_MINUTE
+2026-08-04T01:58:23.442Z INFO  [http-nio-8080-exec-5] [requestId=97ebd674-a407-4ed4-bb50-a4da89abd3ac] ru.abs7.video
+offer.bitrix.BitrixContextSigner - Bitrix context verified: memberId=419222a0c1725a38175958981810edd7, entityType=LE
+AD, entityId=72066, version=v2, nonExpiring=true
+2026-08-04T01:58:23.443Z INFO  [http-nio-8080-exec-5] [requestId=97ebd674-a407-4ed4-bb50-a4da89abd3ac] ru.abs7.video
+offer.bitrix.BitrixController - Bitrix signed context verified: memberId=419222a0c1725a38175958981810edd7, entityTyp
+e=LEAD, entityId=72066
+2026-08-04T01:58:23.445Z INFO  [http-nio-8080-exec-5] [requestId=97ebd674-a407-4ed4-bb50-a4da89abd3ac] ru.abs7.video
+offer.offer.VideoOfferService - Creating video offer: entityType=LEAD, entityId=72066, bitrixMemberId=419222a0c1725a
+38175958981810edd7, bitrixUserId=null, recordingUrlPresent=true, accompanyingTextLength=10, viewNotificationGoal=ONE
+_MINUTE
+2026-08-04T01:58:23.446Z INFO  [http-nio-8080-exec-5] [requestId=97ebd674-a407-4ed4-bb50-a4da89abd3ac] r.a.videooffe
+r.kontur.KonturRecordingUrlParser - Parsing Kontur recording URL: scheme=https, host=rko7.ktalk.ru, path=/recordings
+/LKATA1owT5ZzqEyURWPC
+2026-08-04T01:58:23.446Z INFO  [http-nio-8080-exec-5] [requestId=97ebd674-a407-4ed4-bb50-a4da89abd3ac] r.a.videooffe
+r.kontur.KonturRecordingUrlParser - Kontur recording key extracted: recordingKey=LKATA1owT5ZzqEyURWPC
+2026-08-04T01:58:23.447Z INFO  [http-nio-8080-exec-5] [requestId=97ebd674-a407-4ed4-bb50-a4da89abd3ac] ru.abs7.video
+offer.offer.VideoOfferService - Video offer entity created in memory: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58,
+publicToken=d26c9a1d88c64ebca61be779f7fb12dd, recordingKey=LKATA1owT5ZzqEyURWPC, status=QUEUED, viewNotificationGoal
+=ONE_MINUTE, expiresAt=2026-08-11T01:58:23.447520467Z
+2026-08-04T01:58:23.557Z INFO  [scheduling-1] [requestId=] r.a.v.bitrix.BitrixReadyLinkDeliveryService - Bitrix read
+y-link delivery finished: offerId=eb2d402d-ac73-480d-b923-37be7cbe92d4, status=ERROR, commentId=null, error=Connect
+timed out
+2026-08-04T01:58:23.677Z INFO  [http-nio-8080-exec-5] [requestId=97ebd674-a407-4ed4-bb50-a4da89abd3ac] ru.abs7.video
+offer.offer.VideoOfferService - Video offer persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, status=QUEUED,
+progress=0%, durationMs=232
+2026-08-04T01:58:23.695Z INFO  [http-nio-8080-exec-5] [requestId=97ebd674-a407-4ed4-bb50-a4da89abd3ac] ru.abs7.video
+offer.offer.VideoOfferService - Video offer background processing submitted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f
+63f58
+2026-08-04T01:58:23.696Z INFO  [http-nio-8080-exec-5] [requestId=97ebd674-a407-4ed4-bb50-a4da89abd3ac] ru.abs7.video
+offer.bitrix.BitrixController - Bitrix video offer accepted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, entityTyp
+e=LEAD, entityId=72066, status=QUEUED
+2026-08-04T01:58:23.707Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er processing started: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, thread=video-offer-1
+2026-08-04T01:58:23.710Z INFO  [scheduling-1] [requestId=] r.a.v.bitrix.BitrixReadyLinkDeliveryService - Bitrix read
+y-link delivery claimed: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, entityType=LEAD, entityId=72066
+2026-08-04T01:58:23.714Z INFO  [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixTimelineService - Bitrix
+timeline publication started: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, memberId=419222a0c1725a38175958981810edd
+7, entityType=LEAD, entityId=72066
+2026-08-04T01:58:23.714Z INFO  [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixTimelineService - Calling
+ crm.timeline.comment.add: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, entityType=lead, entityId=72066, publicUrl=
+https://offer.abs7.ru/o/e64ce33270284b91932d0b703ba0974c
+2026-08-04T01:58:23.714Z INFO  [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST
+call started: memberId=419222a0c1725a38175958981810edd7, method=crm.timeline.comment.add, parameterNames=[fields]
+2026-08-04T01:58:23.777Z INFO  [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bi
+trix REST request: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.ru, method=crm.timeline.comment.a
+dd, endpoint=https://abs7.bitrix24.ru/rest/crm.timeline.comment.add.json, tokenExpiresAt=2026-08-04T02:58:14.774703Z
+2026-08-04T01:58:23.863Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er loaded for processing: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, entityType=LEAD, entityId=72066, recordingKe
+y=LKATA1owT5ZzqEyURWPC, status=QUEUED, currentProgress=0%, bitrixMemberId=419222a0c1725a38175958981810edd7
+2026-08-04T01:58:23.893Z INFO  [http-nio-8080-exec-5] [requestId=97ebd674-a407-4ed4-bb50-a4da89abd3ac] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/bitrix/video-offers, status=202, dura
+tionMs=648
+2026-08-04T01:58:24.086Z INFO  [http-nio-8080-exec-6] [requestId=0768a08d-57ca-4ea5-999a-9c2226a7b4fd] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-8006
+-4bbbc0f63f58, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (
+KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:58:24.132Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=processing-started, previous=0%, current=
+1%, status=PREPARING
+2026-08-04T01:58:24.133Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Calling K
+ontur downloader: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC
+2026-08-04T01:58:24.135Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download requested: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, storageDir=/ap
+p/data/videos, tempFile=/app/data/videos/8aa8e380-b261-4fe9-8006-4bbbc0f63f58.download, finalFile=/app/data/videos/8
+aa8e380-b261-4fe9-8006-4bbbc0f63f58.mp4, qualities=[900 p, 900p, 720p, 1080p, high]
+2026-08-04T01:58:24.140Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ quality attempt started: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, attempt=1
+/5, quality=900 p
+2026-08-04T01:58:24.140Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ probe request: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900 p, rang
+e=bytes=0-0
+2026-08-04T01:58:24.191Z INFO  [http-nio-8080-exec-6] [requestId=0768a08d-57ca-4ea5-999a-9c2226a7b4fd] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-80
+06-4bbbc0f63f58, status=200, durationMs=105
+2026-08-04T01:58:25.012Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ probe response: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900 p, sta
+tus=404, contentRange=null, contentLength=-1, totalBytes=0, supportsRanges=false, durationMs=871
+2026-08-04T01:58:25.021Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ quality not found: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900 p,
+status=404
+2026-08-04T01:58:25.024Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ quality attempt started: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, attempt=2
+/5, quality=900p
+2026-08-04T01:58:25.026Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ probe request: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, range
+=bytes=0-0
+2026-08-04T01:58:25.075Z INFO  [http-nio-8080-exec-7] [requestId=61583dca-5861-4853-9734-86cd161f24d1] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-8006
+-4bbbc0f63f58, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (
+KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:58:25.199Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ probe response: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, stat
+us=206, contentRange=bytes 0-0/11492323, contentLength=1, totalBytes=11492323, supportsRanges=true, durationMs=172
+2026-08-04T01:58:25.201Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ quality selected for download attempt: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyUR
+WPC, quality=900p, status=206, totalBytes=11492323, totalHuman=10.96 MiB, supportsRanges=true, mode=SINGLE_STREAM
+2026-08-04T01:58:25.238Z INFO  [http-nio-8080-exec-7] [requestId=61583dca-5861-4853-9734-86cd161f24d1] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-80
+06-4bbbc0f63f58, status=200, durationMs=162
+2026-08-04T01:58:25.510Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=1%, current=1%,
+ status=PREPARING
+2026-08-04T01:58:25.511Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=download-start, progress=1%, downloadedBytes=0, downloadedHuman=0 B, totalBytes=11492323, t
+otalHuman=10.96 MiB, elapsedMs=309
+2026-08-04T01:58:25.511Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Single
+ stream request started: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=90
+0p, expectedLength=11492323, file=/app/data/videos/8aa8e380-b261-4fe9-8006-4bbbc0f63f58.download
+2026-08-04T01:58:25.703Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Single
+ stream response headers: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=9
+00p, status=200, contentLength=11492323, contentRange=null, durationToHeadersMs=192
+2026-08-04T01:58:26.089Z INFO  [http-nio-8080-exec-8] [requestId=f2829857-aa02-4bf4-b2bf-07cd3033d0ee] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-8006
+-4bbbc0f63f58, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (
+KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:58:26.110Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=1%, current=3%,
+ status=PREPARING
+2026-08-04T01:58:26.238Z INFO  [http-nio-8080-exec-8] [requestId=f2829857-aa02-4bf4-b2bf-07cd3033d0ee] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-80
+06-4bbbc0f63f58, status=200, durationMs=149
+2026-08-04T01:58:26.374Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=3%, current=5%,
+ status=PREPARING
+2026-08-04T01:58:26.385Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=single-stream, progress=6%, downloadedBytes=703816, downloadedHuman=687.32 KiB, totalBytes=
+11492323, totalHuman=10.96 MiB, elapsedMs=1183
+2026-08-04T01:58:26.659Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=5%, current=7%,
+ status=PREPARING
+2026-08-04T01:58:26.923Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=7%, current=9%,
+ status=PREPARING
+2026-08-04T01:58:27.089Z INFO  [http-nio-8080-exec-9] [requestId=cadb3eb6-3b16-4ee9-90a5-c9133e8c5553] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-8006
+-4bbbc0f63f58, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (
+KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:58:27.194Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=9%, current=11%
+, status=PREPARING
+2026-08-04T01:58:27.197Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=single-stream, progress=11%, downloadedBytes=1277256, downloadedHuman=1.22 MiB, totalBytes=
+11492323, totalHuman=10.96 MiB, elapsedMs=1995
+2026-08-04T01:58:27.240Z INFO  [http-nio-8080-exec-9] [requestId=cadb3eb6-3b16-4ee9-90a5-c9133e8c5553] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-80
+06-4bbbc0f63f58, status=200, durationMs=150
+2026-08-04T01:58:27.467Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=11%, current=13
+%, status=PREPARING
+2026-08-04T01:58:27.728Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=13%, current=15
+%, status=PREPARING
+2026-08-04T01:58:27.736Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=single-stream, progress=16%, downloadedBytes=1850696, downloadedHuman=1.76 MiB, totalBytes=
+11492323, totalHuman=10.96 MiB, elapsedMs=2534
+2026-08-04T01:58:28.004Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=15%, current=17
+%, status=PREPARING
+2026-08-04T01:58:28.083Z INFO  [http-nio-8080-exec-10] [requestId=640ee4f0-d573-4c80-975c-af5c9dbfd5eb] ru.abs7.vide
+ooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-800
+6-4bbbc0f63f58, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+(KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:58:28.235Z INFO  [http-nio-8080-exec-10] [requestId=640ee4f0-d573-4c80-975c-af5c9dbfd5eb] ru.abs7.vide
+ooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-8
+006-4bbbc0f63f58, status=200, durationMs=152
+2026-08-04T01:58:28.287Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=17%, current=19
+%, status=PREPARING
+2026-08-04T01:58:28.547Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=19%, current=21
+%, status=PREPARING
+2026-08-04T01:58:28.547Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=single-stream, progress=21%, downloadedBytes=2424136, downloadedHuman=2.31 MiB, totalBytes=
+11492323, totalHuman=10.96 MiB, elapsedMs=3346
+2026-08-04T01:58:28.813Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=21%, current=23
+%, status=PREPARING
+2026-08-04T01:58:29.077Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=23%, current=25
+%, status=PREPARING
+2026-08-04T01:58:29.083Z INFO  [http-nio-8080-exec-1] [requestId=11bdadb0-5772-429f-91a3-17403d708640] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-8006
+-4bbbc0f63f58, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (
+KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:58:29.091Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=single-stream, progress=26%, downloadedBytes=2997576, downloadedHuman=2.86 MiB, totalBytes=
+11492323, totalHuman=10.96 MiB, elapsedMs=3889
+2026-08-04T01:58:29.233Z INFO  [http-nio-8080-exec-1] [requestId=11bdadb0-5772-429f-91a3-17403d708640] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-80
+06-4bbbc0f63f58, status=200, durationMs=149
+2026-08-04T01:58:29.346Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=25%, current=27
+%, status=PREPARING
+2026-08-04T01:58:29.613Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=27%, current=29
+%, status=PREPARING
+2026-08-04T01:58:29.920Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=29%, current=31
+%, status=PREPARING
+2026-08-04T01:58:29.921Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=single-stream, progress=31%, downloadedBytes=3571016, downloadedHuman=3.41 MiB, totalBytes=
+11492323, totalHuman=10.96 MiB, elapsedMs=4719
+2026-08-04T01:58:30.078Z INFO  [http-nio-8080-exec-2] [requestId=a04919c0-2035-45a6-8378-8dfb7d614983] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-8006
+-4bbbc0f63f58, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (
+KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:58:30.182Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=31%, current=33
+%, status=PREPARING
+2026-08-04T01:58:30.230Z INFO  [http-nio-8080-exec-2] [requestId=a04919c0-2035-45a6-8378-8dfb7d614983] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-80
+06-4bbbc0f63f58, status=200, durationMs=151
+2026-08-04T01:58:30.447Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=33%, current=35
+%, status=PREPARING
+2026-08-04T01:58:30.456Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=single-stream, progress=36%, downloadedBytes=4144456, downloadedHuman=3.95 MiB, totalBytes=
+11492323, totalHuman=10.96 MiB, elapsedMs=5254
+2026-08-04T01:58:30.717Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=35%, current=37
+%, status=PREPARING
+2026-08-04T01:58:30.973Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=37%, current=39
+%, status=PREPARING
+2026-08-04T01:58:31.090Z INFO  [http-nio-8080-exec-3] [requestId=c8b27411-bfc6-45b9-a994-711c2208d690] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-8006
+-4bbbc0f63f58, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (
+KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:58:31.229Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=39%, current=41
+%, status=PREPARING
+2026-08-04T01:58:31.230Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=single-stream, progress=41%, downloadedBytes=4717896, downloadedHuman=4.50 MiB, totalBytes=
+11492323, totalHuman=10.96 MiB, elapsedMs=6028
+2026-08-04T01:58:31.242Z INFO  [http-nio-8080-exec-3] [requestId=c8b27411-bfc6-45b9-a994-711c2208d690] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-80
+06-4bbbc0f63f58, status=200, durationMs=151
+2026-08-04T01:58:31.500Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=41%, current=43
+%, status=PREPARING
+2026-08-04T01:58:31.758Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=43%, current=45
+%, status=PREPARING
+2026-08-04T01:58:31.764Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=single-stream, progress=46%, downloadedBytes=5291336, downloadedHuman=5.05 MiB, totalBytes=
+11492323, totalHuman=10.96 MiB, elapsedMs=6562
+2026-08-04T01:58:32.020Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=45%, current=47
+%, status=PREPARING
+2026-08-04T01:58:32.085Z INFO  [http-nio-8080-exec-4] [requestId=3d850bd6-93d8-40cb-9091-767818d79cca] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-8006
+-4bbbc0f63f58, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (
+KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:58:32.236Z INFO  [http-nio-8080-exec-4] [requestId=3d850bd6-93d8-40cb-9091-767818d79cca] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-80
+06-4bbbc0f63f58, status=200, durationMs=151
+2026-08-04T01:58:32.281Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=47%, current=49
+%, status=PREPARING
+2026-08-04T01:58:32.544Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=49%, current=51
+%, status=PREPARING
+2026-08-04T01:58:32.544Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=single-stream, progress=51%, downloadedBytes=5864776, downloadedHuman=5.59 MiB, totalBytes=
+11492323, totalHuman=10.96 MiB, elapsedMs=7343
+2026-08-04T01:58:32.815Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=51%, current=53
+%, status=PREPARING
+2026-08-04T01:58:33.080Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=53%, current=55
+%, status=PREPARING
+2026-08-04T01:58:33.086Z INFO  [http-nio-8080-exec-5] [requestId=cacf1c9c-0fb4-4901-ae8b-d6d13ad2684f] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-8006
+-4bbbc0f63f58, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (
+KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:58:33.090Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=single-stream, progress=56%, downloadedBytes=6438216, downloadedHuman=6.14 MiB, totalBytes=
+11492323, totalHuman=10.96 MiB, elapsedMs=7889
+2026-08-04T01:58:33.187Z INFO  [http-nio-8080-exec-5] [requestId=cacf1c9c-0fb4-4901-ae8b-d6d13ad2684f] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-80
+06-4bbbc0f63f58, status=200, durationMs=100
+2026-08-04T01:58:33.393Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=55%, current=57
+%, status=PREPARING
+2026-08-04T01:58:33.657Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=57%, current=59
+%, status=PREPARING
+2026-08-04T01:58:33.801Z ERROR [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix HTTP
+request failed or timed out: memberId=419222a0c1725a38175958981810edd7, method=crm.timeline.comment.add, endpoint=ht
+tps://abs7.bitrix24.ru/rest/crm.timeline.comment.add.json, durationMs=10023, error=Connect timed out
+
+org.springframework.web.client.ResourceAccessException: I/O error on POST request for "https://abs7.bitrix24.ru/rest
+/crm.timeline.comment.add.json": Connect timed out
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.createResourceAccessException(
+DefaultRestClient.java:776) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeInternal(DefaultRestCl
+ient.java:624) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(DefaultRestClient.jav
+a:572) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747) ~[spring-web-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(DefaultRestClient.
+java:921) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClient.java:844) ~[s
+pring-web-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:128) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:74) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixTimelineService.publishReadyLink(BitrixTimelineService.java:40) ~[!/:0.1.
+0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService.deliver(BitrixReadyLinkDeliveryService.java:44)
+~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService.retryPendingDeliveries(BitrixReadyLinkDeliverySe
+rvice.java:65) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.offer.VideoOfferLifecycleService.retryBitrixReadyLinks(VideoOfferLifecycleService.java
+:46) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.runInternal(ScheduledMethodRunnable.java:1
+28) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.lambda$run$1(ScheduledMethodRunnable.java:
+122) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at io.micrometer.observation.Observation.observe(Observation.java:569) ~[micrometer-observation-1.16.4.jar!/
+:1.16.4]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.run(ScheduledMethodRunnable.java:122) ~[sp
+ring-context-7.0.6.jar!/:7.0.6]
+        at org.springframework.scheduling.config.Task$OutcomeTrackingRunnable.run(Task.java:88) ~[spring-context-7.0
+.6.jar!/:7.0.6]
+        at org.springframework.scheduling.support.DelegatingErrorHandlingRunnable.run(DelegatingErrorHandlingRunnabl
+e.java:54) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.FutureTask.runAndReset(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(Unknown Source) ~[na:n
+a]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+Caused by: java.net.SocketTimeoutException: Connect timed out
+        at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(Unknown Source) ~[na:na]
+        at java.base/sun.nio.ch.NioSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/java.net.SocksSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/java.net.Socket.connect(Unknown Source) ~[na:na]
+        at java.base/sun.security.ssl.SSLSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/sun.net.NetworkClient.doConnect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.http.HttpClient.openServer(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.http.HttpClient.openServer(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsClient.<init>(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsClient.New(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.getNewHttpClient(Unknown Source)
+~[na:na]
+        at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect0(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.connect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsURLConnectionImpl.connect(Unknown Source) ~[na:na]
+        at org.springframework.http.client.SimpleClientHttpRequest.executeInternal(SimpleClientHttpRequest.java:80)
+~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.http.client.AbstractStreamingClientHttpRequest.executeInternal(AbstractStreamingClien
+tHttpRequest.java:87) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.http.client.AbstractClientHttpRequest.execute(AbstractClientHttpRequest.java:80) ~[sp
+ring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeInternal(DefaultRestCl
+ient.java:614) ~[spring-web-7.0.6.jar!/:7.0.6]
+        ... 24 common frames omitted
+
+2026-08-04T01:58:33.803Z ERROR [scheduling-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixTimelineService - Не удал
+ось добавить ссылку видеооффера 70817e33-91f8-43d3-8da1-f57bbda1d546 в Bitrix24: Connect timed out
+
+org.springframework.web.client.ResourceAccessException: I/O error on POST request for "https://abs7.bitrix24.ru/rest
+/crm.timeline.comment.add.json": Connect timed out
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.createResourceAccessException(
+DefaultRestClient.java:776) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeInternal(DefaultRestCl
+ient.java:624) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(DefaultRestClient.jav
+a:572) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747) ~[spring-web-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(DefaultRestClient.
+java:921) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClient.java:844) ~[s
+pring-web-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:128) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:74) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixTimelineService.publishReadyLink(BitrixTimelineService.java:40) ~[!/:0.1.
+0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService.deliver(BitrixReadyLinkDeliveryService.java:44)
+~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService.retryPendingDeliveries(BitrixReadyLinkDeliverySe
+rvice.java:65) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.offer.VideoOfferLifecycleService.retryBitrixReadyLinks(VideoOfferLifecycleService.java
+:46) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.runInternal(ScheduledMethodRunnable.java:1
+28) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.lambda$run$1(ScheduledMethodRunnable.java:
+122) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at io.micrometer.observation.Observation.observe(Observation.java:569) ~[micrometer-observation-1.16.4.jar!/
+:1.16.4]
+        at org.springframework.scheduling.support.ScheduledMethodRunnable.run(ScheduledMethodRunnable.java:122) ~[sp
+ring-context-7.0.6.jar!/:7.0.6]
+        at org.springframework.scheduling.config.Task$OutcomeTrackingRunnable.run(Task.java:88) ~[spring-context-7.0
+.6.jar!/:7.0.6]
+        at org.springframework.scheduling.support.DelegatingErrorHandlingRunnable.run(DelegatingErrorHandlingRunnabl
+e.java:54) ~[spring-context-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.FutureTask.runAndReset(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(Unknown Source) ~[na:n
+a]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+Caused by: java.net.SocketTimeoutException: Connect timed out
+        at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(Unknown Source) ~[na:na]
+        at java.base/sun.nio.ch.NioSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/java.net.SocksSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/java.net.Socket.connect(Unknown Source) ~[na:na]
+        at java.base/sun.security.ssl.SSLSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/sun.net.NetworkClient.doConnect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.http.HttpClient.openServer(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.http.HttpClient.openServer(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsClient.<init>(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsClient.New(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.getNewHttpClient(Unknown Source)
+~[na:na]
+        at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect0(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.connect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsURLConnectionImpl.connect(Unknown Source) ~[na:na]
+        at org.springframework.http.client.SimpleClientHttpRequest.executeInternal(SimpleClientHttpRequest.java:80)
+~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.http.client.AbstractStreamingClientHttpRequest.executeInternal(AbstractStreamingClien
+tHttpRequest.java:87) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.http.client.AbstractClientHttpRequest.execute(AbstractClientHttpRequest.java:80) ~[sp
+ring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeInternal(DefaultRestCl
+ient.java:614) ~[spring-web-7.0.6.jar!/:7.0.6]
+        ... 24 common frames omitted
+
+2026-08-04T01:58:33.915Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=59%, current=61
+%, status=PREPARING
+2026-08-04T01:58:33.917Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=single-stream, progress=61%, downloadedBytes=7011656, downloadedHuman=6.69 MiB, totalBytes=
+11492323, totalHuman=10.96 MiB, elapsedMs=8715
+2026-08-04T01:58:34.020Z INFO  [scheduling-1] [requestId=] r.a.v.bitrix.BitrixReadyLinkDeliveryService - Bitrix read
+y-link delivery finished: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, status=ERROR, commentId=null, error=Connect
+timed out
+2026-08-04T01:58:34.020Z INFO  [scheduling-1] [requestId=] r.a.videooffer.offer.VideoOfferLifecycleService - Bitrix
+ready-link retry cycle completed: processed=5
+2026-08-04T01:58:34.082Z INFO  [http-nio-8080-exec-6] [requestId=8380af8a-0bac-4503-b075-667dde63663a] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-8006
+-4bbbc0f63f58, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (
+KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:58:34.195Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=61%, current=63
+%, status=PREPARING
+2026-08-04T01:58:34.206Z INFO  [http-nio-8080-exec-6] [requestId=8380af8a-0bac-4503-b075-667dde63663a] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-80
+06-4bbbc0f63f58, status=200, durationMs=124
+2026-08-04T01:58:34.457Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=63%, current=65
+%, status=PREPARING
+2026-08-04T01:58:34.461Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=single-stream, progress=66%, downloadedBytes=7585096, downloadedHuman=7.23 MiB, totalBytes=
+11492323, totalHuman=10.96 MiB, elapsedMs=9259
+2026-08-04T01:58:34.716Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=65%, current=67
+%, status=PREPARING
+2026-08-04T01:58:34.971Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=67%, current=69
+%, status=PREPARING
+2026-08-04T01:58:35.078Z INFO  [http-nio-8080-exec-7] [requestId=b71cd2db-c2f7-4d95-9bbf-d2716ed03e12] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-8006
+-4bbbc0f63f58, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (
+KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:58:35.228Z INFO  [http-nio-8080-exec-7] [requestId=b71cd2db-c2f7-4d95-9bbf-d2716ed03e12] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-80
+06-4bbbc0f63f58, status=200, durationMs=150
+2026-08-04T01:58:35.232Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=69%, current=71
+%, status=PREPARING
+2026-08-04T01:58:35.233Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=single-stream, progress=71%, downloadedBytes=8174920, downloadedHuman=7.80 MiB, totalBytes=
+11492323, totalHuman=10.96 MiB, elapsedMs=10031
+2026-08-04T01:58:35.496Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=71%, current=73
+%, status=PREPARING
+2026-08-04T01:58:35.758Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=73%, current=75
+%, status=PREPARING
+2026-08-04T01:58:35.761Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=single-stream, progress=76%, downloadedBytes=8748360, downloadedHuman=8.34 MiB, totalBytes=
+11492323, totalHuman=10.96 MiB, elapsedMs=10560
+2026-08-04T01:58:36.011Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=75%, current=77
+%, status=PREPARING
+2026-08-04T01:58:36.075Z INFO  [http-nio-8080-exec-8] [requestId=70a4ce67-fa41-4922-963b-e53a93ffaf4d] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-8006
+-4bbbc0f63f58, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (
+KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:58:36.226Z INFO  [http-nio-8080-exec-8] [requestId=70a4ce67-fa41-4922-963b-e53a93ffaf4d] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-80
+06-4bbbc0f63f58, status=200, durationMs=150
+2026-08-04T01:58:36.268Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=77%, current=79
+%, status=PREPARING
+2026-08-04T01:58:36.536Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=79%, current=81
+%, status=PREPARING
+2026-08-04T01:58:36.537Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=single-stream, progress=81%, downloadedBytes=9321800, downloadedHuman=8.89 MiB, totalBytes=
+11492323, totalHuman=10.96 MiB, elapsedMs=11335
+2026-08-04T01:58:36.790Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=81%, current=83
+%, status=PREPARING
+2026-08-04T01:58:37.043Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=83%, current=85
+%, status=PREPARING
+2026-08-04T01:58:37.045Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=single-stream, progress=86%, downloadedBytes=9895240, downloadedHuman=9.44 MiB, totalBytes=
+11492323, totalHuman=10.96 MiB, elapsedMs=11844
+2026-08-04T01:58:37.081Z INFO  [http-nio-8080-exec-9] [requestId=c9f8762a-f8de-4a0a-b598-1ed939d7e0b8] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-8006
+-4bbbc0f63f58, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (
+KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:58:37.231Z INFO  [http-nio-8080-exec-9] [requestId=c9f8762a-f8de-4a0a-b598-1ed939d7e0b8] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-80
+06-4bbbc0f63f58, status=200, durationMs=149
+2026-08-04T01:58:37.295Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=85%, current=87
+%, status=PREPARING
+2026-08-04T01:58:37.549Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=87%, current=89
+%, status=PREPARING
+2026-08-04T01:58:37.803Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=89%, current=91
+%, status=PREPARING
+2026-08-04T01:58:37.804Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=single-stream, progress=91%, downloadedBytes=10468680, downloadedHuman=9.98 MiB, totalBytes
+=11492323, totalHuman=10.96 MiB, elapsedMs=12602
+2026-08-04T01:58:38.055Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=91%, current=93
+%, status=PREPARING
+2026-08-04T01:58:38.089Z INFO  [http-nio-8080-exec-10] [requestId=20df5529-ee92-4634-8e89-e71680aab1eb] ru.abs7.vide
+ooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-800
+6-4bbbc0f63f58, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+(KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:58:38.240Z INFO  [http-nio-8080-exec-10] [requestId=20df5529-ee92-4634-8e89-e71680aab1eb] ru.abs7.vide
+ooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-8
+006-4bbbc0f63f58, status=200, durationMs=150
+2026-08-04T01:58:38.308Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=93%, current=95
+%, status=PREPARING
+2026-08-04T01:58:38.311Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=single-stream, progress=96%, downloadedBytes=11042120, downloadedHuman=10.53 MiB, totalByte
+s=11492323, totalHuman=10.96 MiB, elapsedMs=13109
+2026-08-04T01:58:38.569Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=95%, current=97
+%, status=PREPARING
+2026-08-04T01:58:38.820Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=97%, current=99
+%, status=PREPARING
+2026-08-04T01:58:38.821Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=single-stream, progress=99%, downloadedBytes=11386184, downloadedHuman=10.86 MiB, totalByte
+s=11492323, totalHuman=10.96 MiB, elapsedMs=13619
+2026-08-04T01:58:39.076Z INFO  [http-nio-8080-exec-1] [requestId=1f360b4f-f2d4-4e29-9dc1-cda40ffd8d94] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-8006
+-4bbbc0f63f58, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (
+KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:58:39.080Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=99%, current=99
+%, status=PREPARING
+2026-08-04T01:58:39.081Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=single-stream, progress=99%, downloadedBytes=11402568, downloadedHuman=10.87 MiB, totalByte
+s=11492323, totalHuman=10.96 MiB, elapsedMs=13879
+2026-08-04T01:58:39.226Z INFO  [http-nio-8080-exec-1] [requestId=1f360b4f-f2d4-4e29-9dc1-cda40ffd8d94] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-80
+06-4bbbc0f63f58, status=200, durationMs=150
+2026-08-04T01:58:39.334Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=99%, current=99
+%, status=PREPARING
+2026-08-04T01:58:39.334Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=single-stream, progress=99%, downloadedBytes=11418952, downloadedHuman=10.89 MiB, totalByte
+s=11492323, totalHuman=10.96 MiB, elapsedMs=14133
+2026-08-04T01:58:39.587Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=99%, current=99
+%, status=PREPARING
+2026-08-04T01:58:39.590Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=single-stream, progress=99%, downloadedBytes=11435336, downloadedHuman=10.91 MiB, totalByte
+s=11492323, totalHuman=10.96 MiB, elapsedMs=14389
+2026-08-04T01:58:39.838Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=99%, current=99
+%, status=PREPARING
+2026-08-04T01:58:39.840Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=single-stream, progress=99%, downloadedBytes=11451720, downloadedHuman=10.92 MiB, totalByte
+s=11492323, totalHuman=10.96 MiB, elapsedMs=14638
+2026-08-04T01:58:40.090Z INFO  [http-nio-8080-exec-2] [requestId=455d2b26-b631-4b50-ad6d-69eebbf0067c] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-8006
+-4bbbc0f63f58, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (
+KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:58:40.092Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=99%, current=99
+%, status=PREPARING
+2026-08-04T01:58:40.093Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=single-stream, progress=99%, downloadedBytes=11468104, downloadedHuman=10.94 MiB, totalByte
+s=11492323, totalHuman=10.96 MiB, elapsedMs=14891
+2026-08-04T01:58:40.239Z INFO  [http-nio-8080-exec-2] [requestId=455d2b26-b631-4b50-ad6d-69eebbf0067c] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-80
+06-4bbbc0f63f58, status=200, durationMs=149
+2026-08-04T01:58:40.340Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=99%, current=99
+%, status=PREPARING
+2026-08-04T01:58:40.341Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=single-stream, progress=99%, downloadedBytes=11484488, downloadedHuman=10.95 MiB, totalByte
+s=11492323, totalHuman=10.96 MiB, elapsedMs=15139
+2026-08-04T01:58:40.593Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=99%, current=99
+%, status=PREPARING
+2026-08-04T01:58:40.594Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=single-stream, progress=99%, downloadedBytes=11492323, downloadedHuman=10.96 MiB, totalByte
+s=11492323, totalHuman=10.96 MiB, elapsedMs=15392
+2026-08-04T01:58:40.595Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Single
+ stream completed: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, co
+piedBytes=11492323, humanSize=10.96 MiB, durationMs=15084
+2026-08-04T01:58:40.596Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ transfer body finished: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=90
+0p, downloadedBytes=11492323, downloadedHuman=10.96 MiB, expectedBytes=11492323, durationMs=15571
+2026-08-04T01:58:40.596Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Moving
+ downloaded file: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, source=/app/data/videos/8aa8e380-b261-4fe9-8006-4bbb
+c0f63f58.download, target=/app/data/videos/8aa8e380-b261-4fe9-8006-4bbbc0f63f58.mp4, bytes=11492323
+2026-08-04T01:58:40.601Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Atomic
+ file move completed: source=/app/data/videos/8aa8e380-b261-4fe9-8006-4bbbc0f63f58.download, target=/app/data/videos
+/8aa8e380-b261-4fe9-8006-4bbbc0f63f58.mp4
+2026-08-04T01:58:40.849Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er progress persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, stage=kontur-download, previous=99%, current=99
+%, status=PREPARING
+2026-08-04T01:58:40.849Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ download progress: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, m
+ode=SINGLE_STREAM, stage=completed, progress=100%, downloadedBytes=11492323, downloadedHuman=10.96 MiB, elapsedMs=15
+648
+2026-08-04T01:58:40.850Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader - Kontur
+ video saved successfully: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, recordingKey=LKATA1owT5ZzqEyURWPC, file=/ap
+p/data/videos/8aa8e380-b261-4fe9-8006-4bbbc0f63f58.mp4, bytes=11492323, humanSize=10.96 MiB, quality=900p, totalDura
+tionMs=16716
+2026-08-04T01:58:40.851Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Kontur do
+wnloader returned successfully: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, path=/app/data/videos/8aa8e380-b261-4f
+e9-8006-4bbbc0f63f58.mp4, bytes=11492323, quality=900p, durationMs=17143
+2026-08-04T01:58:40.949Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Marking v
+ideo offer ready: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, previousStatus=PREPARING, path=/app/data/videos/8aa8
+e380-b261-4fe9-8006-4bbbc0f63f58.mp4, bytes=11492323, quality=900p
+2026-08-04T01:58:41.091Z INFO  [http-nio-8080-exec-3] [requestId=002f5db2-5ed8-4e63-9642-ea07fc34ffd4] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-8006
+-4bbbc0f63f58, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (
+KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:58:41.098Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er READY state persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, publicToken=d26c9a1d88c64ebca61be779f7fb12dd
+, readyAt=2026-08-04T01:58:40.950028874Z
+2026-08-04T01:58:41.098Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Publishin
+g ready link to Bitrix24: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, bitrixMemberId=419222a0c1725a38175958981810e
+dd7, entityType=LEAD, entityId=72066
+2026-08-04T01:58:41.242Z INFO  [http-nio-8080-exec-3] [requestId=002f5db2-5ed8-4e63-9642-ea07fc34ffd4] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-80
+06-4bbbc0f63f58, status=200, durationMs=151
+2026-08-04T01:58:41.251Z INFO  [video-offer-1] [requestId=] r.a.v.bitrix.BitrixReadyLinkDeliveryService - Bitrix rea
+dy-link delivery claimed: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, entityType=LEAD, entityId=72066
+2026-08-04T01:58:41.251Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixTimelineService - Bitrix
+ timeline publication started: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, memberId=419222a0c1725a38175958981810ed
+d7, entityType=LEAD, entityId=72066
+2026-08-04T01:58:41.251Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixTimelineService - Callin
+g crm.timeline.comment.add: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, entityType=lead, entityId=72066, publicUrl
+=https://offer.abs7.ru/o/d26c9a1d88c64ebca61be779f7fb12dd
+2026-08-04T01:58:41.252Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST
+ call started: memberId=419222a0c1725a38175958981810edd7, method=crm.timeline.comment.add, parameterNames=[fields]
+2026-08-04T01:58:41.306Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing B
+itrix REST request: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.ru, method=crm.timeline.comment.
+add, endpoint=https://abs7.bitrix24.ru/rest/crm.timeline.comment.add.json, tokenExpiresAt=2026-08-04T02:58:14.774703
+Z
+2026-08-04T01:58:42.087Z INFO  [http-nio-8080-exec-4] [requestId=3f4e2fec-18ce-4474-a404-7abf2df375f6] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-8006
+-4bbbc0f63f58, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (
+KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:58:42.237Z INFO  [http-nio-8080-exec-4] [requestId=3f4e2fec-18ce-4474-a404-7abf2df375f6] ru.abs7.video
+offer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/video-offers/8aa8e380-b261-4fe9-80
+06-4bbbc0f63f58, status=200, durationMs=149
+2026-08-04T01:58:51.316Z ERROR [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix HTTP
+ request failed or timed out: memberId=419222a0c1725a38175958981810edd7, method=crm.timeline.comment.add, endpoint=h
+ttps://abs7.bitrix24.ru/rest/crm.timeline.comment.add.json, durationMs=10010, error=Connect timed out
+
+org.springframework.web.client.ResourceAccessException: I/O error on POST request for "https://abs7.bitrix24.ru/rest
+/crm.timeline.comment.add.json": Connect timed out
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.createResourceAccessException(
+DefaultRestClient.java:776) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeInternal(DefaultRestCl
+ient.java:624) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(DefaultRestClient.jav
+a:572) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747) ~[spring-web-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(DefaultRestClient.
+java:921) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClient.java:844) ~[s
+pring-web-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:128) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:74) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixTimelineService.publishReadyLink(BitrixTimelineService.java:40) ~[!/:0.1.
+0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService.deliver(BitrixReadyLinkDeliveryService.java:44)
+~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.offer.VideoOfferProcessor.process(VideoOfferProcessor.java:94) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359) ~[spring-aop-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.j
+ava:190) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:158)
+ ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecutionInterceptor.j
+ava:112) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.FutureTask.run(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+Caused by: java.net.SocketTimeoutException: Connect timed out
+        at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(Unknown Source) ~[na:na]
+        at java.base/sun.nio.ch.NioSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/java.net.SocksSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/java.net.Socket.connect(Unknown Source) ~[na:na]
+        at java.base/sun.security.ssl.SSLSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/sun.net.NetworkClient.doConnect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.http.HttpClient.openServer(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.http.HttpClient.openServer(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsClient.<init>(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsClient.New(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.getNewHttpClient(Unknown Source)
+~[na:na]
+        at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect0(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.connect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsURLConnectionImpl.connect(Unknown Source) ~[na:na]
+        at org.springframework.http.client.SimpleClientHttpRequest.executeInternal(SimpleClientHttpRequest.java:80)
+~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.http.client.AbstractStreamingClientHttpRequest.executeInternal(AbstractStreamingClien
+tHttpRequest.java:87) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.http.client.AbstractClientHttpRequest.execute(AbstractClientHttpRequest.java:80) ~[sp
+ring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeInternal(DefaultRestCl
+ient.java:614) ~[spring-web-7.0.6.jar!/:7.0.6]
+        ... 19 common frames omitted
+
+2026-08-04T01:58:51.329Z ERROR [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixTimelineService - Не уда
+лось добавить ссылку видеооффера 8aa8e380-b261-4fe9-8006-4bbbc0f63f58 в Bitrix24: Connect timed out
+
+org.springframework.web.client.ResourceAccessException: I/O error on POST request for "https://abs7.bitrix24.ru/rest
+/crm.timeline.comment.add.json": Connect timed out
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.createResourceAccessException(
+DefaultRestClient.java:776) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeInternal(DefaultRestCl
+ient.java:624) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(DefaultRestClient.jav
+a:572) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747) ~[spring-web-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(DefaultRestClient.
+java:921) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClient.java:844) ~[s
+pring-web-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:128) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:74) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixTimelineService.publishReadyLink(BitrixTimelineService.java:40) ~[!/:0.1.
+0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService.deliver(BitrixReadyLinkDeliveryService.java:44)
+~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.offer.VideoOfferProcessor.process(VideoOfferProcessor.java:94) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359) ~[spring-aop-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.j
+ava:190) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:158)
+ ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecutionInterceptor.j
+ava:112) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.FutureTask.run(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+Caused by: java.net.SocketTimeoutException: Connect timed out
+        at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(Unknown Source) ~[na:na]
+        at java.base/sun.nio.ch.NioSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/java.net.SocksSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/java.net.Socket.connect(Unknown Source) ~[na:na]
+        at java.base/sun.security.ssl.SSLSocketImpl.connect(Unknown Source) ~[na:na]
+        at java.base/sun.net.NetworkClient.doConnect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.http.HttpClient.openServer(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.http.HttpClient.openServer(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsClient.<init>(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsClient.New(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.getNewHttpClient(Unknown Source)
+~[na:na]
+        at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect0(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.connect(Unknown Source) ~[na:na]
+        at java.base/sun.net.www.protocol.https.HttpsURLConnectionImpl.connect(Unknown Source) ~[na:na]
+        at org.springframework.http.client.SimpleClientHttpRequest.executeInternal(SimpleClientHttpRequest.java:80)
+~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.http.client.AbstractStreamingClientHttpRequest.executeInternal(AbstractStreamingClien
+tHttpRequest.java:87) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.http.client.AbstractClientHttpRequest.execute(AbstractClientHttpRequest.java:80) ~[sp
+ring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeInternal(DefaultRestCl
+ient.java:614) ~[spring-web-7.0.6.jar!/:7.0.6]
+        ... 19 common frames omitted
+
+2026-08-04T01:58:51.539Z INFO  [video-offer-1] [requestId=] r.a.v.bitrix.BitrixReadyLinkDeliveryService - Bitrix rea
+dy-link delivery finished: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, status=ERROR, commentId=null, error=Connect
+ timed out
+2026-08-04T01:58:51.641Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Bitrix de
+livery state persisted: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, deliveryStatus=ERROR, commentId=null, delivery
+Error=Connect timed out
+2026-08-04T01:58:51.643Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProcessor - Video off
+er processing completed: offerId=8aa8e380-b261-4fe9-8006-4bbbc0f63f58, publicToken=d26c9a1d88c64ebca61be779f7fb12dd,
+ status=READY, bitrixDelivery=ERROR, totalDurationMs=27935

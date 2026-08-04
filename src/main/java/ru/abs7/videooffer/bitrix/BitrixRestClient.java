@@ -4,11 +4,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
+import ru.abs7.videooffer.kontur.KonturTalkProperties;
 
+import java.net.Authenticator;
+import java.net.InetSocketAddress;
+import java.net.PasswordAuthentication;
+import java.net.ProxySelector;
+import java.net.http.HttpClient;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -23,32 +30,131 @@ public class BitrixRestClient {
     private static final ParameterizedTypeReference<Map<String, Object>> MAP_TYPE =
             new ParameterizedTypeReference<>() {};
 
-    private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(10);
-    private static final Duration READ_TIMEOUT = Duration.ofSeconds(30);
     private static final Duration TOKEN_REFRESH_AHEAD = Duration.ofMinutes(2);
 
     private final BitrixInstallationRepository repository;
     private final BitrixProperties properties;
     private final RestClient restClient;
+    private final Duration connectTimeout;
+    private final Duration readTimeout;
 
     public BitrixRestClient(
             BitrixInstallationRepository repository,
-            BitrixProperties properties) {
+            BitrixProperties properties,
+            KonturTalkProperties talkProperties) {
         this.repository = repository;
         this.properties = properties;
+        this.connectTimeout = Duration.ofSeconds(properties.connectTimeoutSecondsOrDefault());
+        this.readTimeout = Duration.ofSeconds(properties.readTimeoutSecondsOrDefault());
 
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(CONNECT_TIMEOUT);
-        requestFactory.setReadTimeout(READ_TIMEOUT);
-        this.restClient = RestClient.builder()
-                .requestFactory(requestFactory)
-                .build();
+        ResolvedProxy proxy = resolveProxy(properties, talkProperties);
+        this.restClient = buildRestClient(proxy);
 
-        log.info("Bitrix HTTP transport configured: connectTimeoutSeconds={}, readTimeoutSeconds={}, "
+        log.info("Bitrix HTTP transport configured: mode={}, proxySource={}, proxyHost={}, proxyPort={}, "
+                        + "proxyAuthenticationConfigured={}, connectTimeoutSeconds={}, readTimeoutSeconds={}, "
                         + "proactiveRefreshAheadSeconds={}",
-                CONNECT_TIMEOUT.toSeconds(),
-                READ_TIMEOUT.toSeconds(),
+                proxy.enabled() ? "HTTP_PROXY" : "DIRECT",
+                proxy.source(),
+                proxy.enabled() ? proxy.host() : "direct",
+                proxy.enabled() ? proxy.port() : null,
+                proxy.authenticationConfigured(),
+                connectTimeout.toSeconds(),
+                readTimeout.toSeconds(),
                 TOKEN_REFRESH_AHEAD.toSeconds());
+    }
+
+    private RestClient buildRestClient(ResolvedProxy proxy) {
+        RestClient.Builder builder = RestClient.builder();
+        if (!proxy.enabled()) {
+            SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+            requestFactory.setConnectTimeout(connectTimeout);
+            requestFactory.setReadTimeout(readTimeout);
+            return builder.requestFactory(requestFactory).build();
+        }
+
+        enableJdkProxyAuthenticationSchemes();
+        InetSocketAddress proxyAddress = InetSocketAddress.createUnresolved(proxy.host(), proxy.port());
+        HttpClient.Builder httpClientBuilder = HttpClient.newBuilder()
+                .connectTimeout(connectTimeout)
+                .followRedirects(HttpClient.Redirect.ALWAYS)
+                .version(HttpClient.Version.HTTP_1_1)
+                .proxy(ProxySelector.of(proxyAddress));
+
+        if (proxy.authenticationConfigured()) {
+            String username = proxy.username();
+            char[] password = proxy.password().toCharArray();
+            httpClientBuilder.authenticator(new Authenticator() {
+                @Override
+                protected PasswordAuthentication getPasswordAuthentication() {
+                    if (getRequestorType() == RequestorType.PROXY) {
+                        log.debug("Bitrix proxy requested authentication: proxyHost={}, proxyPort={}, scheme={}, prompt={}",
+                                getRequestingHost(), getRequestingPort(), getRequestingScheme(), getRequestingPrompt());
+                        return new PasswordAuthentication(username, password);
+                    }
+                    return null;
+                }
+            });
+        }
+
+        JdkClientHttpRequestFactory requestFactory =
+                new JdkClientHttpRequestFactory(httpClientBuilder.build());
+        requestFactory.setReadTimeout(readTimeout);
+        return builder.requestFactory(requestFactory).build();
+    }
+
+    private ResolvedProxy resolveProxy(
+            BitrixProperties bitrixProperties,
+            KonturTalkProperties talkProperties) {
+        BitrixProperties.ProxySettings explicit = bitrixProperties.proxyOrDefault();
+        if (explicit.enabledOrDefault()) {
+            validateProxy("app.bitrix.proxy", explicit.host(), explicit.port(),
+                    explicit.usernameConfigured(), explicit.passwordConfigured());
+            return new ResolvedProxy(
+                    true,
+                    explicit.host().trim(),
+                    explicit.port(),
+                    explicit.username(),
+                    explicit.password(),
+                    "BITRIX_PROXY");
+        }
+
+        KonturTalkProperties.ProxySettings talkProxy = talkProperties.proxyOrDefault();
+        if (bitrixProperties.reuseTalkProxyOrDefault() && talkProxy.enabledOrDefault()) {
+            validateProxy("app.talk.proxy", talkProxy.host(), talkProxy.port(),
+                    talkProxy.usernameConfigured(), talkProxy.passwordConfigured());
+            return new ResolvedProxy(
+                    true,
+                    talkProxy.host().trim(),
+                    talkProxy.port(),
+                    talkProxy.username(),
+                    talkProxy.password(),
+                    "TALK_PROXY");
+        }
+
+        return ResolvedProxy.direct();
+    }
+
+    private void validateProxy(
+            String prefix,
+            String host,
+            Integer port,
+            boolean usernameConfigured,
+            boolean passwordConfigured) {
+        if (host == null || host.isBlank()) {
+            throw new IllegalStateException(prefix + ".host must be configured when proxy is enabled");
+        }
+        if (port == null || port <= 0 || port > 65_535) {
+            throw new IllegalStateException(prefix + ".port must be between 1 and 65535");
+        }
+        if (usernameConfigured != passwordConfigured) {
+            throw new IllegalStateException(prefix + ".username and .password must be configured together");
+        }
+    }
+
+    private void enableJdkProxyAuthenticationSchemes() {
+        // Java may disable Basic authentication for HTTPS CONNECT by default.
+        System.setProperty("jdk.http.auth.tunneling.disabledSchemes", "");
+        System.setProperty("jdk.http.auth.proxying.disabledSchemes", "");
     }
 
     public Map<String, Object> call(
@@ -333,6 +439,24 @@ public class BitrixRestClient {
         return normalized.length() <= maxLength
                 ? normalized
                 : normalized.substring(0, maxLength) + "...";
+    }
+
+    private record ResolvedProxy(
+            boolean enabled,
+            String host,
+            Integer port,
+            String username,
+            String password,
+            String source) {
+
+        private static ResolvedProxy direct() {
+            return new ResolvedProxy(false, null, null, null, null, "NONE");
+        }
+
+        private boolean authenticationConfigured() {
+            return username != null && !username.isBlank()
+                    && password != null && !password.isBlank();
+        }
     }
 
     private String normalizeDomain(String value) {
