@@ -1,5 +1,7 @@
 package ru.abs7.videooffer.bitrix;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import ru.abs7.videooffer.offer.CrmEntityType;
 
@@ -12,6 +14,7 @@ import java.util.Base64;
 
 @Service
 public class BitrixContextSigner {
+    private static final Logger log = LoggerFactory.getLogger(BitrixContextSigner.class);
     private static final String HMAC_ALGORITHM = "HmacSHA256";
     private static final long TOKEN_LIFETIME_SECONDS = 4 * 60 * 60;
 
@@ -31,7 +34,10 @@ public class BitrixContextSigner {
                 + context.entityId() + "|"
                 + expiresAt;
         byte[] payloadBytes = payload.getBytes(StandardCharsets.UTF_8);
-        return encode(payloadBytes) + "." + encode(sign(payloadBytes));
+        String token = encode(payloadBytes) + "." + encode(sign(payloadBytes));
+        log.info("Bitrix context signed: memberId={}, entityType={}, entityId={}, expiresAt={}",
+                context.memberId(), context.entityType(), context.entityId(), expiresAt);
+        return token;
     }
 
     public BitrixPlacementContext verify(String token) {
@@ -75,10 +81,13 @@ public class BitrixContextSigner {
             throw new IllegalArgumentException("Контекст Bitrix24 истёк или содержит неверный ID");
         }
 
-        return new BitrixPlacementContext(
+        BitrixPlacementContext context = new BitrixPlacementContext(
                 payload[0],
                 CrmEntityType.valueOf(payload[1]),
                 entityId);
+        log.info("Bitrix context verified: memberId={}, entityType={}, entityId={}, expiresAt={}",
+                context.memberId(), context.entityType(), context.entityId(), expiresAt);
+        return context;
     }
 
     private byte[] sign(byte[] payload) {

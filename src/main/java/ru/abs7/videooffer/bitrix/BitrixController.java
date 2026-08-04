@@ -1,6 +1,8 @@
 package ru.abs7.videooffer.bitrix;
 
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +28,7 @@ import java.util.regex.Pattern;
 @RestController
 @RequestMapping("/bitrix")
 public class BitrixController {
+    private static final Logger log = LoggerFactory.getLogger(BitrixController.class);
     private static final Pattern ID_PATTERN = Pattern.compile(
             "\\\"ID\\\"\\s*:\\s*\\\"?(\\d+)\\\"?");
 
@@ -50,11 +53,16 @@ public class BitrixController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public BitrixInstallationService.InstallationResult install(
             @RequestParam MultiValueMap<String, String> parameters) {
-        return installationService.install(parameters);
+        log.info("Bitrix installation callback received: parameterNames={}", parameters.keySet());
+        BitrixInstallationService.InstallationResult result = installationService.install(parameters);
+        log.info("Bitrix installation callback completed: domain={}, memberId={}, placements={}",
+                result.domain(), result.memberId(), result.placements());
+        return result;
     }
 
     @GetMapping(value = "/install", produces = MediaType.APPLICATION_JSON_VALUE)
     public Map<String, String> installInfo() {
+        log.info("Bitrix installation endpoint opened with GET");
         return Map.of(
                 "status", "READY",
                 "message", "Этот URL должен вызываться Bitrix24 методом POST при установке приложения");
@@ -65,12 +73,15 @@ public class BitrixController {
             produces = MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<String> widget(
             @RequestParam MultiValueMap<String, String> parameters) {
+        log.info("Bitrix widget callback received: parameterNames={}", parameters.keySet());
         String placement = required(parameters, "PLACEMENT");
         String memberId = required(parameters, "member_id");
         String placementOptions = required(parameters, "PLACEMENT_OPTIONS");
 
         CrmEntityType entityType = CrmEntityType.fromBitrixPlacement(placement);
         long entityId = extractEntityId(placementOptions);
+        log.info("Bitrix widget context resolved: placement={}, memberId={}, entityType={}, entityId={}",
+                placement, memberId, entityType, entityId);
         String contextToken = contextSigner.create(
                 new BitrixPlacementContext(memberId, entityType, entityId));
 
@@ -80,6 +91,8 @@ public class BitrixController {
                 .replace("{{ENTITY_LABEL}}", entityType.russianLabel())
                 .replace("{{ENTITY_ID}}", Long.toString(entityId));
 
+        log.info("Bitrix widget HTML generated: entityType={}, entityId={}, htmlBytes={}",
+                entityType, entityId, html.getBytes(StandardCharsets.UTF_8).length);
         return ResponseEntity.ok()
                 .contentType(MediaType.TEXT_HTML)
                 .body(html);
@@ -91,7 +104,12 @@ public class BitrixController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<VideoOfferResponse> createFromBitrix(
             @Valid @RequestBody BitrixCreateVideoOfferRequest request) {
+        log.info("Bitrix video offer creation requested: recordingUrlPresent={}, accompanyingTextLength={}",
+                request.recordingUrl() != null && !request.recordingUrl().isBlank(),
+                request.accompanyingText() == null ? 0 : request.accompanyingText().length());
         BitrixPlacementContext context = contextSigner.verify(request.contextToken());
+        log.info("Bitrix signed context verified: memberId={}, entityType={}, entityId={}",
+                context.memberId(), context.entityType(), context.entityId());
         VideoOffer offer = videoOfferService.create(new CreateVideoOfferRequest(
                 context.entityType(),
                 context.entityId(),
@@ -100,6 +118,8 @@ public class BitrixController {
                 request.recordingUrl(),
                 request.accompanyingText()));
 
+        log.info("Bitrix video offer accepted: offerId={}, entityType={}, entityId={}, status={}",
+                offer.getId(), offer.getCrmEntityType(), offer.getCrmEntityId(), offer.getStatus());
         return ResponseEntity.accepted().body(videoOfferService.response(offer));
     }
 

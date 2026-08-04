@@ -32,20 +32,43 @@ public class BitrixRestClient {
         this.restClient = RestClient.builder().build();
     }
 
-    public Map<String, Object> call(String memberId, String method, Map<String, Object> parameters) {
+    public Map<String, Object> call(
+            String memberId,
+            String method,
+            Map<String, Object> parameters) {
+        long startedAt = System.nanoTime();
+        log.info("Bitrix REST call started: memberId={}, method={}, parameterNames={}",
+                memberId, method, parameters.keySet());
+
         BitrixInstallation installation = repository.findByMemberId(memberId)
                 .orElseThrow(() -> new IllegalStateException(
                         "Установка Bitrix24 не найдена для member_id=" + memberId));
 
         try {
-            return execute(installation, method, parameters);
+            Map<String, Object> response = execute(installation, method, parameters);
+            log.info("Bitrix REST call completed: memberId={}, method={}, durationMs={}, responseKeys={}",
+                    memberId, method, elapsedMillis(startedAt), response.keySet());
+            return response;
         } catch (BitrixRestException error) {
             if (!isAuthorizationError(error)) {
+                log.error("Bitrix REST call failed: memberId={}, method={}, errorCode={}, durationMs={}, error={}",
+                        memberId,
+                        method,
+                        error.getErrorCode(),
+                        elapsedMillis(startedAt),
+                        error.getMessage(),
+                        error);
                 throw error;
             }
 
+            log.warn("Bitrix REST authorization error, refreshing token: memberId={}, method={}, "
+                            + "errorCode={}, error={}",
+                    memberId, method, error.getErrorCode(), error.getMessage());
             BitrixInstallation refreshed = refreshAuthorization(memberId);
-            return execute(refreshed, method, parameters);
+            Map<String, Object> response = execute(refreshed, method, parameters);
+            log.info("Bitrix REST call completed after token refresh: memberId={}, method={}, durationMs={}",
+                    memberId, method, elapsedMillis(startedAt));
+            return response;
         }
     }
 
@@ -53,19 +76,46 @@ public class BitrixRestClient {
             BitrixInstallation installation,
             String method,
             Map<String, Object> parameters) {
+        long startedAt = System.nanoTime();
         Map<String, Object> body = new LinkedHashMap<>(parameters);
         body.put("auth", installation.getAccessToken());
 
         String endpoint = "https://" + installation.getPortalDomain()
                 + "/rest/" + method + ".json";
 
-        Map<String, Object> response = restClient.post()
-                .uri(endpoint)
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .body(body)
-                .retrieve()
-                .body(MAP_TYPE);
+        log.info("Executing Bitrix REST request: memberId={}, domain={}, method={}, endpoint={}, "
+                        + "tokenExpiresAt={}",
+                installation.getMemberId(),
+                installation.getPortalDomain(),
+                method,
+                endpoint,
+                installation.getTokenExpiresAt());
+
+        Map<String, Object> response;
+        try {
+            response = restClient.post()
+                    .uri(endpoint)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .body(body)
+                    .retrieve()
+                    .body(MAP_TYPE);
+        } catch (RuntimeException error) {
+            log.error("Bitrix HTTP request failed: memberId={}, method={}, endpoint={}, durationMs={}, error={}",
+                    installation.getMemberId(),
+                    method,
+                    endpoint,
+                    elapsedMillis(startedAt),
+                    rootMessage(error),
+                    error);
+            throw error;
+        }
+
+        log.info("Bitrix REST response received: memberId={}, method={}, durationMs={}, responseKeys={}",
+                installation.getMemberId(),
+                method,
+                elapsedMillis(startedAt),
+                response == null ? "null" : response.keySet());
 
         if (response == null) {
             throw new BitrixRestException("EMPTY_RESPONSE", "Bitrix24 вернул пустой ответ");
@@ -76,6 +126,8 @@ public class BitrixRestClient {
             String code = String.valueOf(error);
             String description = String.valueOf(
                     response.getOrDefault("error_description", "Ошибка Bitrix24: " + code));
+            log.error("Bitrix REST returned API error: memberId={}, method={}, errorCode={}, description={}",
+                    installation.getMemberId(), method, code, description);
             throw new BitrixRestException(code, description);
         }
 
@@ -83,6 +135,9 @@ public class BitrixRestClient {
     }
 
     private synchronized BitrixInstallation refreshAuthorization(String memberId) {
+        long startedAt = System.nanoTime();
+        log.info("Refreshing Bitrix OAuth tokens: memberId={}", memberId);
+
         BitrixInstallation installation = repository.findByMemberId(memberId)
                 .orElseThrow(() -> new IllegalStateException(
                         "Установка Bitrix24 не найдена для member_id=" + memberId));
@@ -91,25 +146,36 @@ public class BitrixRestClient {
             throw new IllegalStateException("У Bitrix24 отсутствует refresh_token");
         }
 
-        Map<String, Object> response = restClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .scheme("https")
-                        .host("oauth.bitrix.info")
-                        .path("/oauth/token/")
-                        .queryParam("grant_type", "refresh_token")
-                        .queryParam("client_id", properties.clientId())
-                        .queryParam("client_secret", properties.clientSecret())
-                        .queryParam("refresh_token", installation.getRefreshToken())
-                        .build())
-                .accept(MediaType.APPLICATION_JSON)
-                .retrieve()
-                .body(MAP_TYPE);
+        Map<String, Object> response;
+        try {
+            response = restClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .scheme("https")
+                            .host("oauth.bitrix.info")
+                            .path("/oauth/token/")
+                            .queryParam("grant_type", "refresh_token")
+                            .queryParam("client_id", properties.clientId())
+                            .queryParam("client_secret", properties.clientSecret())
+                            .queryParam("refresh_token", installation.getRefreshToken())
+                            .build())
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .body(MAP_TYPE);
+        } catch (RuntimeException error) {
+            log.error("Bitrix OAuth token refresh HTTP request failed: memberId={}, durationMs={}, error={}",
+                    memberId, elapsedMillis(startedAt), rootMessage(error), error);
+            throw error;
+        }
 
         if (response == null || response.get("error") != null) {
-            String code = response == null ? "EMPTY_RESPONSE" : String.valueOf(response.get("error"));
+            String code = response == null
+                    ? "EMPTY_RESPONSE"
+                    : String.valueOf(response.get("error"));
             String description = response == null
                     ? "Bitrix24 вернул пустой ответ при обновлении токена"
                     : String.valueOf(response.getOrDefault("error_description", code));
+            log.error("Bitrix OAuth token refresh failed: memberId={}, errorCode={}, description={}",
+                    memberId, code, description);
             throw new BitrixRestException(code, description);
         }
 
@@ -121,7 +187,8 @@ public class BitrixRestClient {
 
         installation.updateAuthorization(domain, accessToken, refreshToken, expiresAt);
         BitrixInstallation saved = repository.saveAndFlush(installation);
-        log.info("OAuth-токены Bitrix24 обновлены, memberId={}", memberId);
+        log.info("OAuth-токены Bitrix24 обновлены: memberId={}, domain={}, expiresAt={}, durationMs={}",
+                memberId, domain, expiresAt, elapsedMillis(startedAt));
         return saved;
     }
 
@@ -159,6 +226,20 @@ public class BitrixRestClient {
                 || message.contains("AUTH")
                 || message.contains("TOKEN")
                 || message.contains("EXPIRED");
+    }
+
+    private long elapsedMillis(long startedAt) {
+        return (System.nanoTime() - startedAt) / 1_000_000L;
+    }
+
+    private String rootMessage(Throwable error) {
+        Throwable current = error;
+        while (current.getCause() != null) {
+            current = current.getCause();
+        }
+        return current.getMessage() == null
+                ? current.getClass().getSimpleName()
+                : current.getMessage();
     }
 
     private String normalizeDomain(String value) {

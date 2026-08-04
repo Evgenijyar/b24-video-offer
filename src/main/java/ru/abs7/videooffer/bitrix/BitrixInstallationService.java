@@ -36,7 +36,12 @@ public class BitrixInstallationService {
     }
 
     public InstallationResult install(MultiValueMap<String, String> parameters) {
+        log.info("Starting Bitrix installation: parameterNames={}", parameters.keySet());
         AuthData auth = AuthData.from(parameters);
+        log.info("Bitrix auth data parsed: domain={}, memberId={}, expiresAt={}, accessTokenPresent={}, refreshTokenPresent={}",
+                auth.domain(), auth.memberId(), auth.expiresAt(),
+                auth.accessToken() != null && !auth.accessToken().isBlank(),
+                auth.refreshToken() != null && !auth.refreshToken().isBlank());
         BitrixInstallation installation = repository.findByMemberId(auth.memberId())
                 .orElseGet(() -> BitrixInstallation.create(
                         auth.memberId(),
@@ -48,19 +53,27 @@ public class BitrixInstallationService {
         installation.updateAuthorization(
                 auth.domain(), auth.accessToken(), auth.refreshToken(), auth.expiresAt());
         repository.saveAndFlush(installation);
+        log.info("Bitrix installation authorization persisted: domain={}, memberId={}",
+                auth.domain(), auth.memberId());
 
         Map<String, String> results = new LinkedHashMap<>();
         for (String placement : PLACEMENTS) {
             try {
+                log.info("Binding Bitrix placement: memberId={}, placement={}, handler={}",
+                        auth.memberId(), placement, handlerUrl);
                 restClient.call(auth.memberId(), "placement.bind", Map.of(
                         "PLACEMENT", placement,
                         "HANDLER", handlerUrl,
                         "TITLE", "Сформировать видеооффер"));
                 results.put(placement, "BOUND");
+                log.info("Bitrix placement bound: memberId={}, placement={}", auth.memberId(), placement);
             } catch (BitrixRestException error) {
                 if (isAlreadyBound(error)) {
                     results.put(placement, "ALREADY_BOUND");
+                    log.info("Bitrix placement already bound: memberId={}, placement={}", auth.memberId(), placement);
                 } else {
+                    log.error("Bitrix placement binding failed: memberId={}, placement={}, errorCode={}, error={}",
+                            auth.memberId(), placement, error.getErrorCode(), error.getMessage(), error);
                     throw error;
                 }
             }

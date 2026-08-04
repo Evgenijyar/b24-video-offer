@@ -1,6 +1,8 @@
 package ru.abs7.videooffer.publicpage;
 
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -23,6 +25,7 @@ import java.nio.file.Path;
 
 @RestController
 public class PublicOfferController {
+    private static final Logger log = LoggerFactory.getLogger(PublicOfferController.class);
     private static final int BUFFER_SIZE = 64 * 1024;
 
     private final VideoOfferService service;
@@ -33,7 +36,8 @@ public class PublicOfferController {
 
     @GetMapping(value = "/o/{token}", produces = MediaType.TEXT_HTML_VALUE)
     public byte[] page(@PathVariable String token) throws IOException {
-        service.getByToken(token);
+        VideoOffer offer = service.getByToken(token);
+        log.info("Public offer page requested: offerId={}, status={}", offer.getId(), offer.getStatus());
         try (InputStream input = new ClassPathResource("static/offer.html").getInputStream()) {
             return input.readAllBytes();
         }
@@ -41,7 +45,10 @@ public class PublicOfferController {
 
     @GetMapping("/api/public/offers/{token}")
     public PublicOfferResponse data(@PathVariable String token) {
-        return PublicOfferResponse.from(service.getByToken(token));
+        VideoOffer offer = service.getByToken(token);
+        log.info("Public offer data requested: offerId={}, status={}, progress={}%",
+                offer.getId(), offer.getStatus(), offer.getProgressPercent());
+        return PublicOfferResponse.from(offer);
     }
 
     @GetMapping("/media/{token}")
@@ -55,6 +62,8 @@ public class PublicOfferController {
         }
 
         Path path = Path.of(offer.getVideoFilePath());
+        log.info("Public video stream requested: offerId={}, rangeHeader={}, file={}",
+                offer.getId(), rangeHeader, path);
         if (!Files.isRegularFile(path)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Видео отсутствует на сервере");
         }
@@ -84,6 +93,9 @@ public class PublicOfferController {
                     "bytes " + range.start() + "-" + range.end() + "/" + fileSize);
         }
 
+        long streamStartedAt = System.nanoTime();
+        log.info("Public video stream started: offerId={}, start={}, end={}, length={}, partial={}",
+                offer.getId(), range.start(), range.end(), range.length(), range.partial());
         try (RandomAccessFile file = new RandomAccessFile(path.toFile(), "r");
              OutputStream output = response.getOutputStream()) {
             file.seek(range.start());
@@ -98,6 +110,8 @@ public class PublicOfferController {
                 remaining -= read;
             }
         }
+        log.info("Public video stream completed: offerId={}, length={}, durationMs={}",
+                offer.getId(), range.length(), (System.nanoTime() - streamStartedAt) / 1_000_000L);
     }
 
     private record ByteRange(long start, long end, boolean partial) {

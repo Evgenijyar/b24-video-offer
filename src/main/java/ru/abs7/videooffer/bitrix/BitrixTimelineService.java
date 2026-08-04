@@ -23,8 +23,11 @@ public class BitrixTimelineService {
     }
 
     public void publishReadyLink(VideoOffer offer) {
+        log.info("Bitrix timeline publication started: offerId={}, memberId={}, entityType={}, entityId={}",
+                offer.getId(), offer.getBitrixMemberId(), offer.getCrmEntityType(), offer.getCrmEntityId());
         if (offer.getBitrixMemberId() == null || offer.getBitrixMemberId().isBlank()) {
             offer.markBitrixDeliveryNotRequired();
+            log.info("Bitrix timeline publication not required: offerId={}, reason=no-member-id", offer.getId());
             return;
         }
 
@@ -32,6 +35,8 @@ public class BitrixTimelineService {
         String comment = "Видео-оффер готов.\n\nСсылка: " + publicUrl;
 
         try {
+            log.info("Calling crm.timeline.comment.add: offerId={}, entityType={}, entityId={}, publicUrl={}",
+                    offer.getId(), offer.getCrmEntityType().bitrixApiName(), offer.getCrmEntityId(), publicUrl);
             Map<String, Object> response = restClient.call(
                     offer.getBitrixMemberId(),
                     "crm.timeline.comment.add",

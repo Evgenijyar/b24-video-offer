@@ -24,6 +24,7 @@ public class VideoOfferLifecycleService {
 
     @EventListener(ApplicationReadyEvent.class)
     public void recoverInterruptedOffers() {
+        log.info("Checking interrupted video offers after application startup");
         var pending = service.findPendingForRecovery();
         if (!pending.isEmpty()) {
             log.info("Возобновляем {} незавершённых видеоофферов", pending.size());
@@ -33,6 +34,7 @@ public class VideoOfferLifecycleService {
 
     @Scheduled(cron = "${app.video.cleanup-cron:0 15 * * * *}")
     public void cleanupExpiredOffers() {
+        log.info("Scheduled expired video offer cleanup started");
         for (VideoOffer offer : service.findExpired()) {
             try {
                 if (offer.getVideoFilePath() != null) {
@@ -41,9 +43,10 @@ public class VideoOfferLifecycleService {
                 service.delete(offer);
                 log.info("Удалён просроченный видеооффер {}", offer.getId());
             } catch (Exception error) {
-                log.warn("Не удалось удалить просроченный видеооффер {}: {}",
-                        offer.getId(), error.getMessage());
+                log.error("Не удалось удалить просроченный видеооффер {}: {}",
+                        offer.getId(), error.getMessage(), error);
             }
         }
+        log.info("Scheduled expired video offer cleanup completed");
     }
 }

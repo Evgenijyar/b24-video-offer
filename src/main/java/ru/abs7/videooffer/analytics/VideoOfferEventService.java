@@ -1,6 +1,8 @@
 package ru.abs7.videooffer.analytics;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import ru.abs7.videooffer.offer.VideoOffer;
 import ru.abs7.videooffer.offer.VideoOfferService;
@@ -11,6 +13,7 @@ import java.util.HexFormat;
 
 @Service
 public class VideoOfferEventService {
+    private static final Logger log = LoggerFactory.getLogger(VideoOfferEventService.class);
     private final VideoOfferService videoOfferService;
     private final VideoOfferEventRepository repository;
 
@@ -25,12 +28,15 @@ public class VideoOfferEventService {
         VideoOffer offer = videoOfferService.getByToken(token);
         String userAgent = truncate(httpRequest.getHeader("User-Agent"), 2000);
         String remoteAddress = resolveRemoteAddress(httpRequest);
+        log.info("Recording public video event: offerId={}, eventType={}, positionSeconds={}, userAgentPresent={}",
+                offer.getId(), request.eventType(), request.playbackPositionSeconds(), userAgent != null);
         repository.save(VideoOfferEvent.create(
                 offer,
                 request.eventType(),
                 request.playbackPositionSeconds(),
                 userAgent,
                 hash(remoteAddress)));
+        log.info("Public video event persisted: offerId={}, eventType={}", offer.getId(), request.eventType());
     }
 
     private String resolveRemoteAddress(HttpServletRequest request) {
