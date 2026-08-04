@@ -1,0 +1,569 @@
+﻿Last login: Tue Aug  4 21:57:48 2026 from 216.57.105.22
+root@VM-397286:~# export PAGER=cat
+root@VM-397286:~# export SYSTEMD_PAGER=cat
+root@VM-397286:~# export GIT_PAGER=cat
+x/sites-enabled/${DOMAIN}.conf"
+
+nginx -t
+sysroot@VM-397286:~# export LESS=-FRSX
+root@VM-397286:~# export COMPOSE_PROGRESS=plain
+root@VM-397286:~#
+lroot@VM-397286:~# set -Eeuo pipefail
+root@VM-397286:~#
+Troot@VM-397286:~# DOMAIN="offer.abs7.ru"
+root@VM-397286:~# APP_DIR="/opt/b24-video-offer"
+{TEroot@VM-397286:~# REPO_URL="https://github.com/Evgenijyar/b24-video-offer.git"
+root@VM-397286:~# NGINX_CONF="/etc/nginx/sites-available/${DOMAIN}.conf"
+enroot@VM-397286:~#
+troot@VM-397286:~# trap '
+>   CODE=$?
+>   echo
+>   echo "============================================================"
+>   echo "DEPLOYMENT FAILED, EXIT CODE: ${CODE}"
+>   echo "============================================================"
+${CHALLENGE>   if [ -d /opt/b24-video-offer ]; then
+>     cd /opt/b24-video-offer
+>     docker compose ps 2>/dev/null || true
+>     docker compose logs --no-color --tail=200 app 2>/dev/null || true
+>   fi
+>   nginx -t 2>&1 || true
+>   exit ${CODE}
+> ' ERR
+root@VM-397286:~#
+root@VM-397286:~# echo
+
+root@VM-397286:~# echo "============================================================"
+============================================================
+root@VM-397286:~# echo "1. CLONING APPLICATION"
+1. CLONING APPLICATION
+root@VM-397286:~# echo "============================================================"
+============================================================
+root@VM-397286:~#
+root@VM-397286:~# if [ -d "${APP_DIR}/.git" ]; then
+>   cd "${APP_DIR}"
+>   git fetch origin
+>   git reset --hard origin/main
+> else
+>   rm -rf "${APP_DIR}"
+>   git clone "${REPO_URL}" "${APP_DIR}"
+>   cd "${APP_DIR}"
+> fi
+Cloning into '/opt/b24-video-offer'...
+remote: Enumerating objects: 299, done.
+remote: Counting objects: 100% (299/299), done.
+remote: Compressing objects: 100% (203/203), done.
+remote: Total 299 (delta 103), reused 247 (delta 51), pack-reused 0 (from 0)
+Receiving objects: 100% (299/299), 177.66 KiB | 1.71 MiB/s, done.
+Resolving deltas: 100% (103/103), done.
+root@VM-397286:/opt/b24-video-offer#
+root@VM-397286:/opt/b24-video-offer# echo
+
+root@VM-397286:/opt/b24-video-offer# echo "Current commit:"
+Current commit:
+/letsenroot@VM-397286:/opt/b24-video-offer# git log -1 --oneline --decorate
+bf6ca0c (HEAD -> main, origin/main, origin/HEAD) Fix Bitrix proxy test compilation
+root@VM-397286:/opt/b24-video-offer#
+root@VM-397286:/opt/b24-video-offer# echo
+
+
+ech
+root@VM-397286:/opt/b24-video-offer# echo "=========================================================
+==="
+============================================================
+==============================root@VM-397286:/opt/b24-video-offer# echo "2. SERVER-SPECIFIC DOCKER S
+ETTINGS"
+2. SERVER-SPECIFIC DOCKER SETTINGS
+root@VM-397286:/opt/b24-video-offer# echo "=========================================================
+==="
+============================================================
+ > "${NGINXroot@VM-397286:/opt/b24-video-offer#
+root@VM-397286:/opt/b24-video-offer# cat > "${APP_DIR}/docker-compose.override.yml" <<'YAML'
+> services:
+>   app:
+>     environment:
+>       JAVA_TOOL_OPTIONS: >-
+>         -Xms128m
+/ {
+     >         -Xmx512m
+>         -XX:MaxMetaspaceSize=192m
+>         -XX:+UseSerialGC
+>         -Djava.security.egd=file:/dev/./urandom
+>
+>       # На новом сервере прямой доступ к Контур.Толку и Bitrix24 работает.
+>       # Поэтому внешний прокси здесь не используется.
+>       APP_TALK_PROXY_ENABLED: "false"
+>       APP_BITRIX_REUSE_TALK_PROXY: "false"
+ >       APP_BITRIX_PROXY_ENABLED: "false"
+>
+ >     mem_limit: 768m
+>     cpus: "1.50"
+> YAML
+root@VM-397286:/opt/b24-video-offer#
+root@VM-397286:/opt/b24-video-offer# grep -qxF 'docker-compose.override.yml' .git/info/exclude 2>/de
+v/null \
+>   || echo 'docker-compose.override.yml' >> .git/info/exclude
+y_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forroot@VM-397286:/opt/b24-video-offer#
+root@VM-397286:/opt/b24-video-offer# echo
+
+root@VM-397286:/opt/b24-video-offer# echo "Resolved Docker Compose configuration:"
+Resolved Docker Compose configuration:
+root@VM-397286:/opt/b24-video-offer# docker compose config --services
+app
+root@VM-397286:/opt/b24-video-offer# docker compose config | grep -E \
+er Range \$http_range;
+        pro>   'container_name:|127.0.0.1:8080|mem_limit:|cpus:|APP_TALK_PROXY_ENABLED|APP_BITRIX_RE
+USE_TALK_PROXY' \
+>   || true
+00s;
+         cpus: 1.5
+    container_name: b24-video-offer
+      APP_BITRIX_REUSE_TALK_PROXY: "false"
+      APP_TALK_PROXY_ENABLED: "false"
+    mem_limit: "805306368"
+root@VM-397286:/opt/b24-video-offer#
+root@VM-397286:/opt/b24-video-offer# echo
+
+root@VM-397286:/opt/b24-video-offer# echo "=========================================================
+==="
+============================================================
+root@VM-397286:/opt/b24-video-offer# echo "3. BUILDING AND STARTING APPLICATION"
+3. BUILDING AND STARTING APPLICATION
+root@VM-397286:/opt/b24-video-offer# echo "=========================================================
+==="
+============================================================
+root@VM-397286:/opt/b24-video-offer#
+root@VM-397286:/opt/b24-video-offer# chmod +x deploy.py
+ho
+ecroot@VM-397286:/opt/b24-video-offer# python3 deploy.py
+ho "==============+ git fetch origin
++ git reset --hard origin/main
+HEAD is now at bf6ca0c Fix Bitrix proxy test compilation
++ docker compose build --pull
+ Image b24-video-offer-app Building
+#1 [internal] load local bake definitions
+#1 reading from stdin 516B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 410B done
+#2 DONE 0.1s
+
+#3 [internal] load metadata for docker.io/library/maven:3.9.16-eclipse-temurin-21
+#3 DONE 6.4s
+
+#4 [internal] load metadata for docker.io/library/eclipse-temurin:21-jre
+#4 DONE 13.2s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.1s
+
+#6 [internal] load build context
+#6 DONE 0.0s
+
+#7 [build 1/6] FROM docker.io/library/maven:3.9.16-eclipse-temurin-21@sha256:c07f7ccfb8ca6c9fa29ee52
+3f00afa7d2ca6132c92f8652c4aebb5ee3491f502
+#7 resolve docker.io/library/maven:3.9.16-eclipse-temurin-21@sha256:c07f7ccfb8ca6c9fa29ee523f00afa7d
+2ca6132c92f8652c4aebb5ee3491f502 0.1s done
+#7 DONE 0.1s
+
+#8 [stage-1 1/4] FROM docker.io/library/eclipse-temurin:21-jre@sha256:8cef5fc7bebe421363ab543a2f4db5
+caf7d119d8db67d56b0f56c485d2de4d55
+#8 resolve docker.io/library/eclipse-temurin:21-jre@sha256:8cef5fc7bebe421363ab543a2f4db5caf7d119d8d
+b67d56b0f56c485d2de4d55
+#8 ...
+
+#9 [build 2/6] WORKDIR /workspace
+#9 CACHED
+
+#8 [stage-1 1/4] FROM docker.io/library/eclipse-temurin:21-jre@sha256:8cef5fc7bebe421363ab543a2f4db5
+caf7d119d8db67d56b0f56c485d2de4d55
+#8 resolve docker.io/library/eclipse-temurin:21-jre@sha256:8cef5fc7bebe421363ab543a2f4db5caf7d119d8d
+b67d56b0f56c485d2de4d55 0.1s done
+#8 ...
+
+#6 [internal] load build context
+#6 transferring context: 253.49kB 0.1s done
+#6 DONE 0.3s
+
+#10 [build 3/6] COPY pom.xml pom.xml
+#10 DONE 0.4s
+
+#8 [stage-1 1/4] FROM docker.io/library/eclipse-temurin:21-jre@sha256:8cef5fc7bebe421363ab543a2f4db5
+caf7d119d8db67d56b0f56c485d2de4d55
+#8 sha256:9710d101e7a3be719551077cf621d1fd206ff3208b4afb0f3c7f5e1f85ef5967 0B / 2.28kB 0.2s
+#8 sha256:85e71d7921a4de715c611d438091dc9f095cbe1a7cd62bab3fe5537ff8dc1cb9 0B / 159B 0.2s
+#8 sha256:55ec27dd4dabba3cb9291f2b20ce6fe6d6d0d586d48dc253dbb778d76ec017cb 0B / 53.12MB 0.2s
+#8 sha256:c4e8c573f1880eec678b862d043508e3e672ae78d786a857b9ada3197d8692e8 0B / 29.39MB 0.2s
+#8 sha256:9710d101e7a3be719551077cf621d1fd206ff3208b4afb0f3c7f5e1f85ef5967 2.28kB / 2.28kB 0.4s done
+#8 sha256:617772c7d19b9f9c4141bc73b37e6f4c5e4e69729f6881a73d0dc23676dbbd60 0B / 41.57MB 0.2s
+#8 sha256:85e71d7921a4de715c611d438091dc9f095cbe1a7cd62bab3fe5537ff8dc1cb9 159B / 159B 1.2s done
+#8 sha256:55ec27dd4dabba3cb9291f2b20ce6fe6d6d0d586d48dc253dbb778d76ec017cb 5.24MB / 53.12MB 1.4s
+#8 sha256:55ec27dd4dabba3cb9291f2b20ce6fe6d6d0d586d48dc253dbb778d76ec017cb 8.39MB / 53.12MB 1.5s
+#8 sha256:a7fb98a8eddd1a70f99f205cb4b66e830a3e8ef4798f5636ece054a567b650de 0B / 389B 0.2s
+#8 sha256:55ec27dd4dabba3cb9291f2b20ce6fe6d6d0d586d48dc253dbb778d76ec017cb 13.41MB / 53.12MB 1.7s
+#8 sha256:c4e8c573f1880eec678b862d043508e3e672ae78d786a857b9ada3197d8692e8 4.19MB / 29.39MB 1.5s
+#8 sha256:c4e8c573f1880eec678b862d043508e3e672ae78d786a857b9ada3197d8692e8 10.49MB / 29.39MB 1.8s
+#8 sha256:a7fb98a8eddd1a70f99f205cb4b66e830a3e8ef4798f5636ece054a567b650de 389B / 389B 0.5s done
+#8 sha256:55ec27dd4dabba3cb9291f2b20ce6fe6d6d0d586d48dc253dbb778d76ec017cb 17.83MB / 53.12MB 2.0s
+#8 sha256:617772c7d19b9f9c4141bc73b37e6f4c5e4e69729f6881a73d0dc23676dbbd60 3.15MB / 41.57MB 1.5s
+#8 sha256:55ec27dd4dabba3cb9291f2b20ce6fe6d6d0d586d48dc253dbb778d76ec017cb 23.07MB / 53.12MB 2.1s
+#8 sha256:617772c7d19b9f9c4141bc73b37e6f4c5e4e69729f6881a73d0dc23676dbbd60 5.24MB / 41.57MB 1.7s
+#8 sha256:55ec27dd4dabba3cb9291f2b20ce6fe6d6d0d586d48dc253dbb778d76ec017cb 26.21MB / 53.12MB 2.3s
+#8 sha256:c4e8c573f1880eec678b862d043508e3e672ae78d786a857b9ada3197d8692e8 16.78MB / 29.39MB 2.1s
+#8 sha256:617772c7d19b9f9c4141bc73b37e6f4c5e4e69729f6881a73d0dc23676dbbd60 9.44MB / 41.57MB 1.8s
+#8 sha256:c4e8c573f1880eec678b862d043508e3e672ae78d786a857b9ada3197d8692e8 20.58MB / 29.39MB 2.3s
+#8 sha256:617772c7d19b9f9c4141bc73b37e6f4c5e4e69729f6881a73d0dc23676dbbd60 13.63MB / 41.57MB 2.0s
+#8 sha256:55ec27dd4dabba3cb9291f2b20ce6fe6d6d0d586d48dc253dbb778d76ec017cb 31.46MB / 53.12MB 2.9s
+#8 sha256:55ec27dd4dabba3cb9291f2b20ce6fe6d6d0d586d48dc253dbb778d76ec017cb 34.60MB / 53.12MB 3.0s
+#8 sha256:c4e8c573f1880eec678b862d043508e3e672ae78d786a857b9ada3197d8692e8 25.17MB / 29.39MB 2.9s
+#8 sha256:617772c7d19b9f9c4141bc73b37e6f4c5e4e69729f6881a73d0dc23676dbbd60 17.83MB / 41.57MB 2.6s
+#8 sha256:c4e8c573f1880eec678b862d043508e3e672ae78d786a857b9ada3197d8692e8 28.05MB / 29.39MB 3.0s
+#8 sha256:617772c7d19b9f9c4141bc73b37e6f4c5e4e69729f6881a73d0dc23676dbbd60 22.02MB / 41.57MB 2.7s
+#8 sha256:c4e8c573f1880eec678b862d043508e3e672ae78d786a857b9ada3197d8692e8 29.39MB / 29.39MB 3.2s do
+ne
+#8 sha256:617772c7d19b9f9c4141bc73b37e6f4c5e4e69729f6881a73d0dc23676dbbd60 24.12MB / 41.57MB 2.9s
+#8 sha256:55ec27dd4dabba3cb9291f2b20ce6fe6d6d0d586d48dc253dbb778d76ec017cb 38.80MB / 53.12MB 3.5s
+#8 sha256:617772c7d19b9f9c4141bc73b37e6f4c5e4e69729f6881a73d0dc23676dbbd60 26.21MB / 41.57MB 3.1s
+#8 sha256:55ec27dd4dabba3cb9291f2b20ce6fe6d6d0d586d48dc253dbb778d76ec017cb 42.99MB / 53.12MB 3.6s
+#8 sha256:55ec27dd4dabba3cb9291f2b20ce6fe6d6d0d586d48dc253dbb778d76ec017cb 46.68MB / 53.12MB 3.8s
+#8 sha256:617772c7d19b9f9c4141bc73b37e6f4c5e4e69729f6881a73d0dc23676dbbd60 31.46MB / 41.57MB 3.3s
+#8 sha256:617772c7d19b9f9c4141bc73b37e6f4c5e4e69729f6881a73d0dc23676dbbd60 34.60MB / 41.57MB 3.5s
+#8 sha256:55ec27dd4dabba3cb9291f2b20ce6fe6d6d0d586d48dc253dbb778d76ec017cb 51.38MB / 53.12MB 4.1s
+#8 sha256:617772c7d19b9f9c4141bc73b37e6f4c5e4e69729f6881a73d0dc23676dbbd60 38.80MB / 41.57MB 3.8s
+#8 sha256:617772c7d19b9f9c4141bc73b37e6f4c5e4e69729f6881a73d0dc23676dbbd60 41.57MB / 41.57MB 3.9s
+#8 sha256:55ec27dd4dabba3cb9291f2b20ce6fe6d6d0d586d48dc253dbb778d76ec017cb 53.12MB / 53.12MB 4.4s do
+ne
+#8 sha256:617772c7d19b9f9c4141bc73b37e6f4c5e4e69729f6881a73d0dc23676dbbd60 41.57MB / 41.57MB 4.0s do
+ne
+#8 extracting sha256:617772c7d19b9f9c4141bc73b37e6f4c5e4e69729f6881a73d0dc23676dbbd60
+#8 ...
+
+#11 [build 4/6] RUN mvn -q -DskipTests dependency:go-offline
+#11 ...
+
+#8 [stage-1 1/4] FROM docker.io/library/eclipse-temurin:21-jre@sha256:8cef5fc7bebe421363ab543a2f4db5
+caf7d119d8db67d56b0f56c485d2de4d55
+#8 extracting sha256:617772c7d19b9f9c4141bc73b37e6f4c5e4e69729f6881a73d0dc23676dbbd60 7.6s done
+#8 DONE 12.9s
+
+#8 [stage-1 1/4] FROM docker.io/library/eclipse-temurin:21-jre@sha256:8cef5fc7bebe421363ab543a2f4db5
+caf7d119d8db67d56b0f56c485d2de4d55
+#8 extracting sha256:a7fb98a8eddd1a70f99f205cb4b66e830a3e8ef4798f5636ece054a567b650de 0.1s done
+#8 extracting sha256:c4e8c573f1880eec678b862d043508e3e672ae78d786a857b9ada3197d8692e8
+#8 extracting sha256:c4e8c573f1880eec678b862d043508e3e672ae78d786a857b9ada3197d8692e8 3.8s done
+#8 DONE 16.8s
+
+#11 [build 4/6] RUN mvn -q -DskipTests dependency:go-offline
+#11 ...
+
+#8 [stage-1 1/4] FROM docker.io/library/eclipse-temurin:21-jre@sha256:8cef5fc7bebe421363ab543a2f4db5
+caf7d119d8db67d56b0f56c485d2de4d55
+#8 extracting sha256:55ec27dd4dabba3cb9291f2b20ce6fe6d6d0d586d48dc253dbb778d76ec017cb
+#8 extracting sha256:55ec27dd4dabba3cb9291f2b20ce6fe6d6d0d586d48dc253dbb778d76ec017cb 5.3s done
+#8 DONE 22.0s
+
+#11 [build 4/6] RUN mvn -q -DskipTests dependency:go-offline
+#11 ...
+
+#8 [stage-1 1/4] FROM docker.io/library/eclipse-temurin:21-jre@sha256:8cef5fc7bebe421363ab543a2f4db5
+caf7d119d8db67d56b0f56c485d2de4d55
+#8 extracting sha256:85e71d7921a4de715c611d438091dc9f095cbe1a7cd62bab3fe5537ff8dc1cb9 0.1s done
+#8 extracting sha256:9710d101e7a3be719551077cf621d1fd206ff3208b4afb0f3c7f5e1f85ef5967 0.1s done
+#8 DONE 22.2s
+
+#12 [stage-1 2/4] WORKDIR /app
+#12 DONE 0.6s
+
+#11 [build 4/6] RUN mvn -q -DskipTests dependency:go-offline
+#11 DONE 184.4s
+
+#13 [build 5/6] COPY src src
+#13 DONE 0.3s
+
+#14 [build 6/6] RUN mvn -q -DskipTests package
+#14 DONE 24.9s
+
+#15 [stage-1 3/4] COPY --from=build /workspace/target/b24-video-offer-*.jar app.jar
+#15 DONE 0.8s
+
+#16 [stage-1 4/4] RUN mkdir -p /app/data/videos
+#16 DONE 0.7s
+
+#17 exporting to image
+#17 exporting layers
+#17 exporting layers 9.0s done
+#17 exporting manifest sha256:31a67d7d2db8f8f91a0d3c402bc7ec721e084cdcf0eb627e53c7e39d0a3bda41 0.0s
+done
+#17 exporting config sha256:67b2e0ed89b1f740551da16069aec6e3d26f67c95078883c9ead0363800acf7b 0.1s do
+ne
+#17 exporting attestation manifest sha256:95dacfabc986b4c2cc84f32eab247fe24d6e7634387d32a34129a7209b
+998313
+#17 exporting attestation manifest sha256:95dacfabc986b4c2cc84f32eab247fe24d6e7634387d32a34129a7209b
+998313 0.1s done
+#17 exporting manifest list sha256:1151bda1776240eb4ae904dfc96dd14f5c6574b6a1ada0264519fc7a3c5a43d9
+0.0s done
+#17 naming to docker.io/library/b24-video-offer-app:latest done
+#17 unpacking to docker.io/library/b24-video-offer-app:latest
+#17 unpacking to docker.io/library/b24-video-offer-app:latest 1.6s done
+#17 DONE 11.0s
+
+#18 resolving provenance for metadata file
+#18 DONE 0.1s
+ Image b24-video-offer-app Built
++ docker compose up -d --remove-orphans
+ Network b24-video-offer_default Creating
+ Network b24-video-offer_default Creating
+ Volume b24-video-offer_video_offer_data Creating
+ Volume b24-video-offer_video_offer_data Creating
+ Volume b24-video-offer_video_offer_data Created
+ Volume b24-video-offer_video_offer_data Created
+ Network b24-video-offer_default Created
+ Network b24-video-offer_default Created
+ Container b24-video-offer Creating
+ Container b24-video-offer Created
+ Container b24-video-offer Starting
+ Container b24-video-offer Started
+Deployment completed successfully.
++ docker compose ps
+NAME              IMAGE                 COMMAND                  SERVICE   CREATED          STATUS
+        PORTS
+b24-video-offer   b24-video-offer-app   "java -jar /app/app.…"   app       52 seconds ago   Up 51 se
+conds   127.0.0.1:8080->8080/tcp
+root@VM-397286:/opt/b24-video-offer#
+=root@VM-397286:/opt/b24-video-offer# echo
+
+root@VM-397286:/opt/b24-video-offer# echo "Waiting for stable local health..."
+Waiting for stable local health...
+root@VM-397286:/opt/b24-video-offer#
+root@VM-397286:/opt/b24-video-offer# HEALTH_OK=0
+root@VM-397286:/opt/b24-video-offer#
+root@VM-397286:/opt/b24-video-offer# for ATTEMPT in $(seq 1 60); do
+>   if RESPONSE="$(curl \
+echo "==================================>       --silent \
+>       --show-error \
+>       --connect-timeout 3 \
+compose>       --max-time 5 \
+>       http://127.0.0.1:8080/api/health 2>/dev/null)"; then
+ror \
+  --connect->
+>     echo "${RESPONSE}"
+>
+>     if echo "${RESPONSE}" | grep -q '"status":"UP"'; then
+>       HEALTH_OK=1
+>       break
+>     fi
+>   fi
+>
+>   sleep 2
+> done
+{"time":"2026-08-04T22:06:51.258854828Z","status":"UP","service":"b24-video-offer"}
+root@VM-397286:/opt/b24-video-offer#
+root@VM-397286:/opt/b24-video-offer# if [ "${HEALTH_OK}" -ne 1 ]; then
+>   echo "Application health check failed"
+>   docker compose ps
+>   docker compose logs --no-color --tail=300 app
+>   exit 1
+> fi
+root@VM-397286:/opt/b24-video-offer#
+root@VM-397286:/opt/b24-video-offer# echo
+
+root@VM-397286:/opt/b24-video-offer# echo "=========================================================
+==="
+============================================================
+root@VM-397286:/opt/b24-video-offer# echo "4. CREATING HTTP NGINX CONFIGURATION"
+4. CREATING HTTP NGINX CONFIGURATION
+root@VM-397286:/opt/b24-video-offer# echo "=========================================================
+==="
+============================================================
+root@VM-397286:/opt/b24-video-offer#
+root@VM-397286:/opt/b24-video-offer# mkdir -p /var/www/certbot/.well-known/acme-challenge
+HTTPS root:"
+curl \
+  --silent \
+  --show-error \
+  --output /dev/null \
+  --croot@VM-397286:/opt/b24-video-offer#
+root@VM-397286:/opt/b24-video-offer# cat > "${NGINX_CONF}" <<EOF
+> server {
+>     listen 80;
+>     listen [::]:80;
+>
+>     server_name ${DOMAIN};
+>
+>     location /.well-known/acme-challenge/ {
+>         root /var/www/certbot;
+>         try_files \$uri =404;
+>     }
+>
+>     location / {
+>         proxy_pass http://127.0.0.1:8080;
+>         proxy_http_version 1.1;
+>
+>         proxy_set_header Host \$host;
+>         proxy_set_header X-Real-IP \$remote_addr;
+>         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+>         proxy_set_header X-Forwarded-Proto http;
+>
+>         proxy_connect_timeout 30s;
+>         proxy_read_timeout 3600s;
+>         proxy_send_timeout 3600s;
+>
+>         proxy_buffering off;
+>         proxy_request_buffering off;
+>     }
+> }
+> EOF
+root@VM-397286:/opt/b24-video-offer#
+root@VM-397286:/opt/b24-video-offer# ln -sfn "${NGINX_CONF}" "/etc/nginx/sites-enabled/${DOMAIN}.con
+f"
+root@VM-397286:/opt/b24-video-offer#
+root@VM-397286:/opt/b24-video-offer# nginx -t
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+root@VM-397286:/opt/b24-video-offer# systemctl reload nginx
+{DOMAIN}/api/healthroot@VM-397286:/opt/b24-video-offer#
+root@VM-397286:/opt/b24-video-offer# echo
+
+root@VM-397286:/opt/b24-video-offer# echo "Testing ACME challenge path..."
+Testing ACME challenge path...
+root@VM-397286:/opt/b24-video-offer#
+root@VM-397286:/opt/b24-video-offer# TEST_TOKEN="b24-video-offer-$(date +%s)"
+"
+echo
+echo "Live logs:"
+echo "cd ${APP_DIR} && docker compose logs -f --tail=300 app"root@VM-397286:/opt/b24-video-offer# pr
+intf '%s' "${TEST_TOKEN}" \
+>   > "/var/www/certbot/.well-known/acme-challenge/${TEST_TOKEN}"
+root@VM-397286:/opt/b24-video-offer#
+root@VM-397286:/opt/b24-video-offer# CHALLENGE_RESPONSE="$(curl \
+>   --silent \
+>   --show-error \
+>   --connect-timeout 5 \
+>   --max-time 15 \
+>   "http://${DOMAIN}/.well-known/acme-challenge/${TEST_TOKEN}")"
+curl: (28) Resolving timed out after 5000 milliseconds
+
+============================================================
+DEPLOYMENT FAILED, EXIT CODE: 28
+============================================================
+NAME              IMAGE                 COMMAND                  SERVICE   CREATED          STATUS
+        PORTS
+b24-video-offer   b24-video-offer-app   "java -jar /app/app.…"   app       58 seconds ago   Up 57 se
+conds   127.0.0.1:8080->8080/tcp
+b24-video-offer  | Picked up JAVA_TOOL_OPTIONS: -Xms128m -Xmx512m -XX:MaxMetaspaceSize=192m -XX:+Use
+SerialGC -Djava.security.egd=file:/dev/./urandom
+b24-video-offer  |
+b24-video-offer  |   .   ____          _            __ _ _
+b24-video-offer  |  /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+b24-video-offer  | ( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+b24-video-offer  |  \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+b24-video-offer  |   '  |____| .__|_| |_|_| |_\__, | / / / /
+b24-video-offer  |  =========|_|==============|___/=/_/_/_/
+b24-video-offer  |
+b24-video-offer  |  :: Spring Boot ::                (v4.0.5)
+b24-video-offer  |
+b24-video-offer  | 2026-08-04T22:06:08.059Z INFO  [main] [requestId=] ru.abs7.videooffer.B24VideoOff
+erApplication - Starting B24VideoOfferApplication v0.1.0-SNAPSHOT using Java 21.0.11 with PID 1 (/ap
+p/app.jar started by root in /app)
+b24-video-offer  | 2026-08-04T22:06:08.076Z INFO  [main] [requestId=] ru.abs7.videooffer.B24VideoOff
+erApplication - No active profile set, falling back to 1 default profile: "default"
+b24-video-offer  | 2026-08-04T22:06:14.797Z INFO  [main] [requestId=] o.s.d.r.config.RepositoryConfi
+gurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+b24-video-offer  | 2026-08-04T22:06:15.252Z INFO  [main] [requestId=] o.s.d.r.config.RepositoryConfi
+gurationDelegate - Finished Spring Data repository scanning in 377 ms. Found 4 JPA repository interf
+aces.
+b24-video-offer  | 2026-08-04T22:06:18.561Z INFO  [main] [requestId=] org.springframework.boot.tomca
+t.TomcatWebServer - Tomcat initialized with port 8080 (http)
+b24-video-offer  | 2026-08-04T22:06:18.629Z INFO  [main] [requestId=] org.apache.catalina.core.Stand
+ardService - Starting service [Tomcat]
+b24-video-offer  | 2026-08-04T22:06:18.630Z INFO  [main] [requestId=] org.apache.catalina.core.Stand
+ardEngine - Starting Servlet engine: [Apache Tomcat/11.0.20]
+b24-video-offer  | 2026-08-04T22:06:18.698Z INFO  [main] [requestId=] o.s.b.w.c.s.WebApplicationCont
+extInitializer - Root WebApplicationContext: initialization completed in 9960 ms
+b24-video-offer  | 2026-08-04T22:06:21.771Z INFO  [main] [requestId=] com.zaxxer.hikari.HikariDataSo
+urce - HikariPool-1 - Starting...
+b24-video-offer  | 2026-08-04T22:06:25.081Z INFO  [main] [requestId=] com.zaxxer.hikari.pool.HikariP
+ool - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@71dd4624
+b24-video-offer  | 2026-08-04T22:06:25.095Z INFO  [main] [requestId=] com.zaxxer.hikari.HikariDataSo
+urce - HikariPool-1 - Start completed.
+b24-video-offer  | 2026-08-04T22:06:25.349Z INFO  [main] [requestId=] org.flywaydb.core.FlywayExecut
+or - Database: jdbc:postgresql://45.11.92.142:5433/b24_video_offer (PostgreSQL 16.14)
+b24-video-offer  | 2026-08-04T22:06:26.487Z INFO  [main] [requestId=] org.flywaydb.core.internal.com
+mand.DbValidate - Successfully validated 3 migrations (execution time 00:00.595s)
+b24-video-offer  | 2026-08-04T22:06:28.993Z INFO  [main] [requestId=] org.flywaydb.core.internal.com
+mand.DbMigrate - Current version of schema "public": 3
+b24-video-offer  | 2026-08-04T22:06:29.045Z INFO  [main] [requestId=] org.flywaydb.core.internal.com
+mand.DbMigrate - Schema "public" is up to date. No migration necessary.
+b24-video-offer  | 2026-08-04T22:06:30.380Z INFO  [main] [requestId=] org.hibernate.orm.jpa - HHH008
+540: Processing PersistenceUnitInfo [name: default]
+b24-video-offer  | 2026-08-04T22:06:30.696Z INFO  [main] [requestId=] org.hibernate.orm.core - HHH00
+0001: Hibernate ORM core version 7.2.7.Final
+b24-video-offer  | 2026-08-04T22:06:34.149Z INFO  [main] [requestId=] o.s.o.j.p.SpringPersistenceUni
+tInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+b24-video-offer  | 2026-08-04T22:06:35.838Z INFO  [main] [requestId=] org.hibernate.orm.connections.
+pooling - HHH10001005: Database info:
+b24-video-offer  |      Database JDBC URL [jdbc:postgresql://45.11.92.142:5433/b24_video_offer]
+b24-video-offer  |      Database driver: PostgreSQL JDBC Driver
+b24-video-offer  |      Database dialect: PostgreSQLDialect
+b24-video-offer  |      Database version: 16.14
+b24-video-offer  |      Default catalog/schema: b24_video_offer/public
+b24-video-offer  |      Autocommit mode: undefined/unknown
+b24-video-offer  |      Isolation level: READ_COMMITTED [default READ_COMMITTED]
+b24-video-offer  |      JDBC fetch size: none
+b24-video-offer  |      Pool: DataSourceConnectionProvider
+b24-video-offer  |      Minimum pool size: undefined/unknown
+b24-video-offer  |      Maximum pool size: undefined/unknown
+b24-video-offer  | 2026-08-04T22:06:40.144Z INFO  [main] [requestId=] org.hibernate.orm.core - HHH00
+0489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform int
+egration)
+b24-video-offer  | 2026-08-04T22:06:40.712Z INFO  [main] [requestId=] o.s.o.jpa.LocalContainerEntity
+ManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+b24-video-offer  | 2026-08-04T22:06:41.172Z INFO  [main] [requestId=] o.s.d.j.repository.query.Query
+EnhancerFactories - Hibernate is in classpath; If applicable, HQL parser will be used.
+b24-video-offer  | 2026-08-04T22:06:45.357Z INFO  [main] [requestId=] ru.abs7.videooffer.kontur.Kont
+urVideoDownloader - Kontur HTTP transport configured: mode=DIRECT, connectTimeoutSeconds=15, readTim
+eoutSeconds=120
+b24-video-offer  | 2026-08-04T22:06:45.448Z INFO  [main] [requestId=] ru.abs7.videooffer.kontur.Kont
+urVideoDownloader - Kontur downloader initialized: baseUrl=https://rko7.ktalk.ru/, storageDir=./data
+/videos, connectTimeoutSeconds=15, readTimeoutSeconds=120, stallWarningSeconds=30, maxParallelParts=
+8, parallelThresholdBytes=33554432, proxyEnabled=false, proxyHost=direct, proxyPort=null, proxyAuthe
+nticationConfigured=true
+b24-video-offer  | 2026-08-04T22:06:45.640Z INFO  [main] [requestId=] ru.abs7.videooffer.bitrix.Bitr
+ixRestClient - Bitrix HTTP transport configured: mode=DIRECT, proxySource=NONE, proxyHost=direct, pr
+oxyPort=null, proxyAuthenticationConfigured=false, connectTimeoutSeconds=15, readTimeoutSeconds=45,
+proactiveRefreshAheadSeconds=120
+b24-video-offer  | 2026-08-04T22:06:45.929Z INFO  [main] [requestId=] ru.abs7.videooffer.offer.Video
+OfferService - VideoOfferService initialized: publicBaseUrl=https://offer.abs7.ru, retentionDays=7
+b24-video-offer  | 2026-08-04T22:06:46.541Z INFO  [main] [requestId=] o.s.b.w.autoconfigure.WelcomeP
+ageHandlerMapping - Adding welcome page: class path resource [static/index.html]
+b24-video-offer  | 2026-08-04T22:06:48.984Z INFO  [main] [requestId=] org.springframework.boot.tomca
+t.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
+b24-video-offer  | 2026-08-04T22:06:49.135Z INFO  [main] [requestId=] ru.abs7.videooffer.B24VideoOff
+erApplication - Started B24VideoOfferApplication in 44.639 seconds (process running for 48.415)
+b24-video-offer  | 2026-08-04T22:06:49.148Z INFO  [main] [requestId=] r.a.videooffer.offer.VideoOffe
+rLifecycleService - Checking interrupted video offers after application startup
+b24-video-offer  | 2026-08-04T22:06:49.562Z INFO  [http-nio-8080-exec-1] [requestId=] o.a.c.c.Contai
+nerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+b24-video-offer  | 2026-08-04T22:06:49.564Z INFO  [http-nio-8080-exec-1] [requestId=] o.springframew
+ork.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+b24-video-offer  | 2026-08-04T22:06:49.636Z INFO  [http-nio-8080-exec-1] [requestId=] o.springframew
+ork.web.servlet.DispatcherServlet - Completed initialization in 70 ms
+b24-video-offer  | 2026-08-04T22:06:49.660Z INFO  [http-nio-8080-exec-1] [requestId=e961b1d8-4110-4d
+07-a270-3325333d220d] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=
+GET, path=/api/health, remoteAddress=172.18.0.1, userAgent=Python-urllib/3.12
+b24-video-offer  | 2026-08-04T22:06:50.541Z INFO  [http-nio-8080-exec-1] [requestId=e961b1d8-4110-4d
+07-a270-3325333d220d] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: metho
+d=GET, path=/api/health, status=200, durationMs=882
+b24-video-offer  | 2026-08-04T22:06:51.245Z INFO  [http-nio-8080-exec-2] [requestId=a3c5891f-ae73-49
+c5-9591-8a6d9d465454] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=
+GET, path=/api/health, remoteAddress=172.18.0.1, userAgent=curl/8.5.0
+b24-video-offer  | 2026-08-04T22:06:51.265Z INFO  [http-nio-8080-exec-2] [requestId=a3c5891f-ae73-49
+c5-9591-8a6d9d465454] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: metho
+d=GET, path=/api/health, status=200, durationMs=21
+b24-video-offer  | 2026-08-04T22:06:51.456Z INFO  [main] [requestId=] ru.abs7.videooffer.offer.Video
+OfferService - Pending video offers selected for recovery: count=0
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful

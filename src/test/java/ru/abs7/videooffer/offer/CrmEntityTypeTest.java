@@ -14,6 +14,13 @@ class CrmEntityTypeTest {
                 CrmEntityType.fromBitrixPlacement("CRM_LEAD_DETAIL_ACTIVITY"));
         assertEquals(CrmEntityType.CONTACT,
                 CrmEntityType.fromBitrixPlacement("CRM_CONTACT_DETAIL_ACTIVITY"));
+
+        assertEquals(CrmEntityType.DEAL,
+                CrmEntityType.fromBitrixPlacement("CRM_DEAL_DETAIL_TOOLBAR"));
+        assertEquals(CrmEntityType.LEAD,
+                CrmEntityType.fromBitrixPlacement("CRM_LEAD_DETAIL_TOOLBAR"));
+        assertEquals(CrmEntityType.CONTACT,
+                CrmEntityType.fromBitrixPlacement("CRM_CONTACT_DETAIL_TOOLBAR"));
     }
 
     @Test

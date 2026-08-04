@@ -3,6 +3,9 @@ package ru.abs7.videooffer.bitrix;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
 
@@ -20,28 +23,42 @@ public class BitrixInstallationService {
     private static final List<String> PLACEMENTS = List.of(
             "CRM_DEAL_DETAIL_ACTIVITY",
             "CRM_LEAD_DETAIL_ACTIVITY",
-            "CRM_CONTACT_DETAIL_ACTIVITY");
+            "CRM_CONTACT_DETAIL_ACTIVITY",
+            "CRM_DEAL_DETAIL_TOOLBAR",
+            "CRM_LEAD_DETAIL_TOOLBAR",
+            "CRM_CONTACT_DETAIL_TOOLBAR");
 
     private final BitrixInstallationRepository repository;
     private final BitrixRestClient restClient;
+    private final BitrixPlacementDiagnosticsService diagnosticsService;
     private final String handlerUrl;
 
     public BitrixInstallationService(
             BitrixInstallationRepository repository,
             BitrixRestClient restClient,
+            BitrixPlacementDiagnosticsService diagnosticsService,
             @Value("${app.public-base-url}") String publicBaseUrl) {
         this.repository = repository;
         this.restClient = restClient;
+        this.diagnosticsService = diagnosticsService;
         this.handlerUrl = publicBaseUrl.replaceAll("/+$", "") + "/bitrix/widget";
+    }
+
+    public static List<String> desiredPlacements() {
+        return PLACEMENTS;
     }
 
     public InstallationResult install(MultiValueMap<String, String> parameters) {
         log.info("Starting Bitrix installation: parameterNames={}", parameters.keySet());
         AuthData auth = AuthData.from(parameters);
-        log.info("Bitrix auth data parsed: domain={}, memberId={}, expiresAt={}, accessTokenPresent={}, refreshTokenPresent={}",
-                auth.domain(), auth.memberId(), auth.expiresAt(),
+        String applicationScopes = first(parameters,
+                "APPLICATION_SCOPE", "scope", "auth[scope]");
+        log.info("Bitrix auth data parsed: domain={}, memberId={}, expiresAt={}, applicationScopes={}, "
+                        + "accessTokenPresent={}, refreshTokenPresent={}",
+                auth.domain(), auth.memberId(), auth.expiresAt(), applicationScopes,
                 auth.accessToken() != null && !auth.accessToken().isBlank(),
                 auth.refreshToken() != null && !auth.refreshToken().isBlank());
+
         BitrixInstallation installation = repository.findByMemberId(auth.memberId())
                 .orElseGet(() -> BitrixInstallation.create(
                         auth.memberId(),
@@ -56,32 +73,77 @@ public class BitrixInstallationService {
         log.info("Bitrix installation authorization persisted: domain={}, memberId={}",
                 auth.domain(), auth.memberId());
 
+        Map<String, String> results = bindPlacements(auth.memberId());
+        BitrixPlacementDiagnosticsService.PlacementDiagnostics diagnostics =
+                diagnosticsService.diagnose(auth.memberId());
+
+        log.info("Локальное приложение Bitrix24 установлено: domain={}, memberId={}, placements={}",
+                auth.domain(), auth.memberId(), results);
+        return new InstallationResult(
+                auth.domain(),
+                auth.memberId(),
+                handlerUrl,
+                applicationScopes,
+                results,
+                diagnostics);
+    }
+
+    public Map<String, String> bindPlacements(String memberId) {
         Map<String, String> results = new LinkedHashMap<>();
         for (String placement : PLACEMENTS) {
             try {
                 log.info("Binding Bitrix placement: memberId={}, placement={}, handler={}",
-                        auth.memberId(), placement, handlerUrl);
-                restClient.call(auth.memberId(), "placement.bind", Map.of(
-                        "PLACEMENT", placement,
-                        "HANDLER", handlerUrl,
-                        "TITLE", "Сформировать видеооффер"));
+                        memberId, placement, handlerUrl);
+                restClient.call(memberId, "placement.bind", bindParameters(placement));
                 results.put(placement, "BOUND");
-                log.info("Bitrix placement bound: memberId={}, placement={}", auth.memberId(), placement);
+                log.info("Bitrix placement bound: memberId={}, placement={}", memberId, placement);
             } catch (BitrixRestException error) {
                 if (isAlreadyBound(error)) {
                     results.put(placement, "ALREADY_BOUND");
-                    log.info("Bitrix placement already bound: memberId={}, placement={}", auth.memberId(), placement);
+                    log.info("Bitrix placement already bound: memberId={}, placement={}",
+                            memberId, placement);
                 } else {
-                    log.error("Bitrix placement binding failed: memberId={}, placement={}, errorCode={}, error={}",
-                            auth.memberId(), placement, error.getErrorCode(), error.getMessage(), error);
-                    throw error;
+                    String status = "ERROR:" + error.getErrorCode() + ":" + safeMessage(error);
+                    results.put(placement, status);
+                    log.error("Bitrix placement binding failed but installation will continue: "
+                                    + "memberId={}, placement={}, errorCode={}, error={}",
+                            memberId, placement, error.getErrorCode(), error.getMessage(), error);
                 }
+            } catch (RuntimeException error) {
+                String status = "TRANSPORT_ERROR:" + rootMessage(error);
+                results.put(placement, status);
+                log.error("Bitrix placement binding transport failure but installation will continue: "
+                                + "memberId={}, placement={}, error={}",
+                        memberId, placement, rootMessage(error), error);
             }
         }
+        return results;
+    }
 
-        log.info("Локальное приложение Bitrix24 установлено: domain={}, memberId={}",
-                auth.domain(), auth.memberId());
-        return new InstallationResult(auth.domain(), auth.memberId(), handlerUrl, results);
+    @Async
+    @EventListener(ApplicationReadyEvent.class)
+    public void rebindPlacementsAfterStartup() {
+        List<BitrixInstallation> installations = repository.findAll();
+        if (installations.isEmpty()) {
+            log.info("Bitrix placement startup diagnostics skipped: no installations found");
+            return;
+        }
+
+        log.info("Starting Bitrix placement rebind and diagnostics after application startup: count={}",
+                installations.size());
+        for (BitrixInstallation installation : installations) {
+            try {
+                Map<String, String> placements = bindPlacements(installation.getMemberId());
+                BitrixPlacementDiagnosticsService.PlacementDiagnostics diagnostics =
+                        diagnosticsService.diagnose(installation.getMemberId());
+                log.info("Bitrix startup placement check completed: domain={}, memberId={}, placements={}, diagnostics={}",
+                        installation.getPortalDomain(), installation.getMemberId(), placements, diagnostics);
+            } catch (RuntimeException error) {
+                log.error("Bitrix startup placement check failed: domain={}, memberId={}, error={}",
+                        installation.getPortalDomain(), installation.getMemberId(),
+                        rootMessage(error), error);
+            }
+        }
     }
 
     public void synchronizeAuthorizationFromWidget(MultiValueMap<String, String> parameters) {
@@ -120,6 +182,17 @@ public class BitrixInstallationService {
         }
     }
 
+    private Map<String, Object> bindParameters(String placement) {
+        Map<String, Object> parameters = new LinkedHashMap<>();
+        parameters.put("PLACEMENT", placement);
+        parameters.put("HANDLER", handlerUrl);
+        parameters.put("TITLE", "Создать видеооффер");
+        parameters.put("LANG_ALL", Map.of(
+                "ru", Map.of("TITLE", "Создать видеооффер"),
+                "en", Map.of("TITLE", "Create video offer")));
+        return parameters;
+    }
+
     private boolean isAlreadyBound(BitrixRestException error) {
         String code = error.getErrorCode().toUpperCase(Locale.ROOT);
         String description = error.getMessage() == null
@@ -131,11 +204,40 @@ public class BitrixInstallationService {
                 || description.contains("УЖЕ");
     }
 
+    private String safeMessage(Throwable error) {
+        String message = error.getMessage();
+        return message == null || message.isBlank()
+                ? error.getClass().getSimpleName()
+                : message.replace('\n', ' ').replace('\r', ' ');
+    }
+
+    private String rootMessage(Throwable error) {
+        Throwable current = error;
+        while (current.getCause() != null) {
+            current = current.getCause();
+        }
+        return safeMessage(current);
+    }
+
+    private static String first(
+            MultiValueMap<String, String> parameters,
+            String... names) {
+        for (String name : names) {
+            String value = parameters.getFirst(name);
+            if (value != null && !value.isBlank()) {
+                return value.trim();
+            }
+        }
+        return null;
+    }
+
     public record InstallationResult(
             String domain,
             String memberId,
             String handler,
-            Map<String, String> placements) {
+            String applicationScopes,
+            Map<String, String> placements,
+            BitrixPlacementDiagnosticsService.PlacementDiagnostics diagnostics) {
     }
 
     private record AuthData(
@@ -190,18 +292,6 @@ public class BitrixInstallationService {
                         "В запросе Bitrix24 отсутствует обязательный параметр: " + names[0]);
             }
             return value.trim();
-        }
-
-        private static String first(
-                MultiValueMap<String, String> parameters,
-                String... names) {
-            for (String name : names) {
-                String value = parameters.getFirst(name);
-                if (value != null && !value.isBlank()) {
-                    return value;
-                }
-            }
-            return null;
         }
 
         private static String normalizeDomain(String value) {

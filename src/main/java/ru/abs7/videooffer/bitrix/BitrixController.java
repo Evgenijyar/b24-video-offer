@@ -1,5 +1,6 @@
 package ru.abs7.videooffer.bitrix;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,8 +56,8 @@ public class BitrixController {
             @RequestParam MultiValueMap<String, String> parameters) {
         log.info("Bitrix installation callback received: parameterNames={}", parameters.keySet());
         BitrixInstallationService.InstallationResult result = installationService.install(parameters);
-        log.info("Bitrix installation callback completed: domain={}, memberId={}, placements={}",
-                result.domain(), result.memberId(), result.placements());
+        log.info("Bitrix installation callback completed: domain={}, memberId={}, applicationScopes={}, placements={}",
+                result.domain(), result.memberId(), result.applicationScopes(), result.placements());
         return result;
     }
 
@@ -72,17 +73,21 @@ public class BitrixController {
             value = "/widget",
             produces = MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<String> widget(
-            @RequestParam MultiValueMap<String, String> parameters) {
+            @RequestParam MultiValueMap<String, String> parameters,
+            HttpServletRequest servletRequest) {
         log.info("Bitrix widget callback received: parameterNames={}", parameters.keySet());
         installationService.synchronizeAuthorizationFromWidget(parameters);
         String placement = required(parameters, "PLACEMENT");
         String memberId = required(parameters, "member_id");
         String placementOptions = required(parameters, "PLACEMENT_OPTIONS");
+        String applicationScope = optional(parameters, "APPLICATION_SCOPE");
+        String userAgent = servletRequest.getHeader("User-Agent");
 
         CrmEntityType entityType = CrmEntityType.fromBitrixPlacement(placement);
         long entityId = extractEntityId(placementOptions);
-        log.info("Bitrix widget context resolved: placement={}, memberId={}, entityType={}, entityId={}",
-                placement, memberId, entityType, entityId);
+        log.info("Bitrix widget context resolved: placement={}, memberId={}, entityType={}, entityId={}, "
+                        + "applicationScope={}, userAgent={}",
+                placement, memberId, entityType, entityId, applicationScope, userAgent);
         String contextToken = contextSigner.create(
                 new BitrixPlacementContext(memberId, entityType, entityId));
 
@@ -92,8 +97,8 @@ public class BitrixController {
                 .replace("{{ENTITY_LABEL}}", entityType.russianLabel())
                 .replace("{{ENTITY_ID}}", Long.toString(entityId));
 
-        log.info("Bitrix widget HTML generated: entityType={}, entityId={}, htmlBytes={}",
-                entityType, entityId, html.getBytes(StandardCharsets.UTF_8).length);
+        log.info("Bitrix widget HTML generated: placement={}, entityType={}, entityId={}, htmlBytes={}",
+                placement, entityType, entityId, html.getBytes(StandardCharsets.UTF_8).length);
         return ResponseEntity.ok()
                 .contentType(MediaType.TEXT_HTML)
                 .body(html);
@@ -146,6 +151,11 @@ public class BitrixController {
                     "Bitrix24 не передал обязательный параметр " + name);
         }
         return value.trim();
+    }
+
+    private String optional(MultiValueMap<String, String> parameters, String name) {
+        String value = parameters.getFirst(name);
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     private String escapeHtmlAttribute(String value) {
