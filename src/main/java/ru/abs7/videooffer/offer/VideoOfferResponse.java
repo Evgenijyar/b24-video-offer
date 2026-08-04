@@ -17,6 +17,11 @@ public record VideoOfferResponse(
         String bitrixDeliveryStatus,
         String bitrixDeliveryError,
         OffsetDateTime bitrixDeliveredAt,
+        ViewNotificationGoal viewNotificationGoal,
+        ViewNotificationStatus viewNotificationStatus,
+        OffsetDateTime viewGoalReachedAt,
+        String viewNotificationError,
+        OffsetDateTime viewNotificationSentAt,
         OffsetDateTime createdAt,
         OffsetDateTime readyAt) {
 
@@ -36,6 +41,11 @@ public record VideoOfferResponse(
                 offer.getBitrixDeliveryStatus(),
                 offer.getBitrixDeliveryError(),
                 offer.getBitrixDeliveredAt(),
+                offer.getViewNotificationGoal(),
+                offer.getViewNotificationStatus(),
+                offer.getViewGoalReachedAt(),
+                offer.getViewNotificationError(),
+                offer.getViewNotificationSentAt(),
                 offer.getCreatedAt(),
                 offer.getReadyAt());
     }

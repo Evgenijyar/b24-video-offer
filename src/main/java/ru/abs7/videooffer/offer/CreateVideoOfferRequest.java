@@ -10,4 +10,5 @@ public record CreateVideoOfferRequest(
         String bitrixMemberId,
         Long bitrixUserId,
         @NotBlank String recordingUrl,
-        String accompanyingText) {}
+        String accompanyingText,
+        ViewNotificationGoal viewNotificationGoal) {}

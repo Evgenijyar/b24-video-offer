@@ -26,7 +26,8 @@ form.addEventListener('submit', async (event) => {
         entityType: document.getElementById('entity-type').value,
         entityId: Number(document.getElementById('entity-id').value),
         recordingUrl: document.getElementById('recording-url').value.trim(),
-        accompanyingText: document.getElementById('accompanying-text').value.trim() || null
+        accompanyingText: document.getElementById('accompanying-text').value.trim() || null,
+        viewNotificationGoal: document.getElementById('view-notification-goal').value
     };
 
     try {
@@ -105,7 +106,7 @@ function renderStatus(data) {
     if (data.status === 'READY') {
         activePublicUrl = data.publicUrl;
         readyResult.hidden = false;
-        localLink.href = location.origin + data.relativePath;
+        localLink.href = location.origin + data.relativePath + '?preview=1';
         publicUrl.textContent = data.publicUrl;
     }
     if (data.status === 'ERROR') {

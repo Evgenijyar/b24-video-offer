@@ -39,13 +39,14 @@ public class VideoOfferService {
     public VideoOffer create(CreateVideoOfferRequest request) {
         long startedAt = System.nanoTime();
         log.info("Creating video offer: entityType={}, entityId={}, bitrixMemberId={}, bitrixUserId={}, "
-                        + "recordingUrlPresent={}, accompanyingTextLength={}",
+                        + "recordingUrlPresent={}, accompanyingTextLength={}, viewNotificationGoal={}",
                 request.entityType(),
                 request.entityId(),
                 normalize(request.bitrixMemberId()),
                 request.bitrixUserId(),
                 request.recordingUrl() != null && !request.recordingUrl().isBlank(),
-                request.accompanyingText() == null ? 0 : request.accompanyingText().length());
+                request.accompanyingText() == null ? 0 : request.accompanyingText().length(),
+                ViewNotificationGoal.orDefault(request.viewNotificationGoal()));
 
         String recordingKey = parser.extractRecordingKey(request.recordingUrl());
         VideoOffer offer = VideoOffer.create(
@@ -56,14 +57,16 @@ public class VideoOfferService {
                 request.recordingUrl().trim(),
                 recordingKey,
                 normalize(request.accompanyingText()),
+                request.viewNotificationGoal(),
                 retentionDays);
 
         log.info("Video offer entity created in memory: offerId={}, publicToken={}, recordingKey={}, "
-                        + "status={}, expiresAt={}",
+                        + "status={}, viewNotificationGoal={}, expiresAt={}",
                 offer.getId(),
                 offer.getPublicToken(),
                 recordingKey,
                 offer.getStatus(),
+                offer.getViewNotificationGoal(),
                 offer.getExpiresAt());
 
         // Здесь намеренно нет внешней @Transactional-транзакции: saveAndFlush должен завершить

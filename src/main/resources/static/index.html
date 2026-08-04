@@ -53,6 +53,16 @@
                 <textarea id="accompanying-text" rows="5" placeholder="Например: Павел Георгиевич, направляю короткую презентацию по итогам нашего разговора."></textarea>
             </label>
 
+            <label class="field field--wide">
+                <span>Когда уведомить о просмотре</span>
+                <select id="view-notification-goal">
+                    <option value="ONE_MINUTE" selected>После 1 минуты просмотра</option>
+                    <option value="HALF">Когда клиент досмотрит до середины</option>
+                    <option value="COMPLETED">Когда клиент досмотрит видео целиком</option>
+                    <option value="NONE">Не уведомлять о просмотре</option>
+                </select>
+            </label>
+
             <div class="form-actions field--wide">
                 <button id="submit-button" class="button button--primary" type="submit">Сформировать видеооффер</button>
                 <div id="form-error" class="inline-error" hidden></div>

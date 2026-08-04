@@ -59,6 +59,49 @@ public class BitrixTimelineService {
         }
     }
 
+    public Long publishViewGoalReached(VideoOffer offer) {
+        log.info("Bitrix view notification publication started: offerId={}, memberId={}, entityType={}, entityId={}, goal={}",
+                offer.getId(), offer.getBitrixMemberId(), offer.getCrmEntityType(),
+                offer.getCrmEntityId(), offer.getViewNotificationGoal());
+        if (offer.getBitrixMemberId() == null || offer.getBitrixMemberId().isBlank()) {
+            throw new IllegalStateException("Для видеооффера отсутствует member_id Bitrix24");
+        }
+
+        String publicUrl = publicBaseUrl + "/o/" + offer.getPublicToken();
+        String resultText = switch (offer.getViewNotificationGoal()) {
+            case NONE -> "Просмотр видео не отслеживается.";
+            case ONE_MINUTE -> isShorterThanOneMinute(offer)
+                    ? "Клиент досмотрел видео целиком (ролик короче одной минуты)."
+                    : "Клиент посмотрел одну минуту видео.";
+            case HALF -> "Клиент досмотрел видео до середины.";
+            case COMPLETED -> "Клиент досмотрел видео целиком.";
+        };
+        String comment = "Клиент просмотрел видеооффер.\n\n"
+                + resultText
+                + "\n\nСсылка: " + publicUrl;
+
+        Map<String, Object> response = restClient.call(
+                offer.getBitrixMemberId(),
+                "crm.timeline.comment.add",
+                Map.of("fields", Map.of(
+                        "ENTITY_ID", offer.getCrmEntityId(),
+                        "ENTITY_TYPE", offer.getCrmEntityType().bitrixApiName(),
+                        "COMMENT", comment)));
+
+        Object result = response.get("result");
+        Long commentId = result instanceof Number number
+                ? number.longValue()
+                : tryParseLong(result);
+        log.info("Bitrix view notification published: offerId={}, entityType={}, entityId={}, commentId={}",
+                offer.getId(), offer.getCrmEntityType(), offer.getCrmEntityId(), commentId);
+        return commentId;
+    }
+
+    private boolean isShorterThanOneMinute(VideoOffer offer) {
+        return offer.getViewGoalDurationSeconds() != null
+                && offer.getViewGoalDurationSeconds().compareTo(java.math.BigDecimal.valueOf(60)) < 0;
+    }
+
     private Long tryParseLong(Object value) {
         if (value == null) {
             return null;

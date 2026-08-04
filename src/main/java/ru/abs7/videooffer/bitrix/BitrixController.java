@@ -104,9 +104,10 @@ public class BitrixController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<VideoOfferResponse> createFromBitrix(
             @Valid @RequestBody BitrixCreateVideoOfferRequest request) {
-        log.info("Bitrix video offer creation requested: recordingUrlPresent={}, accompanyingTextLength={}",
+        log.info("Bitrix video offer creation requested: recordingUrlPresent={}, accompanyingTextLength={}, viewNotificationGoal={}",
                 request.recordingUrl() != null && !request.recordingUrl().isBlank(),
-                request.accompanyingText() == null ? 0 : request.accompanyingText().length());
+                request.accompanyingText() == null ? 0 : request.accompanyingText().length(),
+                ru.abs7.videooffer.offer.ViewNotificationGoal.orDefault(request.viewNotificationGoal()));
         BitrixPlacementContext context = contextSigner.verify(request.contextToken());
         log.info("Bitrix signed context verified: memberId={}, entityType={}, entityId={}",
                 context.memberId(), context.entityType(), context.entityId());
@@ -116,7 +117,8 @@ public class BitrixController {
                 context.memberId(),
                 null,
                 request.recordingUrl(),
-                request.accompanyingText()));
+                request.accompanyingText(),
+                request.viewNotificationGoal()));
 
         log.info("Bitrix video offer accepted: offerId={}, entityType={}, entityId={}, status={}",
                 offer.getId(), offer.getCrmEntityType(), offer.getCrmEntityId(), offer.getStatus());

@@ -74,7 +74,7 @@ h1 {
     font-weight: 700;
 }
 
-input, textarea {
+input, textarea, select {
     width: 100%;
     padding: 12px 13px;
     color: #253238;
@@ -85,12 +85,20 @@ input, textarea {
     font: inherit;
 }
 
-input:focus, textarea:focus {
+input:focus, textarea:focus, select:focus {
     border-color: #2fc6f6;
     box-shadow: 0 0 0 3px rgba(47, 198, 246, .14);
 }
 
 textarea { resize: vertical; }
+
+.field small {
+    display: block;
+    margin-top: 7px;
+    color: #7a8b96;
+    font-size: 12px;
+    line-height: 1.45;
+}
 
 .primary-button, .secondary-button {
     display: inline-flex;

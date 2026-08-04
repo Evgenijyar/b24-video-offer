@@ -30,7 +30,8 @@ form.addEventListener('submit', async (event) => {
     const payload = {
         contextToken,
         recordingUrl: document.getElementById('recording-url').value.trim(),
-        accompanyingText: document.getElementById('accompanying-text').value.trim() || null
+        accompanyingText: document.getElementById('accompanying-text').value.trim() || null,
+        viewNotificationGoal: document.getElementById('view-notification-goal').value
     };
 
     try {
@@ -90,12 +91,12 @@ function renderOffer(data) {
     renderProgress(percent, statusText[data.status] || data.status);
 
     if (data.status === 'READY') {
-        publicLink.href = data.publicUrl;
+        publicLink.href = data.publicUrl + '?preview=1';
         readyResult.hidden = false;
 
         if (data.bitrixDeliveryStatus === 'DELIVERED') {
             deliveryStatus.textContent = 'Ссылка добавлена в таймлайн текущей карточки.';
-            readyMessage.textContent = 'Ссылка автоматически добавлена в таймлайн этой карточки Bitrix24.';
+            readyMessage.textContent = 'Ссылка добавлена в таймлайн. ' + viewGoalMessage(data.viewNotificationGoal);
         } else if (data.bitrixDeliveryStatus === 'ERROR') {
             deliveryStatus.textContent = 'Видео готово, но Bitrix24 не принял комментарий.';
             readyMessage.textContent = data.bitrixDeliveryError
@@ -159,4 +160,14 @@ function fitWindow() {
     } catch (_) {
         // Страница также должна работать при прямом диагностическом открытии.
     }
+}
+
+function viewGoalMessage(goal) {
+    const messages = {
+        ONE_MINUTE: 'Уведомим, когда клиент посмотрит одну минуту видео.',
+        HALF: 'Уведомим, когда клиент досмотрит видео до середины.',
+        COMPLETED: 'Уведомим, когда клиент досмотрит видео целиком.',
+        NONE: 'Уведомление о просмотре отключено.'
+    };
+    return messages[goal] || '';
 }
