@@ -74,6 +74,7 @@ public class BitrixController {
     public ResponseEntity<String> widget(
             @RequestParam MultiValueMap<String, String> parameters) {
         log.info("Bitrix widget callback received: parameterNames={}", parameters.keySet());
+        installationService.synchronizeAuthorizationFromWidget(parameters);
         String placement = required(parameters, "PLACEMENT");
         String memberId = required(parameters, "member_id");
         String placementOptions = required(parameters, "PLACEMENT_OPTIONS");

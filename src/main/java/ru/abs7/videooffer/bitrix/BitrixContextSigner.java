@@ -16,7 +16,7 @@ import java.util.Base64;
 public class BitrixContextSigner {
     private static final Logger log = LoggerFactory.getLogger(BitrixContextSigner.class);
     private static final String HMAC_ALGORITHM = "HmacSHA256";
-    private static final long TOKEN_LIFETIME_SECONDS = 4 * 60 * 60;
+    private static final String NON_EXPIRING_VERSION = "v2";
 
     private final byte[] secret;
 
@@ -28,15 +28,16 @@ public class BitrixContextSigner {
     }
 
     public String create(BitrixPlacementContext context) {
-        long expiresAt = Instant.now().getEpochSecond() + TOKEN_LIFETIME_SECONDS;
-        String payload = context.memberId() + "|"
+        // Это не OAuth-токен Bitrix24, а наш HMAC-подписанный контекст карточки.
+        // Начиная с v2 он не имеет срока действия: подменить сущность или ID без client_secret нельзя.
+        String payload = NON_EXPIRING_VERSION + "|"
+                + context.memberId() + "|"
                 + context.entityType().name() + "|"
-                + context.entityId() + "|"
-                + expiresAt;
+                + context.entityId();
         byte[] payloadBytes = payload.getBytes(StandardCharsets.UTF_8);
         String token = encode(payloadBytes) + "." + encode(sign(payloadBytes));
-        log.info("Bitrix context signed: memberId={}, entityType={}, entityId={}, expiresAt={}",
-                context.memberId(), context.entityType(), context.entityId(), expiresAt);
+        log.info("Bitrix context signed: memberId={}, entityType={}, entityId={}, version={}, nonExpiring=true",
+                context.memberId(), context.entityType(), context.entityId(), NON_EXPIRING_VERSION);
         return token;
     }
 
@@ -68,26 +69,71 @@ public class BitrixContextSigner {
             throw new IllegalArgumentException("Некорректный контекст Bitrix24");
         }
 
-        long entityId;
+        if (NON_EXPIRING_VERSION.equals(payload[0])) {
+            return verifyNonExpiring(payload);
+        }
+
+        // Обратная совместимость с уже открытыми формами старой версии:
+        // memberId|entityType|entityId|expiresAt.
+        return verifyLegacy(payload);
+    }
+
+    private BitrixPlacementContext verifyNonExpiring(String[] payload) {
+        long entityId = parsePositiveId(payload[3]);
+        BitrixPlacementContext context;
+        try {
+            context = new BitrixPlacementContext(
+                    payload[1],
+                    CrmEntityType.valueOf(payload[2]),
+                    entityId);
+        } catch (IllegalArgumentException error) {
+            throw new IllegalArgumentException("Некорректный контекст Bitrix24", error);
+        }
+
+        log.info("Bitrix context verified: memberId={}, entityType={}, entityId={}, version={}, nonExpiring=true",
+                context.memberId(), context.entityType(), context.entityId(), NON_EXPIRING_VERSION);
+        return context;
+    }
+
+    private BitrixPlacementContext verifyLegacy(String[] payload) {
+        long entityId = parsePositiveId(payload[2]);
         long expiresAt;
         try {
-            entityId = Long.parseLong(payload[2]);
             expiresAt = Long.parseLong(payload[3]);
         } catch (NumberFormatException error) {
             throw new IllegalArgumentException("Некорректный контекст Bitrix24", error);
         }
 
-        if (entityId <= 0 || Instant.now().getEpochSecond() > expiresAt) {
-            throw new IllegalArgumentException("Контекст Bitrix24 истёк или содержит неверный ID");
+        if (Instant.now().getEpochSecond() > expiresAt) {
+            throw new IllegalArgumentException(
+                    "Открыта устаревшая форма Bitrix24. Закройте её и снова нажмите «Сформировать видеооффер»");
         }
 
-        BitrixPlacementContext context = new BitrixPlacementContext(
-                payload[0],
-                CrmEntityType.valueOf(payload[1]),
-                entityId);
-        log.info("Bitrix context verified: memberId={}, entityType={}, entityId={}, expiresAt={}",
+        BitrixPlacementContext context;
+        try {
+            context = new BitrixPlacementContext(
+                    payload[0],
+                    CrmEntityType.valueOf(payload[1]),
+                    entityId);
+        } catch (IllegalArgumentException error) {
+            throw new IllegalArgumentException("Некорректный контекст Bitrix24", error);
+        }
+
+        log.info("Legacy Bitrix context verified: memberId={}, entityType={}, entityId={}, expiresAt={}",
                 context.memberId(), context.entityType(), context.entityId(), expiresAt);
         return context;
+    }
+
+    private long parsePositiveId(String value) {
+        try {
+            long entityId = Long.parseLong(value);
+            if (entityId <= 0) {
+                throw new IllegalArgumentException("Bitrix24 передал некорректный ID карточки");
+            }
+            return entityId;
+        } catch (NumberFormatException error) {
+            throw new IllegalArgumentException("Некорректный контекст Bitrix24", error);
+        }
     }
 
     private byte[] sign(byte[] payload) {

@@ -4,9 +4,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -20,6 +23,10 @@ public class BitrixRestClient {
     private static final ParameterizedTypeReference<Map<String, Object>> MAP_TYPE =
             new ParameterizedTypeReference<>() {};
 
+    private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(10);
+    private static final Duration READ_TIMEOUT = Duration.ofSeconds(30);
+    private static final Duration TOKEN_REFRESH_AHEAD = Duration.ofMinutes(2);
+
     private final BitrixInstallationRepository repository;
     private final BitrixProperties properties;
     private final RestClient restClient;
@@ -29,7 +36,19 @@ public class BitrixRestClient {
             BitrixProperties properties) {
         this.repository = repository;
         this.properties = properties;
-        this.restClient = RestClient.builder().build();
+
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(CONNECT_TIMEOUT);
+        requestFactory.setReadTimeout(READ_TIMEOUT);
+        this.restClient = RestClient.builder()
+                .requestFactory(requestFactory)
+                .build();
+
+        log.info("Bitrix HTTP transport configured: connectTimeoutSeconds={}, readTimeoutSeconds={}, "
+                        + "proactiveRefreshAheadSeconds={}",
+                CONNECT_TIMEOUT.toSeconds(),
+                READ_TIMEOUT.toSeconds(),
+                TOKEN_REFRESH_AHEAD.toSeconds());
     }
 
     public Map<String, Object> call(
@@ -43,6 +62,13 @@ public class BitrixRestClient {
         BitrixInstallation installation = repository.findByMemberId(memberId)
                 .orElseThrow(() -> new IllegalStateException(
                         "Установка Bitrix24 не найдена для member_id=" + memberId));
+
+        if (isTokenNearExpiry(installation)) {
+            log.info("Bitrix access token is expired or near expiry; refreshing before REST call: "
+                            + "memberId={}, method={}, tokenExpiresAt={}",
+                    memberId, method, installation.getTokenExpiresAt());
+            installation = refreshAuthorization(memberId, false);
+        }
 
         try {
             Map<String, Object> response = execute(installation, method, parameters);
@@ -61,10 +87,10 @@ public class BitrixRestClient {
                 throw error;
             }
 
-            log.warn("Bitrix REST authorization error, refreshing token: memberId={}, method={}, "
-                            + "errorCode={}, error={}",
+            log.warn("Bitrix REST authorization error, refreshing token and retrying once: "
+                            + "memberId={}, method={}, errorCode={}, error={}",
                     memberId, method, error.getErrorCode(), error.getMessage());
-            BitrixInstallation refreshed = refreshAuthorization(memberId);
+            BitrixInstallation refreshed = refreshAuthorization(memberId, true);
             Map<String, Object> response = execute(refreshed, method, parameters);
             log.info("Bitrix REST call completed after token refresh: memberId={}, method={}, durationMs={}",
                     memberId, method, elapsedMillis(startedAt));
@@ -100,8 +126,23 @@ public class BitrixRestClient {
                     .body(body)
                     .retrieve()
                     .body(MAP_TYPE);
+        } catch (RestClientResponseException error) {
+            String responseBody = abbreviate(error.getResponseBodyAsString(), 2_000);
+            log.error("Bitrix HTTP error response: memberId={}, method={}, endpoint={}, status={}, "
+                            + "durationMs={}, responseBody={}",
+                    installation.getMemberId(),
+                    method,
+                    endpoint,
+                    error.getStatusCode(),
+                    elapsedMillis(startedAt),
+                    responseBody,
+                    error);
+            throw new BitrixRestException(
+                    "HTTP_" + error.getStatusCode().value(),
+                    responseBody.isBlank() ? error.getMessage() : responseBody);
         } catch (RuntimeException error) {
-            log.error("Bitrix HTTP request failed: memberId={}, method={}, endpoint={}, durationMs={}, error={}",
+            log.error("Bitrix HTTP request failed or timed out: memberId={}, method={}, endpoint={}, "
+                            + "durationMs={}, error={}",
                     installation.getMemberId(),
                     method,
                     endpoint,
@@ -134,13 +175,22 @@ public class BitrixRestClient {
         return response;
     }
 
-    private synchronized BitrixInstallation refreshAuthorization(String memberId) {
+    private synchronized BitrixInstallation refreshAuthorization(String memberId, boolean force) {
         long startedAt = System.nanoTime();
-        log.info("Refreshing Bitrix OAuth tokens: memberId={}", memberId);
-
         BitrixInstallation installation = repository.findByMemberId(memberId)
                 .orElseThrow(() -> new IllegalStateException(
                         "Установка Bitrix24 не найдена для member_id=" + memberId));
+
+        // Другой поток мог успеть обновить пару токенов, пока текущий ждал synchronized-блок.
+        if (!force && !isTokenNearExpiry(installation)) {
+            log.info("Bitrix token refresh skipped because another thread already supplied a fresh token: "
+                            + "memberId={}, expiresAt={}",
+                    memberId, installation.getTokenExpiresAt());
+            return installation;
+        }
+
+        log.info("Refreshing Bitrix OAuth tokens: memberId={}, force={}, currentExpiresAt={}",
+                memberId, force, installation.getTokenExpiresAt());
 
         if (installation.getRefreshToken() == null || installation.getRefreshToken().isBlank()) {
             throw new IllegalStateException("У Bitrix24 отсутствует refresh_token");
@@ -161,8 +211,21 @@ public class BitrixRestClient {
                     .accept(MediaType.APPLICATION_JSON)
                     .retrieve()
                     .body(MAP_TYPE);
+        } catch (RestClientResponseException error) {
+            String responseBody = abbreviate(error.getResponseBodyAsString(), 2_000);
+            log.error("Bitrix OAuth token refresh HTTP error: memberId={}, status={}, durationMs={}, "
+                            + "responseBody={}",
+                    memberId,
+                    error.getStatusCode(),
+                    elapsedMillis(startedAt),
+                    responseBody,
+                    error);
+            throw new BitrixRestException(
+                    "OAUTH_HTTP_" + error.getStatusCode().value(),
+                    responseBody.isBlank() ? error.getMessage() : responseBody);
         } catch (RuntimeException error) {
-            log.error("Bitrix OAuth token refresh HTTP request failed: memberId={}, durationMs={}, error={}",
+            log.error("Bitrix OAuth token refresh HTTP request failed or timed out: "
+                            + "memberId={}, durationMs={}, error={}",
                     memberId, elapsedMillis(startedAt), rootMessage(error), error);
             throw error;
         }
@@ -185,6 +248,7 @@ public class BitrixRestClient {
         String domain = normalizeDomain(String.valueOf(
                 response.getOrDefault("client_endpoint", installation.getPortalDomain())));
 
+        // Bitrix каждый раз возвращает новую пару. Обязательно заменяем оба значения атомарно.
         installation.updateAuthorization(domain, accessToken, refreshToken, expiresAt);
         BitrixInstallation saved = repository.saveAndFlush(installation);
         log.info("OAuth-токены Bitrix24 обновлены: memberId={}, domain={}, expiresAt={}, durationMs={}",
@@ -192,19 +256,38 @@ public class BitrixRestClient {
         return saved;
     }
 
+    private boolean isTokenNearExpiry(BitrixInstallation installation) {
+        OffsetDateTime expiresAt = installation.getTokenExpiresAt();
+        return expiresAt == null
+                || !expiresAt.isAfter(OffsetDateTime.now(ZoneOffset.UTC).plus(TOKEN_REFRESH_AHEAD));
+    }
+
     private OffsetDateTime parseExpiration(Map<String, Object> response) {
-        Object expires = response.get("expires");
-        if (expires instanceof Number number) {
-            return OffsetDateTime.ofInstant(
-                    Instant.ofEpochSecond(number.longValue()), ZoneOffset.UTC);
+        Long expiresEpoch = asLong(response.get("expires"));
+        if (expiresEpoch != null) {
+            return OffsetDateTime.ofInstant(Instant.ofEpochSecond(expiresEpoch), ZoneOffset.UTC);
         }
 
-        Object expiresIn = response.get("expires_in");
-        if (expiresIn instanceof Number number) {
-            return OffsetDateTime.now().plusSeconds(number.longValue());
+        Long expiresIn = asLong(response.get("expires_in"));
+        if (expiresIn != null) {
+            return OffsetDateTime.now(ZoneOffset.UTC).plusSeconds(expiresIn);
         }
 
-        return OffsetDateTime.now().plusHours(1);
+        return OffsetDateTime.now(ZoneOffset.UTC).plusHours(1);
+    }
+
+    private Long asLong(Object value) {
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        if (value == null) {
+            return null;
+        }
+        try {
+            return Long.parseLong(String.valueOf(value));
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
     }
 
     private String requiredString(Map<String, Object> response, String key) {
@@ -240,6 +323,16 @@ public class BitrixRestClient {
         return current.getMessage() == null
                 ? current.getClass().getSimpleName()
                 : current.getMessage();
+    }
+
+    private String abbreviate(String value, int maxLength) {
+        if (value == null) {
+            return "";
+        }
+        String normalized = value.replaceAll("\\s+", " ").trim();
+        return normalized.length() <= maxLength
+                ? normalized
+                : normalized.substring(0, maxLength) + "...";
     }
 
     private String normalizeDomain(String value) {

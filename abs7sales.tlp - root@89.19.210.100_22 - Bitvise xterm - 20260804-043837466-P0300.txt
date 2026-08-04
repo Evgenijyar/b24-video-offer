@@ -1,0 +1,1537 @@
+﻿Last login: Tue Aug  4 04:34:21 2026 from 216.57.105.22
+root@1590435-abs7host:~# cd /opt/b24-video-offer && python3 deploy.py
++ git fetch origin
+remote: Enumerating objects: 13, done.
+remote: Counting objects: 100% (13/13), done.
+remote: Compressing objects: 100% (5/5), done.
+remote: Total 8 (delta 3), reused 8 (delta 3), pack-reused 0 (from 0)
+Unpacking objects: 100% (8/8), 19.00 KiB | 3.17 MiB/s, done.
+From https://github.com/Evgenijyar/b24-video-offer
+   b090bca..ef5262d  main       -> origin/main
++ git reset --hard origin/main
+HEAD is now at ef5262d Add video view goal notifications
++ docker compose build --pull
+[+] Building 22.0s (18/18) FINISHED
+ => [internal] load local bake definitions                                                     0.0s
+ => => reading from stdin 516B                                                                 0.0s
+ => [internal] load build definition from Dockerfile                                           0.0s
+ => => transferring dockerfile: 410B                                                           0.0s
+ => [internal] load metadata for docker.io/library/eclipse-temurin:21-jre                      1.0s
+ => [internal] load metadata for docker.io/library/maven:3.9.16-eclipse-temurin-21             1.0s
+ => [internal] load .dockerignore                                                              0.0s
+ => => transferring context: 2B                                                                0.0s
+ => [build 1/6] FROM docker.io/library/maven:3.9.16-eclipse-temurin-21@sha256:2b4496088e7b80a  0.0s
+ => [stage-1 1/4] FROM docker.io/library/eclipse-temurin:21-jre@sha256:273396ed5998598ed1091e  0.0s
+ => [internal] load build context                                                              0.0s
+ => => transferring context: 9.22kB                                                            0.0s
+ => CACHED [build 2/6] WORKDIR /workspace                                                      0.0s
+ => CACHED [build 3/6] COPY pom.xml pom.xml                                                    0.0s
+ => CACHED [build 4/6] RUN mvn -q -DskipTests dependency:go-offline                            0.0s
+ => [build 5/6] COPY src src                                                                   0.2s
+ => [build 6/6] RUN mvn -q -DskipTests package                                                16.9s
+ => CACHED [stage-1 2/4] WORKDIR /app                                                          0.0s
+ => [stage-1 3/4] COPY --from=build /workspace/target/b24-video-offer-*.jar app.jar            0.3s
+ => [stage-1 4/4] RUN mkdir -p /app/data/videos                                                0.4s
+ => exporting to image                                                                         0.4s
+ => => exporting layers                                                                        0.4s
+ => => writing image sha256:dcbb98ac198dc6899fdd94552c3b445be71df58dd2f852adda3fe32d582f3004   0.0s
+ => => naming to docker.io/library/b24-video-offer-app                                         0.0s
+ => resolving provenance for metadata file                                                     0.1s
+[+] build 1/1
+ ✔ Image b24-video-offer-app Built                                                             22.1s
++ docker compose up -d --remove-orphans
+[+] up 1/1
+ ✔ Container b24-video-offer Recreated                                                          1.8s
+Deployment completed successfully.
++ docker compose ps
+NAME              IMAGE                 COMMAND                  SERVICE   CREATED          STATUS
+        PORTS
+b24-video-offer   b24-video-offer-app   "java -jar /app/app.…"   app       27 seconds ago   Up 25 se
+conds   127.0.0.1:8080->8080/tcp
+root@1590435-abs7host:/opt/b24-video-offer# docker logs -f --tail=200 b24-video-offer
+Picked up JAVA_TOOL_OPTIONS: -Xms64m -Xmx256m -XX:MaxMetaspaceSize=128m -XX:+UseSerialGC -Djava.secu
+rity.egd=file:/dev/./urandom
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.0.5)
+
+2026-08-04T01:35:03.885Z INFO  [main] [requestId=] ru.abs7.videooffer.B24VideoOfferApplication - Sta
+rting B24VideoOfferApplication v0.1.0-SNAPSHOT using Java 21.0.11 with PID 1 (/app/app.jar started b
+y root in /app)
+2026-08-04T01:35:03.898Z INFO  [main] [requestId=] ru.abs7.videooffer.B24VideoOfferApplication - No
+active profile set, falling back to 1 default profile: "default"
+2026-08-04T01:35:06.002Z INFO  [main] [requestId=] o.s.d.r.config.RepositoryConfigurationDelegate -
+Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-08-04T01:35:06.189Z INFO  [main] [requestId=] o.s.d.r.config.RepositoryConfigurationDelegate -
+Finished Spring Data repository scanning in 162 ms. Found 4 JPA repository interfaces.
+2026-08-04T01:35:08.090Z INFO  [main] [requestId=] org.springframework.boot.tomcat.TomcatWebServer -
+ Tomcat initialized with port 8080 (http)
+2026-08-04T01:35:08.128Z INFO  [main] [requestId=] org.apache.catalina.core.StandardService - Starti
+ng service [Tomcat]
+2026-08-04T01:35:08.129Z INFO  [main] [requestId=] org.apache.catalina.core.StandardEngine - Startin
+g Servlet engine: [Apache Tomcat/11.0.20]
+2026-08-04T01:35:08.333Z INFO  [main] [requestId=] o.s.b.w.c.s.WebApplicationContextInitializer - Ro
+ot WebApplicationContext: initialization completed in 4250 ms
+2026-08-04T01:35:10.186Z INFO  [main] [requestId=] com.zaxxer.hikari.HikariDataSource - HikariPool-1
+ - Starting...
+2026-08-04T01:35:11.789Z INFO  [main] [requestId=] com.zaxxer.hikari.pool.HikariPool - HikariPool-1
+- Added connection org.postgresql.jdbc.PgConnection@6a6e9289
+2026-08-04T01:35:11.791Z INFO  [main] [requestId=] com.zaxxer.hikari.HikariDataSource - HikariPool-1
+ - Start completed.
+2026-08-04T01:35:11.917Z INFO  [main] [requestId=] org.flywaydb.core.FlywayExecutor - Database: jdbc
+:postgresql://45.11.92.142:5433/b24_video_offer (PostgreSQL 16.14)
+2026-08-04T01:35:12.730Z INFO  [main] [requestId=] org.flywaydb.core.internal.command.DbValidate - S
+uccessfully validated 3 migrations (execution time 00:00.268s)
+2026-08-04T01:35:13.441Z INFO  [main] [requestId=] org.flywaydb.core.internal.command.DbMigrate - Cu
+rrent version of schema "public": 3
+2026-08-04T01:35:13.496Z INFO  [main] [requestId=] org.flywaydb.core.internal.command.DbMigrate - Sc
+hema "public" is up to date. No migration necessary.
+2026-08-04T01:35:14.093Z INFO  [main] [requestId=] org.hibernate.orm.jpa - HHH008540: Processing Per
+sistenceUnitInfo [name: default]
+2026-08-04T01:35:14.287Z INFO  [main] [requestId=] org.hibernate.orm.core - HHH000001: Hibernate ORM
+ core version 7.2.7.Final
+2026-08-04T01:35:15.791Z INFO  [main] [requestId=] o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTime
+Weaver setup: ignoring JPA class transformer
+2026-08-04T01:35:16.370Z INFO  [main] [requestId=] org.hibernate.orm.connections.pooling - HHH100010
+05: Database info:
+        Database JDBC URL [jdbc:postgresql://45.11.92.142:5433/b24_video_offer]
+        Database driver: PostgreSQL JDBC Driver
+        Database dialect: PostgreSQLDialect
+        Database version: 16.14
+        Default catalog/schema: b24_video_offer/public
+        Autocommit mode: undefined/unknown
+        Isolation level: READ_COMMITTED [default READ_COMMITTED]
+        JDBC fetch size: none
+        Pool: DataSourceConnectionProvider
+        Minimum pool size: undefined/unknown
+        Maximum pool size: undefined/unknown
+2026-08-04T01:35:18.811Z INFO  [main] [requestId=] org.hibernate.orm.core - HHH000489: No JTA platfo
+rm available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-08-04T01:35:19.117Z INFO  [main] [requestId=] o.s.o.jpa.LocalContainerEntityManagerFactoryBean
+- Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-08-04T01:35:19.429Z INFO  [main] [requestId=] o.s.d.j.repository.query.QueryEnhancerFactories -
+ Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-08-04T01:35:22.086Z INFO  [main] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader -
+ Kontur HTTP transport configured: mode=HTTP_PROXY, proxyHost=216.57.105.22, proxyPort=31289, authen
+ticationConfigured=true, connectTimeoutSeconds=15, readTimeoutSeconds=120
+2026-08-04T01:35:22.138Z INFO  [main] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader -
+ Kontur downloader initialized: baseUrl=https://rko7.ktalk.ru/, storageDir=./data/videos, connectTim
+eoutSeconds=15, readTimeoutSeconds=120, stallWarningSeconds=30, maxParallelParts=8, parallelThreshol
+dBytes=33554432, proxyEnabled=true, proxyHost=216.57.105.22, proxyPort=31289, proxyAuthenticationCon
+figured=true
+2026-08-04T01:35:22.381Z INFO  [main] [requestId=] ru.abs7.videooffer.offer.VideoOfferService - Vide
+oOfferService initialized: publicBaseUrl=https://offer.abs7.ru, retentionDays=7
+2026-08-04T01:35:23.156Z INFO  [main] [requestId=] o.s.b.w.autoconfigure.WelcomePageHandlerMapping -
+ Adding welcome page: class path resource [static/index.html]
+2026-08-04T01:35:24.470Z INFO  [main] [requestId=] org.springframework.boot.tomcat.TomcatWebServer -
+ Tomcat started on port 8080 (http) with context path '/'
+2026-08-04T01:35:24.497Z INFO  [main] [requestId=] ru.abs7.videooffer.B24VideoOfferApplication - Sta
+rted B24VideoOfferApplication in 22.183 seconds (process running for 23.837)
+2026-08-04T01:35:24.507Z INFO  [main] [requestId=] r.a.videooffer.offer.VideoOfferLifecycleService -
+ Checking interrupted video offers after application startup
+2026-08-04T01:35:24.988Z INFO  [http-nio-8080-exec-1] [requestId=] o.a.c.c.ContainerBase.[Tomcat].[l
+ocalhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-08-04T01:35:24.990Z INFO  [http-nio-8080-exec-1] [requestId=] o.springframework.web.servlet.Dis
+patcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-08-04T01:35:24.995Z INFO  [http-nio-8080-exec-1] [requestId=] o.springframework.web.servlet.Dis
+patcherServlet - Completed initialization in 2 ms
+2026-08-04T01:35:25.016Z INFO  [http-nio-8080-exec-1] [requestId=982e740c-a1b7-4a2b-9460-e423b701acf
+7] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/heal
+th, remoteAddress=172.19.0.1, userAgent=Python-urllib/3.10
+2026-08-04T01:35:25.265Z INFO  [main] [requestId=] ru.abs7.videooffer.offer.VideoOfferService - Pend
+ing video offers selected for recovery: count=0
+2026-08-04T01:35:25.276Z INFO  [http-nio-8080-exec-1] [requestId=982e740c-a1b7-4a2b-9460-e423b701acf
+7] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/he
+alth, status=200, durationMs=259
+2026-08-04T01:35:48.236Z INFO  [http-nio-8080-exec-2] [requestId=5eaf606b-2c9e-4792-8b14-d8599605e58
+c] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/bitrix/
+widget, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit
+/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:35:48.276Z INFO  [http-nio-8080-exec-2] [requestId=5eaf606b-2c9e-4792-8b14-d8599605e58
+c] ru.abs7.videooffer.bitrix.BitrixController - Bitrix widget callback received: parameterNames=[DOM
+AIN, PROTOCOL, LANG, APP_SID, AUTH_ID, AUTH_EXPIRES, REFRESH_ID, SERVER_ENDPOINT, APPLICATION_TOKEN,
+ APPLICATION_SCOPE, member_id, status, PLACEMENT, PLACEMENT_OPTIONS]
+2026-08-04T01:35:48.279Z INFO  [http-nio-8080-exec-2] [requestId=5eaf606b-2c9e-4792-8b14-d8599605e58
+c] ru.abs7.videooffer.bitrix.BitrixController - Bitrix widget context resolved: placement=CRM_LEAD_D
+ETAIL_ACTIVITY, memberId=419222a0c1725a38175958981810edd7, entityType=LEAD, entityId=64634
+2026-08-04T01:35:48.349Z INFO  [http-nio-8080-exec-2] [requestId=5eaf606b-2c9e-4792-8b14-d8599605e58
+c] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=64634, expiresAt=1785821748
+2026-08-04T01:35:48.353Z INFO  [http-nio-8080-exec-2] [requestId=5eaf606b-2c9e-4792-8b14-d8599605e58
+c] ru.abs7.videooffer.bitrix.BitrixController - Bitrix widget HTML generated: entityType=LEAD, entit
+yId=64634, htmlBytes=3935
+2026-08-04T01:35:48.413Z INFO  [http-nio-8080-exec-2] [requestId=5eaf606b-2c9e-4792-8b14-d8599605e58
+c] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/bitri
+x/widget, status=200, durationMs=181
+2026-08-04T01:35:48.487Z INFO  [http-nio-8080-exec-4] [requestId=0a45aa79-23ce-4c26-a4e2-24d3a48d6de
+9] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/assets/b
+itrix-widget.js, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) Ap
+pleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:35:48.490Z INFO  [http-nio-8080-exec-3] [requestId=f2766f8c-7d4e-4bc5-8c8e-325144dad8f
+c] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/assets/b
+itrix-widget.css, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) A
+ppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:35:48.535Z INFO  [http-nio-8080-exec-3] [requestId=f2766f8c-7d4e-4bc5-8c8e-325144dad8f
+c] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/assets
+/bitrix-widget.css, status=200, durationMs=45
+2026-08-04T01:35:48.537Z INFO  [http-nio-8080-exec-4] [requestId=0a45aa79-23ce-4c26-a4e2-24d3a48d6de
+9] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/assets
+/bitrix-widget.js, status=200, durationMs=49
+2026-08-04T01:36:07.473Z INFO  [http-nio-8080-exec-5] [requestId=34df51d0-7f52-4abb-b4dd-9c53d008d1f
+9] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/bitrix/
+video-offers, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) Apple
+WebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:36:08.427Z INFO  [http-nio-8080-exec-5] [requestId=34df51d0-7f52-4abb-b4dd-9c53d008d1f
+9] ru.abs7.videooffer.bitrix.BitrixController - Bitrix video offer creation requested: recordingUrlP
+resent=true, accompanyingTextLength=12, viewNotificationGoal=ONE_MINUTE
+2026-08-04T01:36:08.436Z INFO  [http-nio-8080-exec-5] [requestId=34df51d0-7f52-4abb-b4dd-9c53d008d1f
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context verified: memberId=419222a0c1725a3
+8175958981810edd7, entityType=LEAD, entityId=64634, expiresAt=1785821748
+2026-08-04T01:36:08.441Z INFO  [http-nio-8080-exec-5] [requestId=34df51d0-7f52-4abb-b4dd-9c53d008d1f
+9] ru.abs7.videooffer.bitrix.BitrixController - Bitrix signed context verified: memberId=419222a0c17
+25a38175958981810edd7, entityType=LEAD, entityId=64634
+2026-08-04T01:36:08.472Z INFO  [http-nio-8080-exec-5] [requestId=34df51d0-7f52-4abb-b4dd-9c53d008d1f
+9] ru.abs7.videooffer.offer.VideoOfferService - Creating video offer: entityType=LEAD, entityId=6463
+4, bitrixMemberId=419222a0c1725a38175958981810edd7, bitrixUserId=null, recordingUrlPresent=true, acc
+ompanyingTextLength=12, viewNotificationGoal=ONE_MINUTE
+2026-08-04T01:36:08.474Z INFO  [http-nio-8080-exec-5] [requestId=34df51d0-7f52-4abb-b4dd-9c53d008d1f
+9] r.a.videooffer.kontur.KonturRecordingUrlParser - Parsing Kontur recording URL: scheme=https, host
+=rko7.ktalk.ru, path=/recordings/LKATA1owT5ZzqEyURWPC
+2026-08-04T01:36:08.485Z INFO  [http-nio-8080-exec-5] [requestId=34df51d0-7f52-4abb-b4dd-9c53d008d1f
+9] r.a.videooffer.kontur.KonturRecordingUrlParser - Kontur recording key extracted: recordingKey=LKA
+TA1owT5ZzqEyURWPC
+2026-08-04T01:36:08.500Z INFO  [http-nio-8080-exec-5] [requestId=34df51d0-7f52-4abb-b4dd-9c53d008d1f
+9] ru.abs7.videooffer.offer.VideoOfferService - Video offer entity created in memory: offerId=12fa6f
+ed-7ee3-4715-b647-e7defa2e866a, publicToken=cf1e393002c14407b4495f2bd6cca0db, recordingKey=LKATA1owT
+5ZzqEyURWPC, status=QUEUED, viewNotificationGoal=ONE_MINUTE, expiresAt=2026-08-11T01:36:08.488174520
+Z
+2026-08-04T01:36:09.075Z INFO  [http-nio-8080-exec-5] [requestId=34df51d0-7f52-4abb-b4dd-9c53d008d1f
+9] ru.abs7.videooffer.offer.VideoOfferService - Video offer persisted: offerId=12fa6fed-7ee3-4715-b6
+47-e7defa2e866a, status=QUEUED, progress=0%, durationMs=602
+2026-08-04T01:36:09.095Z INFO  [http-nio-8080-exec-5] [requestId=34df51d0-7f52-4abb-b4dd-9c53d008d1f
+9] ru.abs7.videooffer.offer.VideoOfferService - Video offer background processing submitted: offerId
+=12fa6fed-7ee3-4715-b647-e7defa2e866a
+2026-08-04T01:36:09.096Z INFO  [http-nio-8080-exec-5] [requestId=34df51d0-7f52-4abb-b4dd-9c53d008d1f
+9] ru.abs7.videooffer.bitrix.BitrixController - Bitrix video offer accepted: offerId=12fa6fed-7ee3-4
+715-b647-e7defa2e866a, entityType=LEAD, entityId=64634, status=QUEUED
+2026-08-04T01:36:09.101Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer processing started: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, thread=video-of
+fer-1
+2026-08-04T01:36:09.150Z INFO  [http-nio-8080-exec-5] [requestId=34df51d0-7f52-4abb-b4dd-9c53d008d1f
+9] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/bitri
+x/video-offers, status=202, durationMs=1677
+2026-08-04T01:36:09.235Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer loaded for processing: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, entityType=L
+EAD, entityId=64634, recordingKey=LKATA1owT5ZzqEyURWPC, status=QUEUED, currentProgress=0%, bitrixMem
+berId=419222a0c1725a38175958981810edd7
+2026-08-04T01:36:09.337Z INFO  [http-nio-8080-exec-6] [requestId=4a5e509b-fa1d-455b-884f-962ded5bd9c
+d] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/12fa6fed-7ee3-4715-b647-e7defa2e866a, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:36:09.504Z INFO  [http-nio-8080-exec-6] [requestId=4a5e509b-fa1d-455b-884f-962ded5bd9c
+d] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/12fa6fed-7ee3-4715-b647-e7defa2e866a, status=200, durationMs=167
+2026-08-04T01:36:09.526Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=processin
+g-started, previous=0%, current=1%, status=PREPARING
+2026-08-04T01:36:09.528Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Calling Kontur downloader: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA1o
+wT5ZzqEyURWPC
+2026-08-04T01:36:09.532Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download requested: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKAT
+A1owT5ZzqEyURWPC, storageDir=/app/data/videos, tempFile=/app/data/videos/12fa6fed-7ee3-4715-b647-e7d
+efa2e866a.download, finalFile=/app/data/videos/12fa6fed-7ee3-4715-b647-e7defa2e866a.mp4, qualities=[
+900 p, 900p, 720p, 1080p, high]
+2026-08-04T01:36:09.539Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur quality attempt started: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey
+=LKATA1owT5ZzqEyURWPC, attempt=1/5, quality=900 p
+2026-08-04T01:36:09.540Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur probe request: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA1owT
+5ZzqEyURWPC, quality=900 p, range=bytes=0-0
+2026-08-04T01:36:10.334Z INFO  [http-nio-8080-exec-7] [requestId=a9697448-a27d-4c0a-88aa-c9aa2689c2d
+c] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/12fa6fed-7ee3-4715-b647-e7defa2e866a, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:36:10.409Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur probe response: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA1ow
+T5ZzqEyURWPC, quality=900 p, status=404, contentRange=null, contentLength=-1, totalBytes=0, supports
+Ranges=false, durationMs=869
+2026-08-04T01:36:10.411Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur quality not found: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900 p, status=404
+2026-08-04T01:36:10.411Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur quality attempt started: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey
+=LKATA1owT5ZzqEyURWPC, attempt=2/5, quality=900p
+2026-08-04T01:36:10.412Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur probe request: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA1owT
+5ZzqEyURWPC, quality=900p, range=bytes=0-0
+2026-08-04T01:36:10.490Z INFO  [http-nio-8080-exec-7] [requestId=a9697448-a27d-4c0a-88aa-c9aa2689c2d
+c] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/12fa6fed-7ee3-4715-b647-e7defa2e866a, status=200, durationMs=155
+2026-08-04T01:36:12.125Z INFO  [http-nio-8080-exec-8] [requestId=9bbd3430-c570-430f-8aa3-b41a9889aa5
+5] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/12fa6fed-7ee3-4715-b647-e7defa2e866a, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:36:12.164Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur probe response: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA1ow
+T5ZzqEyURWPC, quality=900p, status=206, contentRange=bytes 0-0/11492323, contentLength=1, totalBytes
+=11492323, supportsRanges=true, durationMs=1752
+2026-08-04T01:36:12.207Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur quality selected for download attempt: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a
+, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, status=206, totalBytes=11492323, totalHuman=10.96
+ MiB, supportsRanges=true, mode=SINGLE_STREAM
+2026-08-04T01:36:12.332Z INFO  [http-nio-8080-exec-8] [requestId=9bbd3430-c570-430f-8aa3-b41a9889aa5
+5] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/12fa6fed-7ee3-4715-b647-e7defa2e866a, status=200, durationMs=206
+2026-08-04T01:36:12.352Z INFO  [http-nio-8080-exec-9] [requestId=1a7669b6-9b18-4051-b29d-4c5a0a55cd7
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/12fa6fed-7ee3-4715-b647-e7defa2e866a, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:36:12.458Z INFO  [http-nio-8080-exec-9] [requestId=1a7669b6-9b18-4051-b29d-4c5a0a55cd7
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/12fa6fed-7ee3-4715-b647-e7defa2e866a, status=200, durationMs=105
+2026-08-04T01:36:12.516Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=1%, current=1%, status=PREPARING
+2026-08-04T01:36:12.517Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=download-start, progress=1%, downloadedByte
+s=0, downloadedHuman=0 B, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=309
+2026-08-04T01:36:12.518Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Single stream request started: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=
+LKATA1owT5ZzqEyURWPC, quality=900p, expectedLength=11492323, file=/app/data/videos/12fa6fed-7ee3-471
+5-b647-e7defa2e866a.download
+2026-08-04T01:36:12.691Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Single stream response headers: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey
+=LKATA1owT5ZzqEyURWPC, quality=900p, status=200, contentLength=11492323, contentRange=null, duration
+ToHeadersMs=172
+2026-08-04T01:36:13.119Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=1%, current=3%, status=PREPARING
+2026-08-04T01:36:13.343Z INFO  [http-nio-8080-exec-10] [requestId=047b1728-afec-49ff-bf10-428a696beb
+38] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vid
+eo-offers/12fa6fed-7ee3-4715-b647-e7defa2e866a, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (
+Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesk
+top/22.0.28.91 Safari/537.36
+2026-08-04T01:36:13.401Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=3%, current=5%, status=PREPARING
+2026-08-04T01:36:13.405Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=6%, downloadedBytes
+=703816, downloadedHuman=687.32 KiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=1197
+2026-08-04T01:36:13.502Z INFO  [http-nio-8080-exec-10] [requestId=047b1728-afec-49ff-bf10-428a696beb
+38] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/v
+ideo-offers/12fa6fed-7ee3-4715-b647-e7defa2e866a, status=200, durationMs=159
+2026-08-04T01:36:13.671Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=5%, current=7%, status=PREPARING
+2026-08-04T01:36:13.942Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=7%, current=9%, status=PREPARING
+2026-08-04T01:36:14.219Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=9%, current=11%, status=PREPARING
+2026-08-04T01:36:14.219Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=11%, downloadedByte
+s=1277256, downloadedHuman=1.22 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=2011
+2026-08-04T01:36:14.343Z INFO  [http-nio-8080-exec-1] [requestId=31fc02c7-b50a-4b70-babc-ec2ca0a7ea1
+5] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/12fa6fed-7ee3-4715-b647-e7defa2e866a, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:36:14.500Z INFO  [http-nio-8080-exec-1] [requestId=31fc02c7-b50a-4b70-babc-ec2ca0a7ea1
+5] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/12fa6fed-7ee3-4715-b647-e7defa2e866a, status=200, durationMs=156
+2026-08-04T01:36:14.515Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=11%, current=13%, status=PREPARING
+2026-08-04T01:36:14.788Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=13%, current=15%, status=PREPARING
+2026-08-04T01:36:14.797Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=16%, downloadedByte
+s=1850696, downloadedHuman=1.76 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=2589
+2026-08-04T01:36:15.065Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=15%, current=17%, status=PREPARING
+2026-08-04T01:36:15.337Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=17%, current=19%, status=PREPARING
+2026-08-04T01:36:15.344Z INFO  [http-nio-8080-exec-2] [requestId=a8bc8f30-e6cb-4e90-9549-31d2c1ac271
+d] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/12fa6fed-7ee3-4715-b647-e7defa2e866a, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:36:15.622Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=19%, current=21%, status=PREPARING
+2026-08-04T01:36:15.622Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=21%, downloadedByte
+s=2424136, downloadedHuman=2.31 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=3414
+2026-08-04T01:36:15.758Z INFO  [http-nio-8080-exec-2] [requestId=a8bc8f30-e6cb-4e90-9549-31d2c1ac271
+d] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/12fa6fed-7ee3-4715-b647-e7defa2e866a, status=200, durationMs=414
+2026-08-04T01:36:15.882Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=21%, current=23%, status=PREPARING
+2026-08-04T01:36:16.147Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=23%, current=25%, status=PREPARING
+2026-08-04T01:36:16.155Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=26%, downloadedByte
+s=2997576, downloadedHuman=2.86 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=3947
+2026-08-04T01:36:16.230Z INFO  [http-nio-8080-exec-3] [requestId=b2d5ac51-9219-497c-81d8-55adb4e61bd
+e] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/12fa6fed-7ee3-4715-b647-e7defa2e866a, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:36:16.334Z INFO  [http-nio-8080-exec-3] [requestId=b2d5ac51-9219-497c-81d8-55adb4e61bd
+e] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/12fa6fed-7ee3-4715-b647-e7defa2e866a, status=200, durationMs=104
+2026-08-04T01:36:16.418Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=25%, current=27%, status=PREPARING
+2026-08-04T01:36:16.682Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=27%, current=29%, status=PREPARING
+2026-08-04T01:36:16.963Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=29%, current=31%, status=PREPARING
+2026-08-04T01:36:16.964Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=31%, downloadedByte
+s=3571016, downloadedHuman=3.41 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=4756
+2026-08-04T01:36:17.292Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=31%, current=33%, status=PREPARING
+2026-08-04T01:36:17.572Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=33%, current=35%, status=PREPARING
+2026-08-04T01:36:17.583Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=36%, downloadedByte
+s=4144456, downloadedHuman=3.95 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=5374
+2026-08-04T01:36:17.854Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=35%, current=37%, status=PREPARING
+2026-08-04T01:36:18.136Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=37%, current=39%, status=PREPARING
+2026-08-04T01:36:18.406Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=39%, current=41%, status=PREPARING
+2026-08-04T01:36:18.407Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=41%, downloadedByte
+s=4717896, downloadedHuman=4.50 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=6199
+2026-08-04T01:36:18.685Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=41%, current=43%, status=PREPARING
+2026-08-04T01:36:18.952Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=43%, current=45%, status=PREPARING
+2026-08-04T01:36:18.966Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=46%, downloadedByte
+s=5291336, downloadedHuman=5.05 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=6758
+2026-08-04T01:36:19.228Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=45%, current=47%, status=PREPARING
+2026-08-04T01:36:19.493Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=47%, current=49%, status=PREPARING
+2026-08-04T01:36:19.757Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=49%, current=51%, status=PREPARING
+2026-08-04T01:36:19.759Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=51%, downloadedByte
+s=5864776, downloadedHuman=5.59 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=7550
+2026-08-04T01:36:20.028Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=51%, current=53%, status=PREPARING
+2026-08-04T01:36:20.302Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=53%, current=55%, status=PREPARING
+2026-08-04T01:36:20.327Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=56%, downloadedByte
+s=6438216, downloadedHuman=6.14 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=8113
+2026-08-04T01:36:20.614Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=55%, current=57%, status=PREPARING
+2026-08-04T01:36:20.888Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=57%, current=59%, status=PREPARING
+2026-08-04T01:36:21.152Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=59%, current=61%, status=PREPARING
+2026-08-04T01:36:21.153Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=61%, downloadedByte
+s=7011656, downloadedHuman=6.69 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=8945
+2026-08-04T01:36:21.421Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=61%, current=63%, status=PREPARING
+2026-08-04T01:36:21.687Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=63%, current=65%, status=PREPARING
+2026-08-04T01:36:21.692Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=66%, downloadedByte
+s=7585096, downloadedHuman=7.23 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=9483
+2026-08-04T01:36:21.950Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=65%, current=67%, status=PREPARING
+2026-08-04T01:36:22.223Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=67%, current=69%, status=PREPARING
+2026-08-04T01:36:22.495Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=69%, current=71%, status=PREPARING
+2026-08-04T01:36:22.496Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=71%, downloadedByte
+s=8174920, downloadedHuman=7.80 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=10287
+2026-08-04T01:36:22.759Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=71%, current=73%, status=PREPARING
+2026-08-04T01:36:23.038Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=73%, current=75%, status=PREPARING
+2026-08-04T01:36:23.043Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=76%, downloadedByte
+s=8748360, downloadedHuman=8.34 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=10834
+2026-08-04T01:36:23.313Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=75%, current=77%, status=PREPARING
+2026-08-04T01:36:23.586Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=77%, current=79%, status=PREPARING
+2026-08-04T01:36:23.848Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=79%, current=81%, status=PREPARING
+2026-08-04T01:36:23.849Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=81%, downloadedByte
+s=9321800, downloadedHuman=8.89 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=11640
+2026-08-04T01:36:24.105Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=81%, current=83%, status=PREPARING
+2026-08-04T01:36:24.369Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=83%, current=85%, status=PREPARING
+2026-08-04T01:36:24.374Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=86%, downloadedByte
+s=9895240, downloadedHuman=9.44 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=12166
+2026-08-04T01:36:24.645Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=85%, current=87%, status=PREPARING
+2026-08-04T01:36:25.004Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=87%, current=89%, status=PREPARING
+2026-08-04T01:36:25.263Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=89%, current=91%, status=PREPARING
+2026-08-04T01:36:25.264Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=91%, downloadedByte
+s=10468680, downloadedHuman=9.98 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=13055
+2026-08-04T01:36:25.524Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=91%, current=93%, status=PREPARING
+2026-08-04T01:36:25.783Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=93%, current=95%, status=PREPARING
+2026-08-04T01:36:25.786Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=96%, downloadedByte
+s=11042120, downloadedHuman=10.53 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=13577
+2026-08-04T01:36:26.057Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=95%, current=97%, status=PREPARING
+2026-08-04T01:36:26.316Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=97%, current=99%, status=PREPARING
+2026-08-04T01:36:26.317Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=99%, downloadedByte
+s=11386184, downloadedHuman=10.86 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=14108
+2026-08-04T01:36:26.567Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=99%, current=99%, status=PREPARING
+2026-08-04T01:36:26.568Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=99%, downloadedByte
+s=11402568, downloadedHuman=10.87 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=14359
+2026-08-04T01:36:26.824Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=99%, current=99%, status=PREPARING
+2026-08-04T01:36:26.825Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=99%, downloadedByte
+s=11418952, downloadedHuman=10.89 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=14616
+2026-08-04T01:36:27.077Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=99%, current=99%, status=PREPARING
+2026-08-04T01:36:27.079Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=99%, downloadedByte
+s=11435336, downloadedHuman=10.91 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=14870
+2026-08-04T01:36:27.331Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=99%, current=99%, status=PREPARING
+2026-08-04T01:36:27.332Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=99%, downloadedByte
+s=11451720, downloadedHuman=10.92 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=15123
+2026-08-04T01:36:27.586Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=99%, current=99%, status=PREPARING
+2026-08-04T01:36:27.587Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=99%, downloadedByte
+s=11468104, downloadedHuman=10.94 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=15379
+2026-08-04T01:36:27.844Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=99%, current=99%, status=PREPARING
+2026-08-04T01:36:27.845Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=99%, downloadedByte
+s=11484488, downloadedHuman=10.95 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=15637
+2026-08-04T01:36:28.113Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=99%, current=99%, status=PREPARING
+2026-08-04T01:36:28.114Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=99%, downloadedByte
+s=11492323, downloadedHuman=10.96 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=15905
+2026-08-04T01:36:28.115Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Single stream completed: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA1
+owT5ZzqEyURWPC, quality=900p, copiedBytes=11492323, humanSize=10.96 MiB, durationMs=15597
+2026-08-04T01:36:28.115Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur transfer body finished: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=
+LKATA1owT5ZzqEyURWPC, quality=900p, downloadedBytes=11492323, downloadedHuman=10.96 MiB, expectedByt
+es=11492323, durationMs=17703
+2026-08-04T01:36:28.116Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Moving downloaded file: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, source=/app/data/vid
+eos/12fa6fed-7ee3-4715-b647-e7defa2e866a.download, target=/app/data/videos/12fa6fed-7ee3-4715-b647-e
+7defa2e866a.mp4, bytes=11492323
+2026-08-04T01:36:28.121Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Atomic file move completed: source=/app/data/videos/12fa6fed-7ee3-4715-b647-e7defa2e866a.d
+ownload, target=/app/data/videos/12fa6fed-7ee3-4715-b647-e7defa2e866a.mp4
+2026-08-04T01:36:28.394Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, stage=kontur-do
+wnload, previous=99%, current=99%, status=PREPARING
+2026-08-04T01:36:28.395Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=completed, progress=100%, downloadedBytes=1
+1492323, downloadedHuman=10.96 MiB, elapsedMs=16187
+2026-08-04T01:36:28.396Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur video saved successfully: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, recordingKe
+y=LKATA1owT5ZzqEyURWPC, file=/app/data/videos/12fa6fed-7ee3-4715-b647-e7defa2e866a.mp4, bytes=114923
+23, humanSize=10.96 MiB, quality=900p, totalDurationMs=18865
+2026-08-04T01:36:28.397Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Kontur downloader returned successfully: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, path=/
+app/data/videos/12fa6fed-7ee3-4715-b647-e7defa2e866a.mp4, bytes=11492323, quality=900p, durationMs=1
+9295
+2026-08-04T01:36:28.499Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Marking video offer ready: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, previousStatus=PREPA
+RING, path=/app/data/videos/12fa6fed-7ee3-4715-b647-e7defa2e866a.mp4, bytes=11492323, quality=900p
+2026-08-04T01:36:28.654Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer READY state persisted: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, publicToken=
+cf1e393002c14407b4495f2bd6cca0db, readyAt=2026-08-04T01:36:28.500461468Z
+2026-08-04T01:36:28.654Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Publishing ready link to Bitrix24: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, bitrixMember
+Id=419222a0c1725a38175958981810edd7, entityType=LEAD, entityId=64634
+2026-08-04T01:36:28.654Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixTimeline
+Service - Bitrix timeline publication started: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, memberI
+d=419222a0c1725a38175958981810edd7, entityType=LEAD, entityId=64634
+2026-08-04T01:36:28.656Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixTimeline
+Service - Calling crm.timeline.comment.add: offerId=12fa6fed-7ee3-4715-b647-e7defa2e866a, entityType
+=lead, entityId=64634, publicUrl=https://offer.abs7.ru/o/cf1e393002c14407b4495f2bd6cca0db
+2026-08-04T01:36:28.657Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call started: memberId=419222a0c1725a38175958981810edd7, method=crm.timeline.commen
+t.add, parameterNames=[fields]
+2026-08-04T01:36:28.736Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Executing Bitrix REST request: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.
+ru, method=crm.timeline.comment.add, endpoint=https://abs7.bitrix24.ru/rest/crm.timeline.comment.add
+.json, tokenExpiresAt=2026-08-04T02:33:32Z
+2026-08-04T01:37:35.207Z INFO  [http-nio-8080-exec-4] [requestId=5ebb65de-329d-43b2-b29b-9fbbf6b7f0a
+8] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/bitrix/
+widget, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit
+/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:37:35.220Z INFO  [http-nio-8080-exec-4] [requestId=5ebb65de-329d-43b2-b29b-9fbbf6b7f0a
+8] ru.abs7.videooffer.bitrix.BitrixController - Bitrix widget callback received: parameterNames=[DOM
+AIN, PROTOCOL, LANG, APP_SID, AUTH_ID, AUTH_EXPIRES, REFRESH_ID, SERVER_ENDPOINT, APPLICATION_TOKEN,
+ APPLICATION_SCOPE, member_id, status, PLACEMENT, PLACEMENT_OPTIONS]
+2026-08-04T01:37:35.221Z INFO  [http-nio-8080-exec-4] [requestId=5ebb65de-329d-43b2-b29b-9fbbf6b7f0a
+8] ru.abs7.videooffer.bitrix.BitrixController - Bitrix widget context resolved: placement=CRM_LEAD_D
+ETAIL_ACTIVITY, memberId=419222a0c1725a38175958981810edd7, entityType=LEAD, entityId=72066
+2026-08-04T01:37:35.227Z INFO  [http-nio-8080-exec-4] [requestId=5ebb65de-329d-43b2-b29b-9fbbf6b7f0a
+8] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72066, expiresAt=1785821855
+2026-08-04T01:37:35.232Z INFO  [http-nio-8080-exec-4] [requestId=5ebb65de-329d-43b2-b29b-9fbbf6b7f0a
+8] ru.abs7.videooffer.bitrix.BitrixController - Bitrix widget HTML generated: entityType=LEAD, entit
+yId=72066, htmlBytes=3935
+2026-08-04T01:37:35.236Z INFO  [http-nio-8080-exec-4] [requestId=5ebb65de-329d-43b2-b29b-9fbbf6b7f0a
+8] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/bitri
+x/widget, status=200, durationMs=29
+2026-08-04T01:37:35.305Z INFO  [http-nio-8080-exec-5] [requestId=857cca0c-35fc-4c31-9d85-1e388c4afea
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/assets/b
+itrix-widget.js, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) Ap
+pleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:37:35.314Z INFO  [http-nio-8080-exec-5] [requestId=857cca0c-35fc-4c31-9d85-1e388c4afea
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/assets
+/bitrix-widget.js, status=304, durationMs=9
+2026-08-04T01:37:35.430Z INFO  [http-nio-8080-exec-6] [requestId=edbe146b-cc2c-45a3-aed4-2bcb5cc6320
+0] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/assets/b
+itrix-widget.css, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) A
+ppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:37:35.434Z INFO  [http-nio-8080-exec-6] [requestId=edbe146b-cc2c-45a3-aed4-2bcb5cc6320
+0] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/assets
+/bitrix-widget.css, status=304, durationMs=4
+2026-08-04T01:37:39.680Z INFO  [http-nio-8080-exec-7] [requestId=5b5d16af-1b5b-4550-9aa0-231d6439d08
+3] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/bitrix/
+video-offers, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) Apple
+WebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-04T01:37:39.698Z INFO  [http-nio-8080-exec-7] [requestId=5b5d16af-1b5b-4550-9aa0-231d6439d08
+3] ru.abs7.videooffer.bitrix.BitrixController - Bitrix video offer creation requested: recordingUrlP
+resent=true, accompanyingTextLength=9, viewNotificationGoal=ONE_MINUTE
+2026-08-04T01:37:39.699Z INFO  [http-nio-8080-exec-7] [requestId=5b5d16af-1b5b-4550-9aa0-231d6439d08
+3] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context verified: memberId=419222a0c1725a3
+8175958981810edd7, entityType=LEAD, entityId=72066, expiresAt=1785821855
+2026-08-04T01:37:39.699Z INFO  [http-nio-8080-exec-7] [requestId=5b5d16af-1b5b-4550-9aa0-231d6439d08
+3] ru.abs7.videooffer.bitrix.BitrixController - Bitrix signed context verified: memberId=419222a0c17
+25a38175958981810edd7, entityType=LEAD, entityId=72066
+2026-08-04T01:37:39.700Z INFO  [http-nio-8080-exec-7] [requestId=5b5d16af-1b5b-4550-9aa0-231d6439d08
+3] ru.abs7.videooffer.offer.VideoOfferService - Creating video offer: entityType=LEAD, entityId=7206
+6, bitrixMemberId=419222a0c1725a38175958981810edd7, bitrixUserId=null, recordingUrlPresent=true, acc
+ompanyingTextLength=9, viewNotificationGoal=ONE_MINUTE
+2026-08-04T01:37:39.701Z INFO  [http-nio-8080-exec-7] [requestId=5b5d16af-1b5b-4550-9aa0-231d6439d08
+3] r.a.videooffer.kontur.KonturRecordingUrlParser - Parsing Kontur recording URL: scheme=https, host
+=rko7.ktalk.ru, path=/recordings/LKATA1owT5ZzqEyURWPC
+2026-08-04T01:37:39.701Z INFO  [http-nio-8080-exec-7] [requestId=5b5d16af-1b5b-4550-9aa0-231d6439d08
+3] r.a.videooffer.kontur.KonturRecordingUrlParser - Kontur recording key extracted: recordingKey=LKA
+TA1owT5ZzqEyURWPC
+2026-08-04T01:37:39.702Z INFO  [http-nio-8080-exec-7] [requestId=5b5d16af-1b5b-4550-9aa0-231d6439d08
+3] ru.abs7.videooffer.offer.VideoOfferService - Video offer entity created in memory: offerId=70817e
+33-91f8-43d3-8da1-f57bbda1d546, publicToken=e64ce33270284b91932d0b703ba0974c, recordingKey=LKATA1owT
+5ZzqEyURWPC, status=QUEUED, viewNotificationGoal=ONE_MINUTE, expiresAt=2026-08-11T01:37:39.702345054
+Z
+2026-08-04T01:37:39.914Z INFO  [http-nio-8080-exec-7] [requestId=5b5d16af-1b5b-4550-9aa0-231d6439d08
+3] ru.abs7.videooffer.offer.VideoOfferService - Video offer persisted: offerId=70817e33-91f8-43d3-8d
+a1-f57bbda1d546, status=QUEUED, progress=0%, durationMs=214
+2026-08-04T01:37:39.919Z INFO  [http-nio-8080-exec-7] [requestId=5b5d16af-1b5b-4550-9aa0-231d6439d08
+3] ru.abs7.videooffer.offer.VideoOfferService - Video offer background processing submitted: offerId
+=70817e33-91f8-43d3-8da1-f57bbda1d546
+2026-08-04T01:37:39.920Z INFO  [http-nio-8080-exec-7] [requestId=5b5d16af-1b5b-4550-9aa0-231d6439d08
+3] ru.abs7.videooffer.bitrix.BitrixController - Bitrix video offer accepted: offerId=70817e33-91f8-4
+3d3-8da1-f57bbda1d546, entityType=LEAD, entityId=72066, status=QUEUED
+2026-08-04T01:37:39.923Z INFO  [http-nio-8080-exec-7] [requestId=5b5d16af-1b5b-4550-9aa0-231d6439d08
+3] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/bitri
+x/video-offers, status=202, durationMs=242
+2026-08-04T01:37:39.925Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer processing started: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, thread=video-of
+fer-2
+2026-08-04T01:37:39.985Z INFO  [http-nio-8080-exec-8] [requestId=a95cb52a-5651-4fdc-a59d-f79fd1dcc08
+4] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:37:40.028Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer loaded for processing: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, entityType=L
+EAD, entityId=72066, recordingKey=LKATA1owT5ZzqEyURWPC, status=QUEUED, currentProgress=0%, bitrixMem
+berId=419222a0c1725a38175958981810edd7
+2026-08-04T01:37:40.145Z INFO  [http-nio-8080-exec-8] [requestId=a95cb52a-5651-4fdc-a59d-f79fd1dcc08
+4] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=159
+2026-08-04T01:37:40.282Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=processin
+g-started, previous=0%, current=1%, status=PREPARING
+2026-08-04T01:37:40.283Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Calling Kontur downloader: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA1o
+wT5ZzqEyURWPC
+2026-08-04T01:37:40.285Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download requested: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKAT
+A1owT5ZzqEyURWPC, storageDir=/app/data/videos, tempFile=/app/data/videos/70817e33-91f8-43d3-8da1-f57
+bbda1d546.download, finalFile=/app/data/videos/70817e33-91f8-43d3-8da1-f57bbda1d546.mp4, qualities=[
+900 p, 900p, 720p, 1080p, high]
+2026-08-04T01:37:40.286Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur quality attempt started: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey
+=LKATA1owT5ZzqEyURWPC, attempt=1/5, quality=900 p
+2026-08-04T01:37:40.286Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur probe request: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA1owT
+5ZzqEyURWPC, quality=900 p, range=bytes=0-0
+2026-08-04T01:37:40.605Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur probe response: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA1ow
+T5ZzqEyURWPC, quality=900 p, status=404, contentRange=null, contentLength=-1, totalBytes=0, supports
+Ranges=false, durationMs=319
+2026-08-04T01:37:40.606Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur quality not found: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900 p, status=404
+2026-08-04T01:37:40.606Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur quality attempt started: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey
+=LKATA1owT5ZzqEyURWPC, attempt=2/5, quality=900p
+2026-08-04T01:37:40.606Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur probe request: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA1owT
+5ZzqEyURWPC, quality=900p, range=bytes=0-0
+2026-08-04T01:37:40.716Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur probe response: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA1ow
+T5ZzqEyURWPC, quality=900p, status=206, contentRange=bytes 0-0/11492323, contentLength=1, totalBytes
+=11492323, supportsRanges=true, durationMs=109
+2026-08-04T01:37:40.717Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur quality selected for download attempt: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546
+, recordingKey=LKATA1owT5ZzqEyURWPC, quality=900p, status=206, totalBytes=11492323, totalHuman=10.96
+ MiB, supportsRanges=true, mode=SINGLE_STREAM
+2026-08-04T01:37:40.977Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=1%, current=1%, status=PREPARING
+2026-08-04T01:37:40.979Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=download-start, progress=1%, downloadedByte
+s=0, downloadedHuman=0 B, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=260
+2026-08-04T01:37:40.980Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Single stream request started: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=
+LKATA1owT5ZzqEyURWPC, quality=900p, expectedLength=11492323, file=/app/data/videos/70817e33-91f8-43d
+3-8da1-f57bbda1d546.download
+2026-08-04T01:37:40.990Z INFO  [http-nio-8080-exec-9] [requestId=f46bfb30-b23f-4af5-8617-bc4b6348ef6
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:37:41.097Z INFO  [http-nio-8080-exec-9] [requestId=f46bfb30-b23f-4af5-8617-bc4b6348ef6
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=107
+2026-08-04T01:37:41.162Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Single stream response headers: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey
+=LKATA1owT5ZzqEyURWPC, quality=900p, status=200, contentLength=11492323, contentRange=null, duration
+ToHeadersMs=182
+2026-08-04T01:37:41.566Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=1%, current=3%, status=PREPARING
+2026-08-04T01:37:41.826Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=3%, current=5%, status=PREPARING
+2026-08-04T01:37:41.829Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=6%, downloadedBytes
+=703816, downloadedHuman=687.32 KiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=1110
+2026-08-04T01:37:41.986Z INFO  [http-nio-8080-exec-10] [requestId=7c987671-3939-4676-b498-f3a2457745
+14] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vid
+eo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (
+Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesk
+top/22.0.28.91 Safari/537.36
+2026-08-04T01:37:42.095Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=5%, current=7%, status=PREPARING
+2026-08-04T01:37:42.152Z INFO  [http-nio-8080-exec-10] [requestId=7c987671-3939-4676-b498-f3a2457745
+14] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/v
+ideo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=166
+2026-08-04T01:37:42.355Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=7%, current=9%, status=PREPARING
+2026-08-04T01:37:42.656Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=9%, current=11%, status=PREPARING
+2026-08-04T01:37:42.657Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=11%, downloadedByte
+s=1277256, downloadedHuman=1.22 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=1938
+2026-08-04T01:37:42.913Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=11%, current=13%, status=PREPARING
+2026-08-04T01:37:43.001Z INFO  [http-nio-8080-exec-1] [requestId=e69de97b-72ce-4ace-a936-28d521c757b
+6] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:37:43.159Z INFO  [http-nio-8080-exec-1] [requestId=e69de97b-72ce-4ace-a936-28d521c757b
+6] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=157
+2026-08-04T01:37:43.176Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=13%, current=15%, status=PREPARING
+2026-08-04T01:37:43.178Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=16%, downloadedByte
+s=1850696, downloadedHuman=1.76 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=2459
+2026-08-04T01:37:43.433Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=15%, current=17%, status=PREPARING
+2026-08-04T01:37:43.694Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=17%, current=19%, status=PREPARING
+2026-08-04T01:37:43.959Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=19%, current=21%, status=PREPARING
+2026-08-04T01:37:43.961Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=21%, downloadedByte
+s=2424136, downloadedHuman=2.31 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=3242
+2026-08-04T01:37:43.990Z INFO  [http-nio-8080-exec-2] [requestId=39eb67cb-a9b8-427a-8122-a1cd405fcd7
+1] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:37:44.145Z INFO  [http-nio-8080-exec-2] [requestId=39eb67cb-a9b8-427a-8122-a1cd405fcd7
+1] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=154
+2026-08-04T01:37:44.228Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=21%, current=23%, status=PREPARING
+2026-08-04T01:37:44.491Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=23%, current=25%, status=PREPARING
+2026-08-04T01:37:44.492Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=26%, downloadedByte
+s=2997576, downloadedHuman=2.86 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=3773
+2026-08-04T01:37:44.747Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=25%, current=27%, status=PREPARING
+2026-08-04T01:37:44.989Z INFO  [http-nio-8080-exec-3] [requestId=a128aa14-6d1e-40cb-be8a-a6eabeddc3e
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:37:45.007Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=27%, current=29%, status=PREPARING
+2026-08-04T01:37:45.141Z INFO  [http-nio-8080-exec-3] [requestId=a128aa14-6d1e-40cb-be8a-a6eabeddc3e
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=152
+2026-08-04T01:37:45.268Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=29%, current=31%, status=PREPARING
+2026-08-04T01:37:45.269Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=31%, downloadedByte
+s=3571016, downloadedHuman=3.41 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=4550
+2026-08-04T01:37:45.530Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=31%, current=33%, status=PREPARING
+2026-08-04T01:37:45.800Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=33%, current=35%, status=PREPARING
+2026-08-04T01:37:45.803Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=36%, downloadedByte
+s=4144456, downloadedHuman=3.95 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=5084
+2026-08-04T01:37:45.991Z INFO  [http-nio-8080-exec-4] [requestId=1c92d8e5-3d6f-42e9-8185-384ce6807ab
+a] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:37:46.057Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=35%, current=37%, status=PREPARING
+2026-08-04T01:37:46.157Z INFO  [http-nio-8080-exec-4] [requestId=1c92d8e5-3d6f-42e9-8185-384ce6807ab
+a] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=166
+2026-08-04T01:37:46.315Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=37%, current=39%, status=PREPARING
+2026-08-04T01:37:46.579Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=39%, current=41%, status=PREPARING
+2026-08-04T01:37:46.579Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=41%, downloadedByte
+s=4717896, downloadedHuman=4.50 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=5860
+2026-08-04T01:37:46.843Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=41%, current=43%, status=PREPARING
+2026-08-04T01:37:46.998Z INFO  [http-nio-8080-exec-5] [requestId=9a042c95-e93b-4cb0-a36f-47420f2b4af
+c] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:37:47.104Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=43%, current=45%, status=PREPARING
+2026-08-04T01:37:47.105Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=46%, downloadedByte
+s=5291336, downloadedHuman=5.05 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=6386
+2026-08-04T01:37:47.151Z INFO  [http-nio-8080-exec-5] [requestId=9a042c95-e93b-4cb0-a36f-47420f2b4af
+c] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=153
+2026-08-04T01:37:47.359Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=45%, current=47%, status=PREPARING
+2026-08-04T01:37:47.617Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=47%, current=49%, status=PREPARING
+2026-08-04T01:37:47.873Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=49%, current=51%, status=PREPARING
+2026-08-04T01:37:47.874Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=51%, downloadedByte
+s=5864776, downloadedHuman=5.59 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=7154
+2026-08-04T01:37:47.985Z INFO  [http-nio-8080-exec-6] [requestId=5144c9b4-c4b4-4a21-a56a-5b00cf32c87
+5] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:37:48.133Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=51%, current=53%, status=PREPARING
+2026-08-04T01:37:48.136Z INFO  [http-nio-8080-exec-6] [requestId=5144c9b4-c4b4-4a21-a56a-5b00cf32c87
+5] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=151
+2026-08-04T01:37:48.388Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=53%, current=55%, status=PREPARING
+2026-08-04T01:37:48.390Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=56%, downloadedByte
+s=6438216, downloadedHuman=6.14 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=7671
+2026-08-04T01:37:48.642Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=55%, current=57%, status=PREPARING
+2026-08-04T01:37:48.903Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=57%, current=59%, status=PREPARING
+2026-08-04T01:37:48.991Z INFO  [http-nio-8080-exec-7] [requestId=d8bb4cc3-79d0-4a1d-ab09-85a9073cc52
+c] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:37:49.145Z INFO  [http-nio-8080-exec-7] [requestId=d8bb4cc3-79d0-4a1d-ab09-85a9073cc52
+c] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=154
+2026-08-04T01:37:49.158Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=59%, current=61%, status=PREPARING
+2026-08-04T01:37:49.159Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=61%, downloadedByte
+s=7011656, downloadedHuman=6.69 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=8440
+2026-08-04T01:37:49.419Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=61%, current=63%, status=PREPARING
+2026-08-04T01:37:49.675Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=63%, current=65%, status=PREPARING
+2026-08-04T01:37:49.677Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=66%, downloadedByte
+s=7585096, downloadedHuman=7.23 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=8957
+2026-08-04T01:37:49.932Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=65%, current=67%, status=PREPARING
+2026-08-04T01:37:49.987Z INFO  [http-nio-8080-exec-8] [requestId=bd442afb-d1f5-4846-8870-cd8bfb17d90
+f] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:37:50.141Z INFO  [http-nio-8080-exec-8] [requestId=bd442afb-d1f5-4846-8870-cd8bfb17d90
+f] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=154
+2026-08-04T01:37:50.270Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=67%, current=69%, status=PREPARING
+2026-08-04T01:37:50.531Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=69%, current=71%, status=PREPARING
+2026-08-04T01:37:50.531Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=71%, downloadedByte
+s=8174920, downloadedHuman=7.80 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=9812
+2026-08-04T01:37:50.789Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=71%, current=73%, status=PREPARING
+2026-08-04T01:37:51.045Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=73%, current=75%, status=PREPARING
+2026-08-04T01:37:51.049Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=76%, downloadedByte
+s=8748360, downloadedHuman=8.34 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=10330
+2026-08-04T01:37:51.110Z INFO  [http-nio-8080-exec-9] [requestId=a9d8ed05-e730-4b25-b9cd-e6bddefe2e6
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:37:51.260Z INFO  [http-nio-8080-exec-9] [requestId=a9d8ed05-e730-4b25-b9cd-e6bddefe2e6
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=149
+2026-08-04T01:37:51.307Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=75%, current=77%, status=PREPARING
+2026-08-04T01:37:51.569Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=77%, current=79%, status=PREPARING
+2026-08-04T01:37:51.831Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=79%, current=81%, status=PREPARING
+2026-08-04T01:37:51.832Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=81%, downloadedByte
+s=9321800, downloadedHuman=8.89 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=11112
+2026-08-04T01:37:52.101Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=81%, current=83%, status=PREPARING
+2026-08-04T01:37:52.152Z INFO  [http-nio-8080-exec-10] [requestId=0eb21956-8710-4c87-b61f-601aaff24d
+33] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vid
+eo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (
+Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesk
+top/22.0.28.91 Safari/537.36
+2026-08-04T01:37:52.303Z INFO  [http-nio-8080-exec-10] [requestId=0eb21956-8710-4c87-b61f-601aaff24d
+33] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/v
+ideo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=151
+2026-08-04T01:37:52.403Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=83%, current=85%, status=PREPARING
+2026-08-04T01:37:52.408Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=86%, downloadedByte
+s=9895240, downloadedHuman=9.44 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=11689
+2026-08-04T01:37:52.666Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=85%, current=87%, status=PREPARING
+2026-08-04T01:37:52.928Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=87%, current=89%, status=PREPARING
+2026-08-04T01:37:53.122Z INFO  [http-nio-8080-exec-1] [requestId=e23d3797-1f18-48a8-b62a-c33e70631eb
+e] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:37:53.193Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=89%, current=91%, status=PREPARING
+2026-08-04T01:37:53.194Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=91%, downloadedByte
+s=10468680, downloadedHuman=9.98 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=12475
+2026-08-04T01:37:53.282Z INFO  [http-nio-8080-exec-1] [requestId=e23d3797-1f18-48a8-b62a-c33e70631eb
+e] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=159
+2026-08-04T01:37:53.459Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=91%, current=93%, status=PREPARING
+2026-08-04T01:37:53.727Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=93%, current=95%, status=PREPARING
+2026-08-04T01:37:53.732Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=96%, downloadedByte
+s=11042120, downloadedHuman=10.53 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=13013
+2026-08-04T01:37:53.991Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=95%, current=97%, status=PREPARING
+2026-08-04T01:37:54.113Z INFO  [http-nio-8080-exec-2] [requestId=9878c736-9f64-4a5d-a674-5e1ff1df8f8
+b] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:37:54.251Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=97%, current=99%, status=PREPARING
+2026-08-04T01:37:54.252Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=99%, downloadedByte
+s=11386184, downloadedHuman=10.86 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=13533
+2026-08-04T01:37:54.264Z INFO  [http-nio-8080-exec-2] [requestId=9878c736-9f64-4a5d-a674-5e1ff1df8f8
+b] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=150
+2026-08-04T01:37:54.507Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=99%, current=99%, status=PREPARING
+2026-08-04T01:37:54.509Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=99%, downloadedByte
+s=11402568, downloadedHuman=10.87 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=13789
+2026-08-04T01:37:54.763Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=99%, current=99%, status=PREPARING
+2026-08-04T01:37:54.765Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=99%, downloadedByte
+s=11418952, downloadedHuman=10.89 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=14046
+2026-08-04T01:37:55.020Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=99%, current=99%, status=PREPARING
+2026-08-04T01:37:55.021Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=99%, downloadedByte
+s=11435336, downloadedHuman=10.91 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=14302
+2026-08-04T01:37:55.110Z INFO  [http-nio-8080-exec-3] [requestId=0f4c3343-12e6-4542-a90b-cb0187a5ee5
+4] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:37:55.261Z INFO  [http-nio-8080-exec-3] [requestId=0f4c3343-12e6-4542-a90b-cb0187a5ee5
+4] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=151
+2026-08-04T01:37:55.279Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=99%, current=99%, status=PREPARING
+2026-08-04T01:37:55.280Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=99%, downloadedByte
+s=11451720, downloadedHuman=10.92 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=14561
+2026-08-04T01:37:55.538Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=99%, current=99%, status=PREPARING
+2026-08-04T01:37:55.539Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=99%, downloadedByte
+s=11468104, downloadedHuman=10.94 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=14819
+2026-08-04T01:37:55.799Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=99%, current=99%, status=PREPARING
+2026-08-04T01:37:55.799Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=99%, downloadedByte
+s=11484488, downloadedHuman=10.95 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=15080
+2026-08-04T01:37:56.063Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=99%, current=99%, status=PREPARING
+2026-08-04T01:37:56.109Z INFO  [http-nio-8080-exec-4] [requestId=188afcfc-6800-4f07-a51e-2c2d4bc06aa
+e] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:37:56.124Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=single-stream, progress=99%, downloadedByte
+s=11492323, downloadedHuman=10.96 MiB, totalBytes=11492323, totalHuman=10.96 MiB, elapsedMs=15405
+2026-08-04T01:37:56.126Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Single stream completed: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA1
+owT5ZzqEyURWPC, quality=900p, copiedBytes=11492323, humanSize=10.96 MiB, durationMs=15146
+2026-08-04T01:37:56.126Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur transfer body finished: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=
+LKATA1owT5ZzqEyURWPC, quality=900p, downloadedBytes=11492323, downloadedHuman=10.96 MiB, expectedByt
+es=11492323, durationMs=15520
+2026-08-04T01:37:56.126Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Moving downloaded file: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, source=/app/data/vid
+eos/70817e33-91f8-43d3-8da1-f57bbda1d546.download, target=/app/data/videos/70817e33-91f8-43d3-8da1-f
+57bbda1d546.mp4, bytes=11492323
+2026-08-04T01:37:56.127Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Atomic file move completed: source=/app/data/videos/70817e33-91f8-43d3-8da1-f57bbda1d546.d
+ownload, target=/app/data/videos/70817e33-91f8-43d3-8da1-f57bbda1d546.mp4
+2026-08-04T01:37:56.275Z INFO  [http-nio-8080-exec-4] [requestId=188afcfc-6800-4f07-a51e-2c2d4bc06aa
+e] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=165
+2026-08-04T01:37:56.379Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer progress persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, stage=kontur-do
+wnload, previous=99%, current=99%, status=PREPARING
+2026-08-04T01:37:56.379Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur download progress: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKey=LKATA
+1owT5ZzqEyURWPC, quality=900p, mode=SINGLE_STREAM, stage=completed, progress=100%, downloadedBytes=1
+1492323, downloadedHuman=10.96 MiB, elapsedMs=15660
+2026-08-04T01:37:56.380Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDow
+nloader - Kontur video saved successfully: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, recordingKe
+y=LKATA1owT5ZzqEyURWPC, file=/app/data/videos/70817e33-91f8-43d3-8da1-f57bbda1d546.mp4, bytes=114923
+23, humanSize=10.96 MiB, quality=900p, totalDurationMs=16096
+2026-08-04T01:37:56.380Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Kontur downloader returned successfully: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, path=/
+app/data/videos/70817e33-91f8-43d3-8da1-f57bbda1d546.mp4, bytes=11492323, quality=900p, durationMs=1
+6454
+2026-08-04T01:37:56.483Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Marking video offer ready: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, previousStatus=PREPA
+RING, path=/app/data/videos/70817e33-91f8-43d3-8da1-f57bbda1d546.mp4, bytes=11492323, quality=900p
+2026-08-04T01:37:56.636Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Video offer READY state persisted: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, publicToken=
+e64ce33270284b91932d0b703ba0974c, readyAt=2026-08-04T01:37:56.484275920Z
+2026-08-04T01:37:56.637Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.offer.VideoOfferProce
+ssor - Publishing ready link to Bitrix24: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, bitrixMember
+Id=419222a0c1725a38175958981810edd7, entityType=LEAD, entityId=72066
+2026-08-04T01:37:56.637Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.bitrix.BitrixTimeline
+Service - Bitrix timeline publication started: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, memberI
+d=419222a0c1725a38175958981810edd7, entityType=LEAD, entityId=72066
+2026-08-04T01:37:56.637Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.bitrix.BitrixTimeline
+Service - Calling crm.timeline.comment.add: offerId=70817e33-91f8-43d3-8da1-f57bbda1d546, entityType
+=lead, entityId=72066, publicUrl=https://offer.abs7.ru/o/e64ce33270284b91932d0b703ba0974c
+2026-08-04T01:37:56.638Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call started: memberId=419222a0c1725a38175958981810edd7, method=crm.timeline.commen
+t.add, parameterNames=[fields]
+2026-08-04T01:37:56.693Z INFO  [video-offer-2] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Executing Bitrix REST request: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.
+ru, method=crm.timeline.comment.add, endpoint=https://abs7.bitrix24.ru/rest/crm.timeline.comment.add
+.json, tokenExpiresAt=2026-08-04T02:33:32Z
+2026-08-04T01:37:57.119Z INFO  [http-nio-8080-exec-5] [requestId=039b924d-358f-42fd-875f-fc34bfeb190
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:37:57.270Z INFO  [http-nio-8080-exec-5] [requestId=039b924d-358f-42fd-875f-fc34bfeb190
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=150
+2026-08-04T01:37:58.102Z INFO  [http-nio-8080-exec-6] [requestId=1c1a9236-5865-42b7-8ff1-1c9f3d4b5d6
+b] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:37:58.253Z INFO  [http-nio-8080-exec-6] [requestId=1c1a9236-5865-42b7-8ff1-1c9f3d4b5d6
+b] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=150
+2026-08-04T01:37:59.112Z INFO  [http-nio-8080-exec-7] [requestId=5040aeec-8dfd-40fb-b4e3-dc759813699
+a] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:37:59.267Z INFO  [http-nio-8080-exec-7] [requestId=5040aeec-8dfd-40fb-b4e3-dc759813699
+a] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=155
+2026-08-04T01:38:00.106Z INFO  [http-nio-8080-exec-8] [requestId=fbe7526b-df92-4a13-b540-84414db3170
+4] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:38:00.263Z INFO  [http-nio-8080-exec-8] [requestId=fbe7526b-df92-4a13-b540-84414db3170
+4] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=156
+2026-08-04T01:38:01.105Z INFO  [http-nio-8080-exec-9] [requestId=4eb20050-0fd3-4b15-8ad3-44be915fa2f
+d] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:38:01.263Z INFO  [http-nio-8080-exec-9] [requestId=4eb20050-0fd3-4b15-8ad3-44be915fa2f
+d] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=157
+2026-08-04T01:38:02.101Z INFO  [http-nio-8080-exec-10] [requestId=cf336b12-5b4b-4055-b189-b7597b5ec4
+8d] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vid
+eo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (
+Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesk
+top/22.0.28.91 Safari/537.36
+2026-08-04T01:38:02.252Z INFO  [http-nio-8080-exec-10] [requestId=cf336b12-5b4b-4055-b189-b7597b5ec4
+8d] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/v
+ideo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=150
+2026-08-04T01:38:03.102Z INFO  [http-nio-8080-exec-1] [requestId=741d7156-3ca4-4f08-a286-6c2cad16e36
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:38:03.254Z INFO  [http-nio-8080-exec-1] [requestId=741d7156-3ca4-4f08-a286-6c2cad16e36
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=152
+2026-08-04T01:38:04.110Z INFO  [http-nio-8080-exec-2] [requestId=3eefef7a-7229-4378-956f-3a1444b7f25
+a] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:38:04.262Z INFO  [http-nio-8080-exec-2] [requestId=3eefef7a-7229-4378-956f-3a1444b7f25
+a] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=151
+2026-08-04T01:38:05.115Z INFO  [http-nio-8080-exec-3] [requestId=fcf6de0e-493d-4e6c-a424-ab2f505e811
+c] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:38:05.265Z INFO  [http-nio-8080-exec-3] [requestId=fcf6de0e-493d-4e6c-a424-ab2f505e811
+c] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=150
+2026-08-04T01:38:06.106Z INFO  [http-nio-8080-exec-4] [requestId=d0df7bd4-c043-4143-abbd-3bd7b50ac02
+5] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:38:06.258Z INFO  [http-nio-8080-exec-4] [requestId=d0df7bd4-c043-4143-abbd-3bd7b50ac02
+5] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=152
+2026-08-04T01:38:07.114Z INFO  [http-nio-8080-exec-5] [requestId=722944fe-65a4-4f94-bdbc-a7149072bfe
+c] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:38:07.265Z INFO  [http-nio-8080-exec-5] [requestId=722944fe-65a4-4f94-bdbc-a7149072bfe
+c] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=150
+2026-08-04T01:38:08.103Z INFO  [http-nio-8080-exec-6] [requestId=c6a56a77-ac09-40de-9951-7a1645ddfaf
+1] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:38:08.256Z INFO  [http-nio-8080-exec-6] [requestId=c6a56a77-ac09-40de-9951-7a1645ddfaf
+1] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=153
+2026-08-04T01:38:09.106Z INFO  [http-nio-8080-exec-7] [requestId=925bd141-8f57-4e9d-8f65-11cda7920c5
+e] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:38:09.258Z INFO  [http-nio-8080-exec-7] [requestId=925bd141-8f57-4e9d-8f65-11cda7920c5
+e] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=151
+2026-08-04T01:38:10.116Z INFO  [http-nio-8080-exec-8] [requestId=bf754b59-c04c-425e-9990-7a0b962cff4
+5] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:38:10.267Z INFO  [http-nio-8080-exec-8] [requestId=bf754b59-c04c-425e-9990-7a0b962cff4
+5] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=150
+2026-08-04T01:38:11.110Z INFO  [http-nio-8080-exec-9] [requestId=d6be3ad1-2708-4951-bbbc-66db22e5ba9
+e] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:38:11.261Z INFO  [http-nio-8080-exec-9] [requestId=d6be3ad1-2708-4951-bbbc-66db22e5ba9
+e] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=151
+2026-08-04T01:38:12.118Z INFO  [http-nio-8080-exec-10] [requestId=890e9f1b-8dcb-47cc-afc1-578644fb2b
+97] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vid
+eo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (
+Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesk
+top/22.0.28.91 Safari/537.36
+2026-08-04T01:38:12.268Z INFO  [http-nio-8080-exec-10] [requestId=890e9f1b-8dcb-47cc-afc1-578644fb2b
+97] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/v
+ideo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=150
+2026-08-04T01:38:13.106Z INFO  [http-nio-8080-exec-1] [requestId=c028c62e-0be4-4edf-9e34-ca76ebf8251
+4] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:38:13.257Z INFO  [http-nio-8080-exec-1] [requestId=c028c62e-0be4-4edf-9e34-ca76ebf8251
+4] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=151
+2026-08-04T01:38:14.109Z INFO  [http-nio-8080-exec-2] [requestId=dd0c9f2d-e7c2-47d7-979f-64e09edee90
+1] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:38:14.259Z INFO  [http-nio-8080-exec-2] [requestId=dd0c9f2d-e7c2-47d7-979f-64e09edee90
+1] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=150
+2026-08-04T01:38:15.118Z INFO  [http-nio-8080-exec-3] [requestId=b84be33f-59a7-4edf-8dde-fb2bf5a5b1a
+0] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:38:15.269Z INFO  [http-nio-8080-exec-3] [requestId=b84be33f-59a7-4edf-8dde-fb2bf5a5b1a
+0] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=151
+2026-08-04T01:38:16.127Z INFO  [http-nio-8080-exec-4] [requestId=1d72ad69-86a5-41a0-bb06-cc12a52564d
+1] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:38:16.279Z INFO  [http-nio-8080-exec-4] [requestId=1d72ad69-86a5-41a0-bb06-cc12a52564d
+1] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=152
+2026-08-04T01:38:17.108Z INFO  [http-nio-8080-exec-5] [requestId=93616d11-7824-4297-be2c-692c4fc196a
+4] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:38:17.258Z INFO  [http-nio-8080-exec-5] [requestId=93616d11-7824-4297-be2c-692c4fc196a
+4] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=149
+2026-08-04T01:38:18.113Z INFO  [http-nio-8080-exec-6] [requestId=18031759-1c8a-41cc-8818-b9d5a08fea9
+6] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:38:18.265Z INFO  [http-nio-8080-exec-6] [requestId=18031759-1c8a-41cc-8818-b9d5a08fea9
+6] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=151
+2026-08-04T01:38:19.107Z INFO  [http-nio-8080-exec-7] [requestId=cd6af29f-7773-4336-b66a-ca7b51e50ca
+8] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:38:19.258Z INFO  [http-nio-8080-exec-7] [requestId=cd6af29f-7773-4336-b66a-ca7b51e50ca
+8] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=150
+2026-08-04T01:38:20.112Z INFO  [http-nio-8080-exec-8] [requestId=614789df-045d-4b63-b880-647fd6e220b
+7] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:38:20.264Z INFO  [http-nio-8080-exec-8] [requestId=614789df-045d-4b63-b880-647fd6e220b
+7] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=151
+2026-08-04T01:38:21.116Z INFO  [http-nio-8080-exec-9] [requestId=9ce77ee6-59db-47cd-aed8-f422cd40aef
+7] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:38:21.267Z INFO  [http-nio-8080-exec-9] [requestId=9ce77ee6-59db-47cd-aed8-f422cd40aef
+7] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=150
+2026-08-04T01:38:22.114Z INFO  [http-nio-8080-exec-10] [requestId=049d818d-3676-41ac-a01c-73b37e03b6
+60] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vid
+eo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (
+Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesk
+top/22.0.28.91 Safari/537.36
+2026-08-04T01:38:22.266Z INFO  [http-nio-8080-exec-10] [requestId=049d818d-3676-41ac-a01c-73b37e03b6
+60] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/v
+ideo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=151
+2026-08-04T01:38:23.114Z INFO  [http-nio-8080-exec-1] [requestId=0f39bb17-0c9e-4cd3-8323-31e552dd801
+4] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:38:23.264Z INFO  [http-nio-8080-exec-1] [requestId=0f39bb17-0c9e-4cd3-8323-31e552dd801
+4] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=150
+2026-08-04T01:38:24.112Z INFO  [http-nio-8080-exec-2] [requestId=ca34013c-a02e-4aea-a610-b3f399c6ea8
+e] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:38:24.263Z INFO  [http-nio-8080-exec-2] [requestId=ca34013c-a02e-4aea-a610-b3f399c6ea8
+e] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=150
+2026-08-04T01:38:25.104Z INFO  [http-nio-8080-exec-3] [requestId=31ec00ee-629d-48da-8716-93cee1b6e21
+4] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:38:25.258Z INFO  [http-nio-8080-exec-3] [requestId=31ec00ee-629d-48da-8716-93cee1b6e21
+4] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=153
+2026-08-04T01:38:26.108Z INFO  [http-nio-8080-exec-4] [requestId=0de34560-96b7-431b-9fc3-46fc3d16178
+f] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:38:26.260Z INFO  [http-nio-8080-exec-4] [requestId=0de34560-96b7-431b-9fc3-46fc3d16178
+f] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=152
+2026-08-04T01:38:27.106Z INFO  [http-nio-8080-exec-5] [requestId=d75f7824-87f9-4951-ad31-99fb1bbe3b6
+d] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:38:27.259Z INFO  [http-nio-8080-exec-5] [requestId=d75f7824-87f9-4951-ad31-99fb1bbe3b6
+d] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=153
+2026-08-04T01:38:28.115Z INFO  [http-nio-8080-exec-6] [requestId=0deb0e2d-b87a-455a-a976-d52f26b9fea
+1] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:38:28.272Z INFO  [http-nio-8080-exec-6] [requestId=0deb0e2d-b87a-455a-a976-d52f26b9fea
+1] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=156
+2026-08-04T01:38:29.111Z INFO  [http-nio-8080-exec-7] [requestId=299d560f-1cac-43da-965e-9400b1cab6e
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/vide
+o-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (W
+indows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskt
+op/22.0.28.91 Safari/537.36
+2026-08-04T01:38:29.262Z INFO  [http-nio-8080-exec-7] [requestId=299d560f-1cac-43da-965e-9400b1cab6e
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/vi
+deo-offers/70817e33-91f8-43d3-8da1-f57bbda1d546, status=200, durationMs=150

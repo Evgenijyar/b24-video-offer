@@ -78,9 +78,28 @@ public class VideoOffer {
     public void markPreparing(int progress) { status=VideoOfferStatus.PREPARING; progressPercent=Math.max(0, Math.min(99, progress)); updatedAt=OffsetDateTime.now(); }
     public void markReady(String path, long size, String quality) { status=VideoOfferStatus.READY; progressPercent=100; videoFilePath=path; videoFileSize=size; videoQuality=quality; readyAt=OffsetDateTime.now(); updatedAt=readyAt; errorMessage=null; }
     public void markError(String message) { status=VideoOfferStatus.ERROR; errorMessage=message; updatedAt=OffsetDateTime.now(); }
+    public boolean claimBitrixDelivery() {
+        if (status != VideoOfferStatus.READY) {
+            return false;
+        }
+        if (!"PENDING".equals(bitrixDeliveryStatus) && !"ERROR".equals(bitrixDeliveryStatus)) {
+            return false;
+        }
+        bitrixDeliveryStatus = "SENDING";
+        bitrixDeliveryError = null;
+        updatedAt = OffsetDateTime.now();
+        return true;
+    }
     public void markBitrixDelivered(Long commentId) { bitrixDeliveryStatus="DELIVERED"; bitrixTimelineCommentId=commentId; bitrixDeliveryError=null; bitrixDeliveredAt=OffsetDateTime.now(); updatedAt=bitrixDeliveredAt; }
     public void markBitrixDeliveryError(String message) { bitrixDeliveryStatus="ERROR"; bitrixDeliveryError=message; updatedAt=OffsetDateTime.now(); }
     public void markBitrixDeliveryNotRequired() { bitrixDeliveryStatus="NOT_REQUIRED"; bitrixDeliveryError=null; updatedAt=OffsetDateTime.now(); }
+    public void releaseStaleBitrixDelivery(String message) {
+        if ("SENDING".equals(bitrixDeliveryStatus)) {
+            bitrixDeliveryStatus = "ERROR";
+            bitrixDeliveryError = message;
+            updatedAt = OffsetDateTime.now();
+        }
+    }
 
     public boolean markViewGoalReached(
             String sessionId,

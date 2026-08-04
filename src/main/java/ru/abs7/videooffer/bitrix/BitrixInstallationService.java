@@ -84,6 +84,42 @@ public class BitrixInstallationService {
         return new InstallationResult(auth.domain(), auth.memberId(), handlerUrl, results);
     }
 
+    public void synchronizeAuthorizationFromWidget(MultiValueMap<String, String> parameters) {
+        AuthData incoming = AuthData.from(parameters);
+        BitrixInstallation installation = repository.findByMemberId(incoming.memberId())
+                .orElseGet(() -> BitrixInstallation.create(
+                        incoming.memberId(),
+                        incoming.domain(),
+                        incoming.accessToken(),
+                        incoming.refreshToken(),
+                        incoming.expiresAt()));
+
+        OffsetDateTime storedExpiresAt = installation.getTokenExpiresAt();
+        boolean tokenChanged = !incoming.accessToken().equals(installation.getAccessToken());
+        boolean incomingIsNewer = storedExpiresAt == null
+                || incoming.expiresAt().isAfter(storedExpiresAt.plusSeconds(5));
+        boolean storedExpiredOrNearExpiry = storedExpiresAt == null
+                || !storedExpiresAt.isAfter(OffsetDateTime.now().plusSeconds(30));
+
+        if (installation.getId() == null
+                || incomingIsNewer
+                || (storedExpiredOrNearExpiry && tokenChanged)) {
+            installation.updateAuthorization(
+                    incoming.domain(),
+                    incoming.accessToken(),
+                    incoming.refreshToken(),
+                    incoming.expiresAt());
+            repository.saveAndFlush(installation);
+            log.info("Fresh Bitrix authorization synchronized from widget callback: "
+                            + "memberId={}, domain={}, expiresAt={}, tokenChanged={}",
+                    incoming.memberId(), incoming.domain(), incoming.expiresAt(), tokenChanged);
+        } else {
+            log.debug("Widget authorization is not newer than stored authorization: "
+                            + "memberId={}, incomingExpiresAt={}, storedExpiresAt={}",
+                    incoming.memberId(), incoming.expiresAt(), storedExpiresAt);
+        }
+    }
+
     private boolean isAlreadyBound(BitrixRestException error) {
         String code = error.getErrorCode().toUpperCase(Locale.ROOT);
         String description = error.getMessage() == null

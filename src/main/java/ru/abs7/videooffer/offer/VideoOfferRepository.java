@@ -32,6 +32,35 @@ public interface VideoOfferRepository extends JpaRepository<VideoOffer, UUID> {
 
     @Query("""
             select offer from VideoOffer offer
+            where offer.status = :readyStatus
+              and offer.bitrixDeliveryStatus in :statuses
+              and offer.bitrixMemberId is not null
+              and offer.expiresAt > :moment
+            order by offer.updatedAt asc
+            """)
+    List<VideoOffer> findBitrixDeliveriesForRetry(
+            @Param("readyStatus") VideoOfferStatus readyStatus,
+            @Param("statuses") Collection<String> statuses,
+            @Param("moment") OffsetDateTime moment,
+            Pageable pageable);
+
+    @Query("""
+            select offer from VideoOffer offer
+            where offer.status = :readyStatus
+              and offer.bitrixDeliveryStatus = :sendingStatus
+              and offer.updatedAt < :staleBefore
+              and offer.expiresAt > :moment
+            order by offer.updatedAt asc
+            """)
+    List<VideoOffer> findStaleBitrixDeliveries(
+            @Param("readyStatus") VideoOfferStatus readyStatus,
+            @Param("sendingStatus") String sendingStatus,
+            @Param("staleBefore") OffsetDateTime staleBefore,
+            @Param("moment") OffsetDateTime moment,
+            Pageable pageable);
+
+    @Query("""
+            select offer from VideoOffer offer
             where offer.viewNotificationStatus in :statuses
               and offer.viewGoalReachedAt is not null
               and offer.expiresAt > :moment

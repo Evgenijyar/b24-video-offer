@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import ru.abs7.videooffer.bitrix.BitrixTimelineService;
+import ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService;
 import ru.abs7.videooffer.kontur.KonturVideoDownloader;
 
 import java.util.UUID;
@@ -16,15 +16,15 @@ public class VideoOfferProcessor {
 
     private final VideoOfferRepository repository;
     private final KonturVideoDownloader downloader;
-    private final BitrixTimelineService bitrixTimelineService;
+    private final BitrixReadyLinkDeliveryService bitrixReadyLinkDeliveryService;
 
     public VideoOfferProcessor(
             VideoOfferRepository repository,
             KonturVideoDownloader downloader,
-            BitrixTimelineService bitrixTimelineService) {
+            BitrixReadyLinkDeliveryService bitrixReadyLinkDeliveryService) {
         this.repository = repository;
         this.downloader = downloader;
-        this.bitrixTimelineService = bitrixTimelineService;
+        this.bitrixReadyLinkDeliveryService = bitrixReadyLinkDeliveryService;
     }
 
     @Async
@@ -91,20 +91,21 @@ public class VideoOfferProcessor {
                     current.getBitrixMemberId(),
                     current.getCrmEntityType(),
                     current.getCrmEntityId());
-            bitrixTimelineService.publishReadyLink(current);
-            repository.saveAndFlush(current);
+            bitrixReadyLinkDeliveryService.deliver(id);
+            VideoOffer delivered = repository.findById(id).orElseThrow(() ->
+                    new IllegalStateException("Видеооффер исчез из базы после отправки в Bitrix24: " + id));
             log.info("Bitrix delivery state persisted: offerId={}, deliveryStatus={}, commentId={}, deliveryError={}",
                     id,
-                    current.getBitrixDeliveryStatus(),
-                    current.getBitrixTimelineCommentId(),
-                    current.getBitrixDeliveryError());
+                    delivered.getBitrixDeliveryStatus(),
+                    delivered.getBitrixTimelineCommentId(),
+                    delivered.getBitrixDeliveryError());
 
             log.info("Video offer processing completed: offerId={}, publicToken={}, status={}, bitrixDelivery={}, "
                             + "totalDurationMs={}",
                     id,
-                    current.getPublicToken(),
-                    current.getStatus(),
-                    current.getBitrixDeliveryStatus(),
+                    delivered.getPublicToken(),
+                    delivered.getStatus(),
+                    delivered.getBitrixDeliveryStatus(),
                     elapsedMillis(startedAt));
         } catch (Exception error) {
             String message = rootMessage(error);
