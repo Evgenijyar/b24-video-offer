@@ -21,6 +21,13 @@ class CrmEntityTypeTest {
                 CrmEntityType.fromBitrixPlacement("CRM_LEAD_DETAIL_TOOLBAR"));
         assertEquals(CrmEntityType.CONTACT,
                 CrmEntityType.fromBitrixPlacement("CRM_CONTACT_DETAIL_TOOLBAR"));
+
+        assertEquals(CrmEntityType.DEAL,
+                CrmEntityType.fromBitrixPlacement("CRM_DEAL_DETAIL_TAB"));
+        assertEquals(CrmEntityType.LEAD,
+                CrmEntityType.fromBitrixPlacement("CRM_LEAD_DETAIL_TAB"));
+        assertEquals(CrmEntityType.CONTACT,
+                CrmEntityType.fromBitrixPlacement("CRM_CONTACT_DETAIL_TAB"));
     }
 
     @Test

@@ -26,7 +26,10 @@ public class BitrixInstallationService {
             "CRM_CONTACT_DETAIL_ACTIVITY",
             "CRM_DEAL_DETAIL_TOOLBAR",
             "CRM_LEAD_DETAIL_TOOLBAR",
-            "CRM_CONTACT_DETAIL_TOOLBAR");
+            "CRM_CONTACT_DETAIL_TOOLBAR",
+            "CRM_DEAL_DETAIL_TAB",
+            "CRM_LEAD_DETAIL_TAB",
+            "CRM_CONTACT_DETAIL_TAB");
 
     private final BitrixInstallationRepository repository;
     private final BitrixRestClient restClient;
@@ -183,13 +186,20 @@ public class BitrixInstallationService {
     }
 
     private Map<String, Object> bindParameters(String placement) {
+        String russianTitle = placement.endsWith("_DETAIL_TAB")
+                ? "Видео-оффер"
+                : "Создать видеооффер";
+        String englishTitle = placement.endsWith("_DETAIL_TAB")
+                ? "Video offer"
+                : "Create video offer";
+
         Map<String, Object> parameters = new LinkedHashMap<>();
         parameters.put("PLACEMENT", placement);
         parameters.put("HANDLER", handlerUrl);
-        parameters.put("TITLE", "Создать видеооффер");
+        parameters.put("TITLE", russianTitle);
         parameters.put("LANG_ALL", Map.of(
-                "ru", Map.of("TITLE", "Создать видеооффер"),
-                "en", Map.of("TITLE", "Create video offer")));
+                "ru", Map.of("TITLE", russianTitle),
+                "en", Map.of("TITLE", englishTitle)));
         return parameters;
     }
 

@@ -29,9 +29,15 @@ public enum CrmEntityType {
         }
 
         return switch (placement.trim().toUpperCase(Locale.ROOT)) {
-            case "CRM_DEAL_DETAIL_ACTIVITY", "CRM_DEAL_DETAIL_TOOLBAR" -> DEAL;
-            case "CRM_LEAD_DETAIL_ACTIVITY", "CRM_LEAD_DETAIL_TOOLBAR" -> LEAD;
-            case "CRM_CONTACT_DETAIL_ACTIVITY", "CRM_CONTACT_DETAIL_TOOLBAR" -> CONTACT;
+            case "CRM_DEAL_DETAIL_ACTIVITY",
+                    "CRM_DEAL_DETAIL_TOOLBAR",
+                    "CRM_DEAL_DETAIL_TAB" -> DEAL;
+            case "CRM_LEAD_DETAIL_ACTIVITY",
+                    "CRM_LEAD_DETAIL_TOOLBAR",
+                    "CRM_LEAD_DETAIL_TAB" -> LEAD;
+            case "CRM_CONTACT_DETAIL_ACTIVITY",
+                    "CRM_CONTACT_DETAIL_TOOLBAR",
+                    "CRM_CONTACT_DETAIL_TAB" -> CONTACT;
             default -> throw new IllegalArgumentException(
                     "Неподдерживаемое место встраивания Bitrix24: " + placement);
         };
