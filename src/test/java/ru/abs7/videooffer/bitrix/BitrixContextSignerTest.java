@@ -8,7 +8,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class BitrixContextSignerTest {
     private final BitrixContextSigner signer = new BitrixContextSigner(
-            new BitrixProperties("local.test", "test-secret", "https://example.test/bitrix/install"));
+            new BitrixProperties(
+                    "local.test",
+                    "test-secret",
+                    "https://example.test/bitrix/install",
+                    null,
+                    null,
+                    null,
+                    null));
 
     @Test
     void signsAndVerifiesPlacementContext() {
