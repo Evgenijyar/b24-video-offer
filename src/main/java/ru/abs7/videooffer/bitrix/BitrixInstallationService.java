@@ -20,10 +20,22 @@ import java.util.Map;
 @Service
 public class BitrixInstallationService {
     private static final Logger log = LoggerFactory.getLogger(BitrixInstallationService.class);
-    private static final List<String> PLACEMENTS = List.of(
+    /**
+     * Production desktop placements. These are the original placements used by
+     * the working desktop version before the mobile diagnostics were added.
+     */
+    private static final List<String> DESKTOP_PLACEMENTS = List.of(
             "CRM_DEAL_DETAIL_ACTIVITY",
             "CRM_LEAD_DETAIL_ACTIVITY",
-            "CRM_CONTACT_DETAIL_ACTIVITY",
+            "CRM_CONTACT_DETAIL_ACTIVITY");
+
+    /**
+     * Temporary diagnostic placements from releases 011/012. Mobile Bitrix24
+     * does not render them, while on desktop they only add unnecessary entries.
+     * They are removed during installation/startup so the desktop interface is
+     * restored to its original state.
+     */
+    private static final List<String> OBSOLETE_DIAGNOSTIC_PLACEMENTS = List.of(
             "CRM_DEAL_DETAIL_TOOLBAR",
             "CRM_LEAD_DETAIL_TOOLBAR",
             "CRM_CONTACT_DETAIL_TOOLBAR",
@@ -48,7 +60,7 @@ public class BitrixInstallationService {
     }
 
     public static List<String> desiredPlacements() {
-        return PLACEMENTS;
+        return DESKTOP_PLACEMENTS;
     }
 
     public InstallationResult install(MultiValueMap<String, String> parameters) {
@@ -76,6 +88,8 @@ public class BitrixInstallationService {
         log.info("Bitrix installation authorization persisted: domain={}, memberId={}",
                 auth.domain(), auth.memberId());
 
+        cleanupObsoleteDiagnosticPlacements(auth.memberId());
+        resetDesktopPlacements(auth.memberId());
         Map<String, String> results = bindPlacements(auth.memberId());
         BitrixPlacementDiagnosticsService.PlacementDiagnostics diagnostics =
                 diagnosticsService.diagnose(auth.memberId());
@@ -93,7 +107,7 @@ public class BitrixInstallationService {
 
     public Map<String, String> bindPlacements(String memberId) {
         Map<String, String> results = new LinkedHashMap<>();
-        for (String placement : PLACEMENTS) {
+        for (String placement : DESKTOP_PLACEMENTS) {
             try {
                 log.info("Binding Bitrix placement: memberId={}, placement={}, handler={}",
                         memberId, placement, handlerUrl);
@@ -123,6 +137,67 @@ public class BitrixInstallationService {
         return results;
     }
 
+
+    public Map<String, String> resetDesktopPlacements(String memberId) {
+        Map<String, String> results = new LinkedHashMap<>();
+        for (String placement : DESKTOP_PLACEMENTS) {
+            try {
+                log.info("Resetting desktop Bitrix placement before fresh bind: memberId={}, placement={}",
+                        memberId, placement);
+                Map<String, Object> response = restClient.call(
+                        memberId,
+                        "placement.unbind",
+                        Map.<String, Object>of("PLACEMENT", placement));
+                results.put(placement, "RESET");
+                log.info("Desktop Bitrix placement reset: memberId={}, placement={}, responseKeys={}",
+                        memberId, placement, response.keySet());
+            } catch (BitrixRestException error) {
+                String status = "ERROR:" + error.getErrorCode() + ":" + safeMessage(error);
+                results.put(placement, status);
+                log.warn("Unable to reset desktop Bitrix placement; a normal bind will still be attempted: "
+                                + "memberId={}, placement={}, errorCode={}, error={}",
+                        memberId, placement, error.getErrorCode(), error.getMessage());
+            } catch (RuntimeException error) {
+                String status = "TRANSPORT_ERROR:" + rootMessage(error);
+                results.put(placement, status);
+                log.warn("Transport failure while resetting desktop Bitrix placement; "
+                                + "a normal bind will still be attempted: memberId={}, placement={}, error={}",
+                        memberId, placement, rootMessage(error));
+            }
+        }
+        return results;
+    }
+
+    public Map<String, String> cleanupObsoleteDiagnosticPlacements(String memberId) {
+        Map<String, String> results = new LinkedHashMap<>();
+        for (String placement : OBSOLETE_DIAGNOSTIC_PLACEMENTS) {
+            try {
+                log.info("Removing obsolete diagnostic Bitrix placement: memberId={}, placement={}",
+                        memberId, placement);
+                Map<String, Object> response = restClient.call(
+                        memberId,
+                        "placement.unbind",
+                        Map.<String, Object>of("PLACEMENT", placement));
+                results.put(placement, "UNBOUND");
+                log.info("Obsolete diagnostic Bitrix placement removed: memberId={}, placement={}, responseKeys={}",
+                        memberId, placement, response.keySet());
+            } catch (BitrixRestException error) {
+                String status = "ERROR:" + error.getErrorCode() + ":" + safeMessage(error);
+                results.put(placement, status);
+                log.warn("Unable to remove obsolete diagnostic Bitrix placement; startup will continue: "
+                                + "memberId={}, placement={}, errorCode={}, error={}",
+                        memberId, placement, error.getErrorCode(), error.getMessage());
+            } catch (RuntimeException error) {
+                String status = "TRANSPORT_ERROR:" + rootMessage(error);
+                results.put(placement, status);
+                log.warn("Transport failure while removing obsolete diagnostic Bitrix placement; "
+                                + "startup will continue: memberId={}, placement={}, error={}",
+                        memberId, placement, rootMessage(error));
+            }
+        }
+        return results;
+    }
+
     @Async
     @EventListener(ApplicationReadyEvent.class)
     public void rebindPlacementsAfterStartup() {
@@ -136,6 +211,7 @@ public class BitrixInstallationService {
                 installations.size());
         for (BitrixInstallation installation : installations) {
             try {
+                cleanupObsoleteDiagnosticPlacements(installation.getMemberId());
                 Map<String, String> placements = bindPlacements(installation.getMemberId());
                 BitrixPlacementDiagnosticsService.PlacementDiagnostics diagnostics =
                         diagnosticsService.diagnose(installation.getMemberId());

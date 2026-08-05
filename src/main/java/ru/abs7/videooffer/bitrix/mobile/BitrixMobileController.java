@@ -20,7 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @RestController
-@RequestMapping("/bitrix/mobile")
+@RequestMapping({"/bitrix/mobile", "/bitrix/app"})
 public class BitrixMobileController {
     private static final Logger log = LoggerFactory.getLogger(BitrixMobileController.class);
 
@@ -44,7 +44,7 @@ public class BitrixMobileController {
     public ResponseEntity<String> openMobileApplication(
             @RequestParam MultiValueMap<String, String> parameters,
             HttpServletRequest servletRequest) {
-        log.info("Bitrix mobile application opened: parameterNames={}, userAgent={}",
+        log.info("Bitrix standalone application opened: parameterNames={}, userAgent={}",
                 parameters.keySet(), servletRequest.getHeader("User-Agent"));
         installationService.synchronizeAuthorizationFromWidget(parameters);
         String memberId = required(parameters, "member_id", "auth[member_id]", "MEMBER_ID");
