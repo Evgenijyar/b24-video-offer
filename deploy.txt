@@ -2,5 +2,19 @@ git add .
 git commit -m "Описание изменений"
 git push
 
+cd /opt/b24-video-offer 
+python3 deploy.py
+docker logs -f --tail=200 b24-video-offer
+
+cd /opt/b24-video-offer && docker compose restart app
+
+cd /opt/b24-video-offer && docker compose stop app
+
+cd /opt/b24-video-offer && docker compose start app
+
+cd /opt/b24-video-offer && docker compose down
+
+cd /opt/b24-video-offer && docker compose up -d
+
 CREATE USER b24_video_offer_user
 WITH PASSWORD 'Secret123IUGBhbjn87##gfreg224';

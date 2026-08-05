@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="color-scheme" content="light dark">
+    <title>Видео-оффер</title>
+    <link rel="stylesheet" href="/assets/bitrix-mobile.css">
+    <script src="//api.bitrix24.com/api/v1/"></script>
+</head>
+<body>
+<main class="mobile-shell">
+    <header class="mobile-header">
+        <div class="logo-mark">▶</div>
+        <div>
+            <div class="eyebrow">BITRIX24 · ВИДЕООФФЕР</div>
+            <h1>Создать видеооффер</h1>
+            <p>Найдите нужную карточку CRM, выберите её и сформируйте оффер.</p>
+        </div>
+    </header>
+
+    <input id="mobile-context-token" type="hidden" value="{{MOBILE_CONTEXT_TOKEN}}">
+
+    <section class="panel search-panel">
+        <label class="field">
+            <span>Что ищем</span>
+            <select id="entity-type">
+                <option value="LEAD" selected>Лид</option>
+                <option value="CONTACT">Контакт</option>
+                <option value="DEAL">Сделка</option>
+            </select>
+        </label>
+
+        <label class="field">
+            <span>Поиск</span>
+            <div class="search-box">
+                <input id="search-query" type="search" inputmode="search" autocomplete="off"
+                       placeholder="Название, имя, ID или телефон">
+                <button id="clear-search" type="button" aria-label="Очистить поиск" hidden>×</button>
+            </div>
+            <small id="search-hint">Введите минимум 2 символа. Поиск запускается автоматически.</small>
+        </label>
+
+        <div id="search-state" class="search-state">Начните вводить название, имя, ID или телефон.</div>
+        <div id="search-results" class="search-results" hidden></div>
+    </section>
+
+    <section id="selected-card" class="selected-card" hidden>
+        <div class="selected-icon">✓</div>
+        <div class="selected-copy">
+            <div class="selected-label">Выбрано</div>
+            <strong id="selected-title"></strong>
+            <span id="selected-meta"></span>
+        </div>
+        <button id="change-selection" class="text-button" type="button">Изменить</button>
+    </section>
+
+    <section id="offer-section" class="panel offer-panel" hidden>
+        <form id="mobile-offer-form">
+            <input id="selected-context-token" type="hidden">
+
+            <label class="field">
+                <span>Ссылка на запись Контур.Толка</span>
+                <input id="recording-url" type="url" required
+                       placeholder="https://.../recordings/..." autocomplete="off">
+            </label>
+
+            <label class="field">
+                <span>Сопроводительный текст</span>
+                <textarea id="accompanying-text" rows="4"
+                          placeholder="Например: направляю короткую презентацию по итогам разговора."></textarea>
+            </label>
+
+            <label class="field">
+                <span>Когда уведомить о просмотре</span>
+                <select id="view-notification-goal">
+                    <option value="ONE_MINUTE" selected>После 1 минуты просмотра</option>
+                    <option value="HALF">Когда клиент досмотрит до середины</option>
+                    <option value="COMPLETED">Когда клиент досмотрит видео целиком</option>
+                    <option value="NONE">Не уведомлять</option>
+                </select>
+            </label>
+
+            <div id="form-error" class="message message--error" hidden></div>
+
+            <button id="submit-button" class="primary-button" type="submit">
+                Сформировать видеооффер
+            </button>
+        </form>
+    </section>
+
+    <section id="processing" class="panel processing-card" hidden>
+        <div class="processing-head">
+            <strong id="processing-status">Подготавливаем видео</strong>
+            <span id="processing-percent">0%</span>
+        </div>
+        <div class="progress"><div id="progress-bar"></div></div>
+        <div id="delivery-status" class="delivery-status"></div>
+    </section>
+
+    <section id="ready-result" class="ready-card" hidden>
+        <div class="ready-icon">✓</div>
+        <div>
+            <strong>Видеооффер готов</strong>
+            <p id="ready-message">Ссылка добавлена в карточку Bitrix24.</p>
+            <a id="public-link" class="secondary-button" target="_blank" rel="noopener">
+                Открыть предпросмотр
+            </a>
+        </div>
+    </section>
+</main>
+<script src="/assets/bitrix-mobile.js"></script>
+</body>
+</html>
