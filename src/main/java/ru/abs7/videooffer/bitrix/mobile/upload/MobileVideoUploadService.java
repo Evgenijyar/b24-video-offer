@@ -174,6 +174,25 @@ public class MobileVideoUploadService {
         return MobileVideoUploadResponse.from(requireAuthorized(uploadId, uploadToken));
     }
 
+    public void discard(UUID uploadId, String uploadToken) throws IOException {
+        MobileVideoUpload discarded = transactionTemplate.execute(status -> {
+            MobileVideoUpload upload = repository.findByIdForUpdate(uploadId)
+                    .orElseThrow(() -> new NoSuchElementException("Сессия записи видео не найдена"));
+            verifyToken(upload, uploadToken);
+            if (upload.getStatus() == MobileVideoUploadStatus.CONSUMED) {
+                throw new IllegalArgumentException("Готовый видеооффер уже создан и не может быть удалён этой операцией");
+            }
+            repository.delete(upload);
+            repository.flush();
+            return upload;
+        });
+
+        deleteIfPresent(discarded.getSourceFilePath());
+        deleteIfPresent(discarded.getNormalizedFilePath());
+        log.info("Mobile video upload discarded by client: uploadId={}, status={}, bytes={}",
+                discarded.getId(), discarded.getStatus(), discarded.getBytesReceived());
+    }
+
     public VideoOfferResponse createOffer(
             UUID uploadId,
             CreateMobileVideoOfferRequest request) throws IOException {

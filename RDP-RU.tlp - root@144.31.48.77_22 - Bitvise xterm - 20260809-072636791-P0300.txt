@@ -1,0 +1,1647 @@
+﻿Last login: Sun Aug  9 03:40:14 2026 from 216.57.105.22
+root@VM-397286:~# cd /opt/b24-video-offer && python3 deploy.py
++ git fetch origin
+remote: Enumerating objects: 55, done.
+remote: Counting objects: 100% (55/55), done.
+remote: Compressing objects: 100% (18/18), done.
+remote: Total 35 (delta 13), reused 35 (delta 13), pack-reused 0 (from 0)
+Unpacking objects: 100% (35/35), 39.91 KiB | 374.00 KiB/s, done.
+From https://github.com/Evgenijyar/b24-video-offer
+   5b7d878..872ce82  main       -> origin/main
++ git reset --hard origin/main
+HEAD is now at 872ce82 Add direct mobile video recording and fix WebView entity picker
++ docker compose build --pull
+[+] Building 52.7s (18/18) FINISHED
+ => [internal] load local bake definitions                                                     0.0s
+ => => reading from stdin 516B                                                                 0.0s
+ => [internal] load build definition from Dockerfile                                           0.1s
+ => => transferring dockerfile: 410B                                                           0.0s
+ => [internal] load metadata for docker.io/library/maven:3.9.16-eclipse-temurin-21             1.3s
+ => [internal] load metadata for docker.io/library/eclipse-temurin:21-jre                      1.3s
+ => [internal] load .dockerignore                                                              0.0s
+ => => transferring context: 2B                                                                0.0s
+ => [build 1/6] FROM docker.io/library/maven:3.9.16-eclipse-temurin-21@sha256:c07f7ccfb8ca6c9  0.2s
+ => => resolve docker.io/library/maven:3.9.16-eclipse-temurin-21@sha256:c07f7ccfb8ca6c9fa29ee  0.2s
+ => [internal] load build context                                                              0.1s
+ => => transferring context: 126.92kB                                                          0.1s
+ => [stage-1 1/4] FROM docker.io/library/eclipse-temurin:21-jre@sha256:8cef5fc7bebe421363ab54  0.3s
+ => => resolve docker.io/library/eclipse-temurin:21-jre@sha256:8cef5fc7bebe421363ab543a2f4db5  0.2s
+ => CACHED [build 2/6] WORKDIR /workspace                                                      0.0s
+ => CACHED [build 3/6] COPY pom.xml pom.xml                                                    0.0s
+ => CACHED [build 4/6] RUN mvn -q -DskipTests dependency:go-offline                            0.0s
+ => [build 5/6] COPY src src                                                                   0.2s
+ => [build 6/6] RUN mvn -q -DskipTests package                                                32.5s
+ => CACHED [stage-1 2/4] WORKDIR /app                                                          0.0s
+ => [stage-1 3/4] COPY --from=build /workspace/target/b24-video-offer-*.jar app.jar            0.4s
+ => [stage-1 4/4] RUN mkdir -p /app/data/videos                                                0.8s
+ => exporting to image                                                                        14.0s
+ => => exporting layers                                                                       10.4s
+ => => exporting manifest sha256:a417e07f2473cf7718414340210a0180dfced3a88a19dd7f8b905aabdbb9  0.1s
+ => => exporting config sha256:0584498827fa2fecbc77c173e99919103b6c7fed52dc2cf961c9102f42a8b4  0.1s
+ => => exporting attestation manifest sha256:f821853f3d29110ab1d43910135f414ce580314dee7cd22c  0.1s
+ => => exporting manifest list sha256:9966bc75345e7ffb94dde1f09aa0e8b3bf3b876272f2b06f8677481  0.0s
+ => => naming to docker.io/library/b24-video-offer-app:latest                                  0.0s
+ => => unpacking to docker.io/library/b24-video-offer-app:latest                               3.2s
+ => resolving provenance for metadata file                                                     0.1s
+[+] build 1/1
+ ✔ Image b24-video-offer-app Built                                                             53.1s
++ docker compose up -d --remove-orphans
+[+] up 1/1
+ ✔ Container b24-video-offer Started                                                            2.7s
+^[[A^[[BHealth check failed. Recent logs:
+b24-video-offer  | Picked up JAVA_TOOL_OPTIONS: -Xms128m -Xmx512m -XX:MaxMetaspaceSize=192m -XX:+Use
+SerialGC -Djava.security.egd=file:/dev/./urandom
+b24-video-offer  |
+b24-video-offer  |   .   ____          _            __ _ _
+b24-video-offer  |  /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+b24-video-offer  | ( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+b24-video-offer  |  \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+b24-video-offer  |   '  |____| .__|_| |_|_| |_\__, | / / / /
+b24-video-offer  |  =========|_|==============|___/=/_/_/_/
+b24-video-offer  |
+b24-video-offer  |  :: Spring Boot ::                (v4.0.5)
+b24-video-offer  |
+b24-video-offer  | 2026-08-09T04:12:54.213Z INFO  [main] [requestId=] ru.abs7.videooffer.B24VideoOff
+erApplication - Starting B24VideoOfferApplication v0.1.0-SNAPSHOT using Java 21.0.11 with PID 1 (/ap
+p/app.jar started by root in /app)
+b24-video-offer  | 2026-08-09T04:12:54.226Z INFO  [main] [requestId=] ru.abs7.videooffer.B24VideoOff
+erApplication - No active profile set, falling back to 1 default profile: "default"
+b24-video-offer  | 2026-08-09T04:13:04.309Z INFO  [main] [requestId=] o.s.d.r.config.RepositoryConfi
+gurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+b24-video-offer  | 2026-08-09T04:13:04.900Z INFO  [main] [requestId=] o.s.d.r.config.RepositoryConfi
+gurationDelegate - Finished Spring Data repository scanning in 558 ms. Found 5 JPA repository interf
+aces.
+b24-video-offer  | 2026-08-09T04:13:09.953Z INFO  [main] [requestId=] org.springframework.boot.tomca
+t.TomcatWebServer - Tomcat initialized with port 8080 (http)
+b24-video-offer  | 2026-08-09T04:13:10.134Z INFO  [main] [requestId=] org.apache.catalina.core.Stand
+ardService - Starting service [Tomcat]
+b24-video-offer  | 2026-08-09T04:13:10.138Z INFO  [main] [requestId=] org.apache.catalina.core.Stand
+ardEngine - Starting Servlet engine: [Apache Tomcat/11.0.20]
+b24-video-offer  | 2026-08-09T04:13:10.409Z INFO  [main] [requestId=] o.s.b.w.c.s.WebApplicationCont
+extInitializer - Root WebApplicationContext: initialization completed in 15050 ms
+b24-video-offer  | 2026-08-09T04:13:15.045Z INFO  [main] [requestId=] com.zaxxer.hikari.HikariDataSo
+urce - HikariPool-1 - Starting...
+b24-video-offer  | 2026-08-09T04:13:19.001Z INFO  [main] [requestId=] com.zaxxer.hikari.pool.HikariP
+ool - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@4afd65fd
+b24-video-offer  | 2026-08-09T04:13:19.036Z INFO  [main] [requestId=] com.zaxxer.hikari.HikariDataSo
+urce - HikariPool-1 - Start completed.
+b24-video-offer  | 2026-08-09T04:13:19.320Z INFO  [main] [requestId=] org.flywaydb.core.FlywayExecut
+or - Database: jdbc:postgresql://45.11.92.142:5433/b24_video_offer (PostgreSQL 16.14)
+b24-video-offer  | 2026-08-09T04:13:20.199Z INFO  [main] [requestId=] org.flywaydb.core.internal.com
+mand.DbValidate - Successfully validated 4 migrations (execution time 00:00.405s)
+b24-video-offer  | 2026-08-09T04:13:20.518Z INFO  [main] [requestId=] org.flywaydb.core.internal.com
+mand.DbMigrate - Current version of schema "public": 3
+b24-video-offer  | 2026-08-09T04:13:20.724Z INFO  [main] [requestId=] org.flywaydb.core.internal.com
+mand.DbMigrate - Migrating schema "public" to version "4 - mobile video upload"
+b24-video-offer  | 2026-08-09T04:13:21.216Z INFO  [main] [requestId=] org.flywaydb.core.internal.com
+mand.DbMigrate - Successfully applied 1 migration to schema "public", now at version v4 (execution t
+ime 00:00.221s)
+b24-video-offer  | 2026-08-09T04:13:21.999Z INFO  [main] [requestId=] org.hibernate.orm.jpa - HHH008
+540: Processing PersistenceUnitInfo [name: default]
+b24-video-offer  | 2026-08-09T04:13:22.305Z INFO  [main] [requestId=] org.hibernate.orm.core - HHH00
+0001: Hibernate ORM core version 7.2.7.Final
+b24-video-offer  | 2026-08-09T04:13:26.187Z INFO  [main] [requestId=] o.s.o.j.p.SpringPersistenceUni
+tInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+b24-video-offer  | 2026-08-09T04:13:26.620Z INFO  [main] [requestId=] org.hibernate.orm.connections.
+pooling - HHH10001005: Database info:
+b24-video-offer  |      Database JDBC URL [jdbc:postgresql://45.11.92.142:5433/b24_video_offer]
+b24-video-offer  |      Database driver: PostgreSQL JDBC Driver
+b24-video-offer  |      Database dialect: PostgreSQLDialect
+b24-video-offer  |      Database version: 16.14
+b24-video-offer  |      Default catalog/schema: b24_video_offer/public
+b24-video-offer  |      Autocommit mode: undefined/unknown
+b24-video-offer  |      Isolation level: READ_COMMITTED [default READ_COMMITTED]
+b24-video-offer  |      JDBC fetch size: none
+b24-video-offer  |      Pool: DataSourceConnectionProvider
+b24-video-offer  |      Minimum pool size: undefined/unknown
+b24-video-offer  |      Maximum pool size: undefined/unknown
+b24-video-offer  | 2026-08-09T04:13:32.562Z INFO  [main] [requestId=] org.hibernate.orm.core - HHH00
+0489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform int
+egration)
+b24-video-offer  | 2026-08-09T04:13:32.811Z INFO  [main] [requestId=] o.s.o.jpa.LocalContainerEntity
+ManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+b24-video-offer  | 2026-08-09T04:13:33.639Z INFO  [main] [requestId=] o.s.d.j.repository.query.Query
+EnhancerFactories - Hibernate is in classpath; If applicable, HQL parser will be used.
+b24-video-offer  | 2026-08-09T04:13:39.416Z INFO  [main] [requestId=] ru.abs7.videooffer.kontur.Kont
+urVideoDownloader - Kontur HTTP transport configured: mode=DIRECT, connectTimeoutSeconds=15, readTim
+eoutSeconds=120
+b24-video-offer  | 2026-08-09T04:13:39.602Z INFO  [main] [requestId=] ru.abs7.videooffer.kontur.Kont
+urVideoDownloader - Kontur downloader initialized: baseUrl=https://rko7.ktalk.ru/, storageDir=./data
+/videos, connectTimeoutSeconds=15, readTimeoutSeconds=120, stallWarningSeconds=30, maxParallelParts=
+8, parallelThresholdBytes=33554432, proxyEnabled=false, proxyHost=direct, proxyPort=null, proxyAuthe
+nticationConfigured=true
+b24-video-offer  | 2026-08-09T04:13:39.751Z INFO  [main] [requestId=] ru.abs7.videooffer.bitrix.Bitr
+ixRestClient - Bitrix HTTP transport configured: mode=DIRECT, proxySource=NONE, proxyHost=direct, pr
+oxyPort=null, proxyAuthenticationConfigured=false, connectTimeoutSeconds=15, readTimeoutSeconds=45,
+proactiveRefreshAheadSeconds=120
+b24-video-offer  | 2026-08-09T04:13:40.119Z INFO  [main] [requestId=] ru.abs7.videooffer.offer.Video
+OfferService - VideoOfferService initialized: publicBaseUrl=https://offer.abs7.ru, retentionDays=7,
+videoStorageDir=/app/data/videos
+b24-video-offer  | 2026-08-09T04:13:41.232Z INFO  [main] [requestId=] r.a.v.b.mobile.upload.MobileVi
+deoUploadService - MobileVideoUploadService initialized: uploadDirectory=/app/data/mobile-uploads, m
+axUploadBytes=536870912, maxChunkBytes=16777216, retentionHours=24
+b24-video-offer  | 2026-08-09T04:13:41.757Z INFO  [main] [requestId=] o.s.b.w.autoconfigure.WelcomeP
+ageHandlerMapping - Adding welcome page: class path resource [static/index.html]
+b24-video-offer  | 2026-08-09T04:13:45.361Z INFO  [main] [requestId=] org.springframework.boot.tomca
+t.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
+b24-video-offer  | 2026-08-09T04:13:45.522Z INFO  [main] [requestId=] ru.abs7.videooffer.B24VideoOff
+erApplication - Started B24VideoOfferApplication in 55.898 seconds (process running for 60.406)
+b24-video-offer  | 2026-08-09T04:13:45.557Z INFO  [main] [requestId=] r.a.videooffer.offer.VideoOffe
+rLifecycleService - Checking interrupted video offers after application startup
+root@VM-397286:/opt/b24-video-offer# docker logs -f --tail=200 b24-video-offer
+2026-08-09T04:13:15.045Z INFO  [main] [requestId=] com.zaxxer.hikari.HikariDataSource - HikariPool-1
+ - Starting...
+2026-08-09T04:13:19.001Z INFO  [main] [requestId=] com.zaxxer.hikari.pool.HikariPool - HikariPool-1
+- Added connection org.postgresql.jdbc.PgConnection@4afd65fd
+2026-08-09T04:13:19.036Z INFO  [main] [requestId=] com.zaxxer.hikari.HikariDataSource - HikariPool-1
+ - Start completed.
+2026-08-09T04:13:19.320Z INFO  [main] [requestId=] org.flywaydb.core.FlywayExecutor - Database: jdbc
+:postgresql://45.11.92.142:5433/b24_video_offer (PostgreSQL 16.14)
+2026-08-09T04:13:20.199Z INFO  [main] [requestId=] org.flywaydb.core.internal.command.DbValidate - S
+uccessfully validated 4 migrations (execution time 00:00.405s)
+2026-08-09T04:13:20.518Z INFO  [main] [requestId=] org.flywaydb.core.internal.command.DbMigrate - Cu
+rrent version of schema "public": 3
+2026-08-09T04:13:20.724Z INFO  [main] [requestId=] org.flywaydb.core.internal.command.DbMigrate - Mi
+grating schema "public" to version "4 - mobile video upload"
+2026-08-09T04:13:21.216Z INFO  [main] [requestId=] org.flywaydb.core.internal.command.DbMigrate - Su
+ccessfully applied 1 migration to schema "public", now at version v4 (execution time 00:00.221s)
+2026-08-09T04:13:21.999Z INFO  [main] [requestId=] org.hibernate.orm.jpa - HHH008540: Processing Per
+sistenceUnitInfo [name: default]
+2026-08-09T04:13:22.305Z INFO  [main] [requestId=] org.hibernate.orm.core - HHH000001: Hibernate ORM
+ core version 7.2.7.Final
+2026-08-09T04:13:26.187Z INFO  [main] [requestId=] o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTime
+Weaver setup: ignoring JPA class transformer
+2026-08-09T04:13:26.620Z INFO  [main] [requestId=] org.hibernate.orm.connections.pooling - HHH100010
+05: Database info:
+        Database JDBC URL [jdbc:postgresql://45.11.92.142:5433/b24_video_offer]
+        Database driver: PostgreSQL JDBC Driver
+        Database dialect: PostgreSQLDialect
+        Database version: 16.14
+        Default catalog/schema: b24_video_offer/public
+        Autocommit mode: undefined/unknown
+        Isolation level: READ_COMMITTED [default READ_COMMITTED]
+        JDBC fetch size: none
+        Pool: DataSourceConnectionProvider
+        Minimum pool size: undefined/unknown
+        Maximum pool size: undefined/unknown
+2026-08-09T04:13:32.562Z INFO  [main] [requestId=] org.hibernate.orm.core - HHH000489: No JTA platfo
+rm available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-08-09T04:13:32.811Z INFO  [main] [requestId=] o.s.o.jpa.LocalContainerEntityManagerFactoryBean
+- Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-08-09T04:13:33.639Z INFO  [main] [requestId=] o.s.d.j.repository.query.QueryEnhancerFactories -
+ Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-08-09T04:13:39.416Z INFO  [main] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader -
+ Kontur HTTP transport configured: mode=DIRECT, connectTimeoutSeconds=15, readTimeoutSeconds=120
+2026-08-09T04:13:39.602Z INFO  [main] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader -
+ Kontur downloader initialized: baseUrl=https://rko7.ktalk.ru/, storageDir=./data/videos, connectTim
+eoutSeconds=15, readTimeoutSeconds=120, stallWarningSeconds=30, maxParallelParts=8, parallelThreshol
+dBytes=33554432, proxyEnabled=false, proxyHost=direct, proxyPort=null, proxyAuthenticationConfigured
+=true
+2026-08-09T04:13:39.751Z INFO  [main] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitr
+ix HTTP transport configured: mode=DIRECT, proxySource=NONE, proxyHost=direct, proxyPort=null, proxy
+AuthenticationConfigured=false, connectTimeoutSeconds=15, readTimeoutSeconds=45, proactiveRefreshAhe
+adSeconds=120
+2026-08-09T04:13:40.119Z INFO  [main] [requestId=] ru.abs7.videooffer.offer.VideoOfferService - Vide
+oOfferService initialized: publicBaseUrl=https://offer.abs7.ru, retentionDays=7, videoStorageDir=/ap
+p/data/videos
+2026-08-09T04:13:41.232Z INFO  [main] [requestId=] r.a.v.b.mobile.upload.MobileVideoUploadService -
+MobileVideoUploadService initialized: uploadDirectory=/app/data/mobile-uploads, maxUploadBytes=53687
+0912, maxChunkBytes=16777216, retentionHours=24
+2026-08-09T04:13:41.757Z INFO  [main] [requestId=] o.s.b.w.autoconfigure.WelcomePageHandlerMapping -
+ Adding welcome page: class path resource [static/index.html]
+2026-08-09T04:13:45.361Z INFO  [main] [requestId=] org.springframework.boot.tomcat.TomcatWebServer -
+ Tomcat started on port 8080 (http) with context path '/'
+2026-08-09T04:13:45.522Z INFO  [main] [requestId=] ru.abs7.videooffer.B24VideoOfferApplication - Sta
+rted B24VideoOfferApplication in 55.898 seconds (process running for 60.406)
+2026-08-09T04:13:45.557Z INFO  [main] [requestId=] r.a.videooffer.offer.VideoOfferLifecycleService -
+ Checking interrupted video offers after application startup
+2026-08-09T04:13:47.304Z INFO  [main] [requestId=] ru.abs7.videooffer.offer.VideoOfferService - Pend
+ing video offers selected for recovery: count=0
+2026-08-09T04:13:47.384Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Ensuring Bitrix desktop placements after startup: count=1
+2026-08-09T04:13:47.385Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Binding Bitrix placement: memberId=419222a0c1725a38175958981810edd7, placement=CRM_DEAL_DE
+TAIL_ACTIVITY, handler=https://offer.abs7.ru/bitrix/widget
+2026-08-09T04:13:47.386Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call started: memberId=419222a0c1725a38175958981810edd7, method=placement.bind, par
+ameterNames=[PLACEMENT, HANDLER, TITLE, LANG_ALL]
+2026-08-09T04:13:47.465Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Executing Bitrix REST request: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.
+ru, method=placement.bind, endpoint=https://abs7.bitrix24.ru/rest/placement.bind.json, tokenExpiresA
+t=2026-08-09T04:43:48.807177Z
+2026-08-09T04:13:49.639Z ERROR [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix HTTP error response: memberId=419222a0c1725a38175958981810edd7, method=placement.bind, e
+ndpoint=https://abs7.bitrix24.ru/rest/placement.bind.json, status=400 BAD_REQUEST, durationMs=2174,
+responseBody={"error":"ERROR_CORE","error_description":"Unable to set placement handler: Handler alr
+eady binded"}
+
+org.springframework.web.client.HttpClientErrorException$BadRequest: 400 Bad Request: "{"error":"ERRO
+R_CORE","error_description":"Unable to set placement handler: Handler already binded"}"
+        at org.springframework.web.client.HttpClientErrorException.create(HttpClientErrorException.j
+ava:106) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.createException(StatusHandler.java:132) ~[sp
+ring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.lambda$createDefaultStatusHandler$1(StatusHa
+ndler.java:107) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.handle(StatusHandler.java:75) ~[spring-web-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.applyStatusHandlers(
+DefaultRestClient.java:940) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$readBody$0(De
+faultRestClient.java:929) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient.readWithMessageConverters(DefaultRestCli
+ent.java:224) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.readBody(DefaultRest
+Client.java:928) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$body$1(Defaul
+tRestClient.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeIntern
+al(DefaultRestClient.java:617) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(Defau
+ltRestClient.java:572) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747
+) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(De
+faultRestClient.java:921) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClie
+nt.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:234) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:180) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:97) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.ensureDesktopPlacementsAfterStartup(B
+itrixInstallationService.java:140) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMe
+thodInvocation.java:190) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvo
+cation.java:158) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecut
+ionInterceptor.java:112) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.FutureTask.run(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-09T04:13:49.661Z ERROR [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call failed: memberId=419222a0c1725a38175958981810edd7, method=placement.bind, erro
+rCode=HTTP_400, durationMs=2275, error={"error":"ERROR_CORE","error_description":"Unable to set plac
+ement handler: Handler already binded"}
+
+ru.abs7.videooffer.bitrix.BitrixRestException: {"error":"ERROR_CORE","error_description":"Unable to
+set placement handler: Handler already binded"}
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:248) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:180) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:97) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.ensureDesktopPlacementsAfterStartup(B
+itrixInstallationService.java:140) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMe
+thodInvocation.java:190) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvo
+cation.java:158) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecut
+ionInterceptor.java:112) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.FutureTask.run(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-09T04:13:49.662Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Bitrix placement already bound: memberId=419222a0c1725a38175958981810edd7, placement=CRM_D
+EAL_DETAIL_ACTIVITY
+2026-08-09T04:13:49.663Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Binding Bitrix placement: memberId=419222a0c1725a38175958981810edd7, placement=CRM_LEAD_DE
+TAIL_ACTIVITY, handler=https://offer.abs7.ru/bitrix/widget
+2026-08-09T04:13:49.663Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call started: memberId=419222a0c1725a38175958981810edd7, method=placement.bind, par
+ameterNames=[PLACEMENT, HANDLER, TITLE, LANG_ALL]
+2026-08-09T04:13:49.737Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Executing Bitrix REST request: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.
+ru, method=placement.bind, endpoint=https://abs7.bitrix24.ru/rest/placement.bind.json, tokenExpiresA
+t=2026-08-09T04:43:48.807177Z
+2026-08-09T04:13:49.841Z ERROR [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix HTTP error response: memberId=419222a0c1725a38175958981810edd7, method=placement.bind, e
+ndpoint=https://abs7.bitrix24.ru/rest/placement.bind.json, status=400 BAD_REQUEST, durationMs=104, r
+esponseBody={"error":"ERROR_CORE","error_description":"Unable to set placement handler: Handler alre
+ady binded"}
+
+org.springframework.web.client.HttpClientErrorException$BadRequest: 400 Bad Request: "{"error":"ERRO
+R_CORE","error_description":"Unable to set placement handler: Handler already binded"}"
+        at org.springframework.web.client.HttpClientErrorException.create(HttpClientErrorException.j
+ava:106) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.createException(StatusHandler.java:132) ~[sp
+ring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.lambda$createDefaultStatusHandler$1(StatusHa
+ndler.java:107) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.handle(StatusHandler.java:75) ~[spring-web-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.applyStatusHandlers(
+DefaultRestClient.java:940) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$readBody$0(De
+faultRestClient.java:929) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient.readWithMessageConverters(DefaultRestCli
+ent.java:224) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.readBody(DefaultRest
+Client.java:928) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$body$1(Defaul
+tRestClient.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeIntern
+al(DefaultRestClient.java:617) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(Defau
+ltRestClient.java:572) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747
+) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(De
+faultRestClient.java:921) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClie
+nt.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:234) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:180) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:97) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.ensureDesktopPlacementsAfterStartup(B
+itrixInstallationService.java:140) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMe
+thodInvocation.java:190) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvo
+cation.java:158) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecut
+ionInterceptor.java:112) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.FutureTask.run(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-09T04:13:49.845Z ERROR [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call failed: memberId=419222a0c1725a38175958981810edd7, method=placement.bind, erro
+rCode=HTTP_400, durationMs=181, error={"error":"ERROR_CORE","error_description":"Unable to set place
+ment handler: Handler already binded"}
+
+ru.abs7.videooffer.bitrix.BitrixRestException: {"error":"ERROR_CORE","error_description":"Unable to
+set placement handler: Handler already binded"}
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:248) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:180) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:97) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.ensureDesktopPlacementsAfterStartup(B
+itrixInstallationService.java:140) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMe
+thodInvocation.java:190) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvo
+cation.java:158) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecut
+ionInterceptor.java:112) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.FutureTask.run(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-09T04:13:49.848Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Bitrix placement already bound: memberId=419222a0c1725a38175958981810edd7, placement=CRM_L
+EAD_DETAIL_ACTIVITY
+2026-08-09T04:13:49.849Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Binding Bitrix placement: memberId=419222a0c1725a38175958981810edd7, placement=CRM_CONTACT
+_DETAIL_ACTIVITY, handler=https://offer.abs7.ru/bitrix/widget
+2026-08-09T04:13:49.849Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call started: memberId=419222a0c1725a38175958981810edd7, method=placement.bind, par
+ameterNames=[PLACEMENT, HANDLER, TITLE, LANG_ALL]
+2026-08-09T04:13:49.875Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Executing Bitrix REST request: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.
+ru, method=placement.bind, endpoint=https://abs7.bitrix24.ru/rest/placement.bind.json, tokenExpiresA
+t=2026-08-09T04:43:48.807177Z
+2026-08-09T04:13:49.958Z ERROR [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix HTTP error response: memberId=419222a0c1725a38175958981810edd7, method=placement.bind, e
+ndpoint=https://abs7.bitrix24.ru/rest/placement.bind.json, status=400 BAD_REQUEST, durationMs=82, re
+sponseBody={"error":"ERROR_CORE","error_description":"Unable to set placement handler: Handler alrea
+dy binded"}
+
+org.springframework.web.client.HttpClientErrorException$BadRequest: 400 Bad Request: "{"error":"ERRO
+R_CORE","error_description":"Unable to set placement handler: Handler already binded"}"
+        at org.springframework.web.client.HttpClientErrorException.create(HttpClientErrorException.j
+ava:106) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.createException(StatusHandler.java:132) ~[sp
+ring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.lambda$createDefaultStatusHandler$1(StatusHa
+ndler.java:107) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.handle(StatusHandler.java:75) ~[spring-web-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.applyStatusHandlers(
+DefaultRestClient.java:940) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$readBody$0(De
+faultRestClient.java:929) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient.readWithMessageConverters(DefaultRestCli
+ent.java:224) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.readBody(DefaultRest
+Client.java:928) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$body$1(Defaul
+tRestClient.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeIntern
+al(DefaultRestClient.java:617) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(Defau
+ltRestClient.java:572) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747
+) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(De
+faultRestClient.java:921) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClie
+nt.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:234) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:180) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:97) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.ensureDesktopPlacementsAfterStartup(B
+itrixInstallationService.java:140) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMe
+thodInvocation.java:190) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvo
+cation.java:158) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecut
+ionInterceptor.java:112) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.FutureTask.run(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-09T04:13:49.964Z ERROR [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call failed: memberId=419222a0c1725a38175958981810edd7, method=placement.bind, erro
+rCode=HTTP_400, durationMs=115, error={"error":"ERROR_CORE","error_description":"Unable to set place
+ment handler: Handler already binded"}
+
+ru.abs7.videooffer.bitrix.BitrixRestException: {"error":"ERROR_CORE","error_description":"Unable to
+set placement handler: Handler already binded"}
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:248) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:180) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:97) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.ensureDesktopPlacementsAfterStartup(B
+itrixInstallationService.java:140) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMe
+thodInvocation.java:190) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvo
+cation.java:158) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecut
+ionInterceptor.java:112) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.FutureTask.run(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-09T04:13:49.966Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Bitrix placement already bound: memberId=419222a0c1725a38175958981810edd7, placement=CRM_C
+ONTACT_DETAIL_ACTIVITY
+2026-08-09T04:13:49.966Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Bitrix desktop placement startup check completed: domain=abs7.bitrix24.ru, memberId=419222
+a0c1725a38175958981810edd7, placements={CRM_DEAL_DETAIL_ACTIVITY=ALREADY_BOUND, CRM_LEAD_DETAIL_ACTI
+VITY=ALREADY_BOUND, CRM_CONTACT_DETAIL_ACTIVITY=ALREADY_BOUND}
+2026-08-09T04:14:00.276Z INFO  [http-nio-8080-exec-1] [requestId=] o.a.c.c.ContainerBase.[Tomcat].[l
+ocalhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-08-09T04:14:00.277Z INFO  [http-nio-8080-exec-1] [requestId=] o.springframework.web.servlet.Dis
+patcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-08-09T04:14:00.321Z INFO  [http-nio-8080-exec-1] [requestId=] o.springframework.web.servlet.Dis
+patcherServlet - Completed initialization in 43 ms
+2026-08-09T04:14:00.435Z INFO  [http-nio-8080-exec-1] [requestId=98975b88-d8af-4f9d-b613-0df8617dd75
+c] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/bitrix/
+widget, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit
+/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-09T04:14:00.619Z INFO  [http-nio-8080-exec-1] [requestId=98975b88-d8af-4f9d-b613-0df8617dd75
+c] ru.abs7.videooffer.bitrix.BitrixController - Bitrix widget callback received: parameterNames=[DOM
+AIN, PROTOCOL, LANG, APP_SID, AUTH_ID, AUTH_EXPIRES, REFRESH_ID, SERVER_ENDPOINT, APPLICATION_TOKEN,
+ APPLICATION_SCOPE, member_id, status, PLACEMENT, PLACEMENT_OPTIONS]
+2026-08-09T04:14:01.053Z INFO  [http-nio-8080-exec-1] [requestId=98975b88-d8af-4f9d-b613-0df8617dd75
+c] r.a.videooffer.bitrix.BitrixInstallationService - Fresh Bitrix authorization synchronized from wi
+dget callback: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.ru, expiresAt=2026-08
+-09T05:14:00.621337530Z, tokenChanged=true
+2026-08-09T04:14:01.054Z INFO  [http-nio-8080-exec-1] [requestId=98975b88-d8af-4f9d-b613-0df8617dd75
+c] ru.abs7.videooffer.bitrix.BitrixController - Bitrix widget context resolved: placement=CRM_LEAD_D
+ETAIL_ACTIVITY, memberId=419222a0c1725a38175958981810edd7, entityType=LEAD, entityId=64634, applicat
+ionScope=crm,placement,mobile, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.3
+6 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-09T04:14:01.072Z INFO  [http-nio-8080-exec-1] [requestId=98975b88-d8af-4f9d-b613-0df8617dd75
+c] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=64634, version=v2, nonExpiring=true
+2026-08-09T04:14:01.102Z INFO  [http-nio-8080-exec-1] [requestId=98975b88-d8af-4f9d-b613-0df8617dd75
+c] ru.abs7.videooffer.bitrix.BitrixController - Bitrix widget HTML generated: placement=CRM_LEAD_DET
+AIL_ACTIVITY, entityType=LEAD, entityId=64634, htmlBytes=3925
+2026-08-09T04:14:01.153Z INFO  [http-nio-8080-exec-1] [requestId=98975b88-d8af-4f9d-b613-0df8617dd75
+c] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/bitri
+x/widget, status=200, durationMs=720
+2026-08-09T04:14:01.264Z INFO  [http-nio-8080-exec-2] [requestId=de4e676e-691a-476a-89da-a79bbf11e50
+5] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/assets/b
+itrix-widget.css, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) A
+ppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-09T04:14:01.275Z INFO  [http-nio-8080-exec-3] [requestId=d9011ce7-77eb-467c-ad63-1f1c24bb6cf
+3] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/assets/b
+itrix-widget.js, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) Ap
+pleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-09T04:14:01.305Z INFO  [http-nio-8080-exec-3] [requestId=d9011ce7-77eb-467c-ad63-1f1c24bb6cf
+3] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/assets
+/bitrix-widget.js, status=200, durationMs=29
+2026-08-09T04:14:01.305Z INFO  [http-nio-8080-exec-2] [requestId=de4e676e-691a-476a-89da-a79bbf11e50
+5] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/assets
+/bitrix-widget.css, status=200, durationMs=41
+2026-08-09T04:14:15.200Z INFO  [http-nio-8080-exec-4] [requestId=6c57dd2f-db0d-47c3-a188-c5be6635e0b
+8] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/bitrix/
+app, remoteAddress=77.220.52.206, userAgent=Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.22
+0624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari
+/537.36 BitrixMobile/Version=61
+2026-08-09T04:14:15.211Z INFO  [http-nio-8080-exec-4] [requestId=6c57dd2f-db0d-47c3-a188-c5be6635e0b
+8] r.a.v.bitrix.mobile.BitrixMobileController - Bitrix standalone application opened: parameterNames
+=[DOMAIN, PROTOCOL, LANG, APP_SID, AUTH_ID, AUTH_EXPIRES, REFRESH_ID, SERVER_ENDPOINT, APPLICATION_T
+OKEN, APPLICATION_SCOPE, member_id, status, PLACEMENT, PLACEMENT_OPTIONS], userAgent=Mozilla/5.0 (Li
+nux; Android 13; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Versio
+n/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:14:15.334Z INFO  [http-nio-8080-exec-4] [requestId=6c57dd2f-db0d-47c3-a188-c5be6635e0b
+8] r.a.videooffer.bitrix.BitrixInstallationService - Fresh Bitrix authorization synchronized from wi
+dget callback: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.ru, expiresAt=2026-08
+-09T05:14:15.213366230Z, tokenChanged=true
+2026-08-09T04:14:15.347Z INFO  [http-nio-8080-exec-4] [requestId=6c57dd2f-db0d-47c3-a188-c5be6635e0b
+8] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/bitri
+x/app, status=200, durationMs=146
+2026-08-09T04:14:15.394Z INFO  [http-nio-8080-exec-5] [requestId=374c5a13-544b-4115-b6a4-23e509e805e
+7] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/assets/b
+itrix-mobile.js, remoteAddress=77.220.52.206, userAgent=Mozilla/5.0 (Linux; Android 13; M2101K7BNY B
+uild/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.181 M
+obile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:14:15.395Z INFO  [http-nio-8080-exec-6] [requestId=859068b7-4abc-46c2-a895-e79045ff927
+c] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/assets/b
+itrix-mobile.css, remoteAddress=77.220.52.206, userAgent=Mozilla/5.0 (Linux; Android 13; M2101K7BNY
+Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.181
+Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:14:15.401Z INFO  [http-nio-8080-exec-6] [requestId=859068b7-4abc-46c2-a895-e79045ff927
+c] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/assets
+/bitrix-mobile.css, status=200, durationMs=5
+2026-08-09T04:14:15.405Z INFO  [http-nio-8080-exec-5] [requestId=374c5a13-544b-4115-b6a4-23e509e805e
+7] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/assets
+/bitrix-mobile.js, status=200, durationMs=11
+2026-08-09T04:14:15.513Z INFO  [http-nio-8080-exec-7] [requestId=73ed2c55-9822-49ee-96c1-b58dc64d8bc
+8] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/bitrix/
+mobile/client-events, remoteAddress=77.220.52.206, userAgent=Mozilla/5.0 (Linux; Android 13; M2101K7
+BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.
+181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:14:15.734Z INFO  [http-nio-8080-exec-7] [requestId=73ed2c55-9822-49ee-96c1-b58dc64d8bc
+8] r.a.v.bitrix.mobile.BitrixMobileController - Bitrix mobile client event: memberId=419222a0c1725a3
+8175958981810edd7, event=CAPABILITIES, details={"mediaDevices":true,"getUserMedia":true,"mediaRecord
+er":true,"mp4":true,"webm":true}, userAgent=Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.22
+0624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari
+/537.36 BitrixMobile/Version=61
+2026-08-09T04:14:15.742Z INFO  [http-nio-8080-exec-7] [requestId=73ed2c55-9822-49ee-96c1-b58dc64d8bc
+8] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/bitri
+x/mobile/client-events, status=200, durationMs=229
+2026-08-09T04:14:24.418Z INFO  [http-nio-8080-exec-9] [requestId=d51c4524-bfef-4f58-a7df-bf447148f3f
+9] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/bitrix/m
+obile/search, remoteAddress=77.220.52.206, userAgent=Mozilla/5.0 (Linux; Android 13; M2101K7BNY Buil
+d/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.181 Mobi
+le Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:14:24.443Z INFO  [http-nio-8080-exec-9] [requestId=d51c4524-bfef-4f58-a7df-bf447148f3f
+9] r.a.v.bitrix.mobile.BitrixCrmSearchService - Mobile CRM search started: memberId=419222a0c1725a38
+175958981810edd7, entityType=LEAD, queryLength=2, phoneLike=false
+2026-08-09T04:14:24.446Z INFO  [http-nio-8080-exec-9] [requestId=d51c4524-bfef-4f58-a7df-bf447148f3f
+9] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a381
+75958981810edd7, method=crm.item.list, parameterNames=[entityTypeId, select, filter, order, start]
+2026-08-09T04:14:24.491Z INFO  [http-nio-8080-exec-9] [requestId=d51c4524-bfef-4f58-a7df-bf447148f3f
+9] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c172
+5a38175958981810edd7, domain=abs7.bitrix24.ru, method=crm.item.list, endpoint=https://abs7.bitrix24.
+ru/rest/crm.item.list.json, tokenExpiresAt=2026-08-09T05:14:15.213366Z
+2026-08-09T04:14:25.512Z INFO  [http-nio-8080-exec-10] [requestId=3f702a16-cbe5-4751-94c6-44e351dde4
+b8] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/bitrix/
+mobile/search, remoteAddress=77.220.52.206, userAgent=Mozilla/5.0 (Linux; Android 13; M2101K7BNY Bui
+ld/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.181 Mob
+ile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:14:25.524Z INFO  [http-nio-8080-exec-10] [requestId=3f702a16-cbe5-4751-94c6-44e351dde4
+b8] r.a.v.bitrix.mobile.BitrixCrmSearchService - Mobile CRM search started: memberId=419222a0c1725a3
+8175958981810edd7, entityType=LEAD, queryLength=5, phoneLike=false
+2026-08-09T04:14:25.524Z INFO  [http-nio-8080-exec-10] [requestId=3f702a16-cbe5-4751-94c6-44e351dde4
+b8] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a38
+175958981810edd7, method=crm.item.list, parameterNames=[entityTypeId, select, filter, order, start]
+2026-08-09T04:14:25.528Z INFO  [http-nio-8080-exec-9] [requestId=d51c4524-bfef-4f58-a7df-bf447148f3f
+9] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST response received: memberId=419222a0c172
+5a38175958981810edd7, method=crm.item.list, durationMs=1037, responseKeys=[result, next, total, time
+]
+2026-08-09T04:14:25.528Z INFO  [http-nio-8080-exec-9] [requestId=d51c4524-bfef-4f58-a7df-bf447148f3f
+9] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call completed: memberId=419222a0c1725a3
+8175958981810edd7, method=crm.item.list, durationMs=1082, responseKeys=[result, next, total, time]
+2026-08-09T04:14:25.534Z INFO  [http-nio-8080-exec-9] [requestId=d51c4524-bfef-4f58-a7df-bf447148f3f
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72076, version=v2, nonExpiring=true
+2026-08-09T04:14:25.535Z INFO  [http-nio-8080-exec-9] [requestId=d51c4524-bfef-4f58-a7df-bf447148f3f
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72074, version=v2, nonExpiring=true
+2026-08-09T04:14:25.539Z INFO  [http-nio-8080-exec-9] [requestId=d51c4524-bfef-4f58-a7df-bf447148f3f
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=71742, version=v2, nonExpiring=true
+2026-08-09T04:14:25.540Z INFO  [http-nio-8080-exec-9] [requestId=d51c4524-bfef-4f58-a7df-bf447148f3f
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=71120, version=v2, nonExpiring=true
+2026-08-09T04:14:25.542Z INFO  [http-nio-8080-exec-9] [requestId=d51c4524-bfef-4f58-a7df-bf447148f3f
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=52430, version=v2, nonExpiring=true
+2026-08-09T04:14:25.542Z INFO  [http-nio-8080-exec-9] [requestId=d51c4524-bfef-4f58-a7df-bf447148f3f
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=59408, version=v2, nonExpiring=true
+2026-08-09T04:14:25.543Z INFO  [http-nio-8080-exec-9] [requestId=d51c4524-bfef-4f58-a7df-bf447148f3f
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=71994, version=v2, nonExpiring=true
+2026-08-09T04:14:25.543Z INFO  [http-nio-8080-exec-9] [requestId=d51c4524-bfef-4f58-a7df-bf447148f3f
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=14876, version=v2, nonExpiring=true
+2026-08-09T04:14:25.543Z INFO  [http-nio-8080-exec-9] [requestId=d51c4524-bfef-4f58-a7df-bf447148f3f
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72072, version=v2, nonExpiring=true
+2026-08-09T04:14:25.544Z INFO  [http-nio-8080-exec-9] [requestId=d51c4524-bfef-4f58-a7df-bf447148f3f
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=64634, version=v2, nonExpiring=true
+2026-08-09T04:14:25.544Z INFO  [http-nio-8080-exec-9] [requestId=d51c4524-bfef-4f58-a7df-bf447148f3f
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72066, version=v2, nonExpiring=true
+2026-08-09T04:14:25.545Z INFO  [http-nio-8080-exec-9] [requestId=d51c4524-bfef-4f58-a7df-bf447148f3f
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=71520, version=v2, nonExpiring=true
+2026-08-09T04:14:25.545Z INFO  [http-nio-8080-exec-9] [requestId=d51c4524-bfef-4f58-a7df-bf447148f3f
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=71122, version=v2, nonExpiring=true
+2026-08-09T04:14:25.545Z INFO  [http-nio-8080-exec-9] [requestId=d51c4524-bfef-4f58-a7df-bf447148f3f
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72070, version=v2, nonExpiring=true
+2026-08-09T04:14:25.546Z INFO  [http-nio-8080-exec-9] [requestId=d51c4524-bfef-4f58-a7df-bf447148f3f
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=25752, version=v2, nonExpiring=true
+2026-08-09T04:14:25.546Z INFO  [http-nio-8080-exec-9] [requestId=d51c4524-bfef-4f58-a7df-bf447148f3f
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72042, version=v2, nonExpiring=true
+2026-08-09T04:14:25.546Z INFO  [http-nio-8080-exec-9] [requestId=d51c4524-bfef-4f58-a7df-bf447148f3f
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=57108, version=v2, nonExpiring=true
+2026-08-09T04:14:25.546Z INFO  [http-nio-8080-exec-9] [requestId=d51c4524-bfef-4f58-a7df-bf447148f3f
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=57516, version=v2, nonExpiring=true
+2026-08-09T04:14:25.547Z INFO  [http-nio-8080-exec-9] [requestId=d51c4524-bfef-4f58-a7df-bf447148f3f
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72032, version=v2, nonExpiring=true
+2026-08-09T04:14:25.547Z INFO  [http-nio-8080-exec-9] [requestId=d51c4524-bfef-4f58-a7df-bf447148f3f
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=71682, version=v2, nonExpiring=true
+2026-08-09T04:14:25.547Z INFO  [http-nio-8080-exec-9] [requestId=d51c4524-bfef-4f58-a7df-bf447148f3f
+9] r.a.v.bitrix.mobile.BitrixCrmSearchService - Mobile CRM search completed: memberId=419222a0c1725a
+38175958981810edd7, entityType=LEAD, queryLength=2, resultCount=20
+2026-08-09T04:14:25.604Z INFO  [http-nio-8080-exec-10] [requestId=3f702a16-cbe5-4751-94c6-44e351dde4
+b8] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c17
+25a38175958981810edd7, domain=abs7.bitrix24.ru, method=crm.item.list, endpoint=https://abs7.bitrix24
+.ru/rest/crm.item.list.json, tokenExpiresAt=2026-08-09T05:14:15.213366Z
+2026-08-09T04:14:25.653Z INFO  [http-nio-8080-exec-9] [requestId=d51c4524-bfef-4f58-a7df-bf447148f3f
+9] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/bitrix
+/mobile/search, status=200, durationMs=1235
+2026-08-09T04:14:26.648Z INFO  [http-nio-8080-exec-10] [requestId=3f702a16-cbe5-4751-94c6-44e351dde4
+b8] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST response received: memberId=419222a0c17
+25a38175958981810edd7, method=crm.item.list, durationMs=1044, responseKeys=[result, total, time]
+2026-08-09T04:14:26.649Z INFO  [http-nio-8080-exec-10] [requestId=3f702a16-cbe5-4751-94c6-44e351dde4
+b8] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call completed: memberId=419222a0c1725a
+38175958981810edd7, method=crm.item.list, durationMs=1124, responseKeys=[result, total, time]
+2026-08-09T04:14:26.698Z INFO  [http-nio-8080-exec-10] [requestId=3f702a16-cbe5-4751-94c6-44e351dde4
+b8] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a38
+175958981810edd7, entityType=LEAD, entityId=64634, version=v2, nonExpiring=true
+2026-08-09T04:14:26.709Z INFO  [http-nio-8080-exec-10] [requestId=3f702a16-cbe5-4751-94c6-44e351dde4
+b8] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a38
+175958981810edd7, entityType=LEAD, entityId=27574, version=v2, nonExpiring=true
+2026-08-09T04:14:26.711Z INFO  [http-nio-8080-exec-10] [requestId=3f702a16-cbe5-4751-94c6-44e351dde4
+b8] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a38
+175958981810edd7, entityType=LEAD, entityId=33082, version=v2, nonExpiring=true
+2026-08-09T04:14:26.711Z INFO  [http-nio-8080-exec-10] [requestId=3f702a16-cbe5-4751-94c6-44e351dde4
+b8] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a38
+175958981810edd7, entityType=LEAD, entityId=58832, version=v2, nonExpiring=true
+2026-08-09T04:14:26.715Z INFO  [http-nio-8080-exec-10] [requestId=3f702a16-cbe5-4751-94c6-44e351dde4
+b8] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a38
+175958981810edd7, entityType=LEAD, entityId=55182, version=v2, nonExpiring=true
+2026-08-09T04:14:26.716Z INFO  [http-nio-8080-exec-10] [requestId=3f702a16-cbe5-4751-94c6-44e351dde4
+b8] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a38
+175958981810edd7, entityType=LEAD, entityId=54314, version=v2, nonExpiring=true
+2026-08-09T04:14:26.717Z INFO  [http-nio-8080-exec-10] [requestId=3f702a16-cbe5-4751-94c6-44e351dde4
+b8] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a38
+175958981810edd7, entityType=LEAD, entityId=53766, version=v2, nonExpiring=true
+2026-08-09T04:14:26.718Z INFO  [http-nio-8080-exec-10] [requestId=3f702a16-cbe5-4751-94c6-44e351dde4
+b8] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a38
+175958981810edd7, entityType=LEAD, entityId=50852, version=v2, nonExpiring=true
+2026-08-09T04:14:26.719Z INFO  [http-nio-8080-exec-10] [requestId=3f702a16-cbe5-4751-94c6-44e351dde4
+b8] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a38
+175958981810edd7, entityType=LEAD, entityId=47520, version=v2, nonExpiring=true
+2026-08-09T04:14:26.719Z INFO  [http-nio-8080-exec-10] [requestId=3f702a16-cbe5-4751-94c6-44e351dde4
+b8] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a38
+175958981810edd7, entityType=LEAD, entityId=41874, version=v2, nonExpiring=true
+2026-08-09T04:14:26.720Z INFO  [http-nio-8080-exec-10] [requestId=3f702a16-cbe5-4751-94c6-44e351dde4
+b8] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a38
+175958981810edd7, entityType=LEAD, entityId=23474, version=v2, nonExpiring=true
+2026-08-09T04:14:26.721Z INFO  [http-nio-8080-exec-10] [requestId=3f702a16-cbe5-4751-94c6-44e351dde4
+b8] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a38
+175958981810edd7, entityType=LEAD, entityId=19668, version=v2, nonExpiring=true
+2026-08-09T04:14:26.722Z INFO  [http-nio-8080-exec-10] [requestId=3f702a16-cbe5-4751-94c6-44e351dde4
+b8] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a38
+175958981810edd7, entityType=LEAD, entityId=9460, version=v2, nonExpiring=true
+2026-08-09T04:14:26.723Z INFO  [http-nio-8080-exec-10] [requestId=3f702a16-cbe5-4751-94c6-44e351dde4
+b8] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a38
+175958981810edd7, entityType=LEAD, entityId=4714, version=v2, nonExpiring=true
+2026-08-09T04:14:26.724Z INFO  [http-nio-8080-exec-10] [requestId=3f702a16-cbe5-4751-94c6-44e351dde4
+b8] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a38
+175958981810edd7, entityType=LEAD, entityId=2264, version=v2, nonExpiring=true
+2026-08-09T04:14:26.725Z INFO  [http-nio-8080-exec-10] [requestId=3f702a16-cbe5-4751-94c6-44e351dde4
+b8] r.a.v.bitrix.mobile.BitrixCrmSearchService - Mobile CRM search completed: memberId=419222a0c1725
+a38175958981810edd7, entityType=LEAD, queryLength=5, resultCount=15
+2026-08-09T04:14:26.728Z INFO  [http-nio-8080-exec-10] [requestId=3f702a16-cbe5-4751-94c6-44e351dde4
+b8] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/bitri
+x/mobile/search, status=200, durationMs=1216
+2026-08-09T04:14:32.335Z INFO  [http-nio-8080-exec-8] [requestId=45c248f6-81d4-4af1-aada-8fd729b43b1
+c] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/bitrix/
+mobile/client-events, remoteAddress=77.220.52.206, userAgent=Mozilla/5.0 (Linux; Android 13; M2101K7
+BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.
+181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:14:32.343Z INFO  [http-nio-8080-exec-8] [requestId=45c248f6-81d4-4af1-aada-8fd729b43b1
+c] r.a.v.bitrix.mobile.BitrixMobileController - Bitrix mobile client event: memberId=419222a0c1725a3
+8175958981810edd7, event=CAMERA_ERROR, details=NotReadableError: Could not start video source, userA
+gent=Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML
+, like Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:14:32.345Z INFO  [http-nio-8080-exec-8] [requestId=45c248f6-81d4-4af1-aada-8fd729b43b1
+c] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/bitri
+x/mobile/client-events, status=200, durationMs=10
+2026-08-09T04:15:00.004Z INFO  [scheduling-1] [requestId=] r.a.videooffer.offer.VideoOfferLifecycleS
+ervice - Scheduled expired video offer cleanup started
+2026-08-09T04:15:00.130Z INFO  [scheduling-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferServic
+e - Expired video offers selected for cleanup: count=0
+2026-08-09T04:15:00.131Z INFO  [scheduling-1] [requestId=] r.a.videooffer.offer.VideoOfferLifecycleS
+ervice - Scheduled expired video offer cleanup completed
+2026-08-09T04:16:41.561Z INFO  [http-nio-8080-exec-1] [requestId=3d84cc91-05ac-4013-ac60-7c4c4efd6f4
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/bitrix/
+app, remoteAddress=77.220.52.206, userAgent=Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.22
+0624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari
+/537.36 BitrixMobile/Version=61
+2026-08-09T04:16:42.176Z INFO  [http-nio-8080-exec-1] [requestId=3d84cc91-05ac-4013-ac60-7c4c4efd6f4
+2] r.a.v.bitrix.mobile.BitrixMobileController - Bitrix standalone application opened: parameterNames
+=[DOMAIN, PROTOCOL, LANG, APP_SID, AUTH_ID, AUTH_EXPIRES, REFRESH_ID, SERVER_ENDPOINT, APPLICATION_T
+OKEN, APPLICATION_SCOPE, member_id, status, PLACEMENT, PLACEMENT_OPTIONS], userAgent=Mozilla/5.0 (Li
+nux; Android 13; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Versio
+n/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:16:42.320Z INFO  [http-nio-8080-exec-1] [requestId=3d84cc91-05ac-4013-ac60-7c4c4efd6f4
+2] r.a.videooffer.bitrix.BitrixInstallationService - Fresh Bitrix authorization synchronized from wi
+dget callback: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.ru, expiresAt=2026-08
+-09T05:16:42.181420588Z, tokenChanged=true
+2026-08-09T04:16:42.331Z INFO  [http-nio-8080-exec-1] [requestId=3d84cc91-05ac-4013-ac60-7c4c4efd6f4
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/bitri
+x/app, status=200, durationMs=771
+2026-08-09T04:16:42.388Z INFO  [http-nio-8080-exec-2] [requestId=f8fee05f-718b-46bf-926b-746b7e51c92
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/assets/b
+itrix-mobile.js, remoteAddress=77.220.52.206, userAgent=Mozilla/5.0 (Linux; Android 13; M2101K7BNY B
+uild/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.181 M
+obile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:16:42.398Z INFO  [http-nio-8080-exec-3] [requestId=2b3ce4f6-cd2c-40ee-8a0d-def4dd912f0
+5] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/assets/b
+itrix-mobile.css, remoteAddress=77.220.52.206, userAgent=Mozilla/5.0 (Linux; Android 13; M2101K7BNY
+Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.181
+Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:16:42.408Z INFO  [http-nio-8080-exec-2] [requestId=f8fee05f-718b-46bf-926b-746b7e51c92
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/assets
+/bitrix-mobile.js, status=304, durationMs=20
+2026-08-09T04:16:42.415Z INFO  [http-nio-8080-exec-3] [requestId=2b3ce4f6-cd2c-40ee-8a0d-def4dd912f0
+5] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/assets
+/bitrix-mobile.css, status=304, durationMs=17
+2026-08-09T04:16:42.519Z INFO  [http-nio-8080-exec-4] [requestId=4da676e3-f81c-4787-992f-211298a0142
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/bitrix/
+mobile/client-events, remoteAddress=77.220.52.206, userAgent=Mozilla/5.0 (Linux; Android 13; M2101K7
+BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.
+181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:16:42.535Z INFO  [http-nio-8080-exec-4] [requestId=4da676e3-f81c-4787-992f-211298a0142
+2] r.a.v.bitrix.mobile.BitrixMobileController - Bitrix mobile client event: memberId=419222a0c1725a3
+8175958981810edd7, event=CAPABILITIES, details={"mediaDevices":true,"getUserMedia":true,"mediaRecord
+er":true,"mp4":true,"webm":true}, userAgent=Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.22
+0624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari
+/537.36 BitrixMobile/Version=61
+2026-08-09T04:16:42.560Z INFO  [http-nio-8080-exec-4] [requestId=4da676e3-f81c-4787-992f-211298a0142
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/bitri
+x/mobile/client-events, status=200, durationMs=41
+2026-08-09T04:16:45.940Z INFO  [http-nio-8080-exec-6] [requestId=cd363cc3-120a-4bf0-9fe9-370580493f1
+7] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/bitrix/m
+obile/search, remoteAddress=77.220.52.206, userAgent=Mozilla/5.0 (Linux; Android 13; M2101K7BNY Buil
+d/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.181 Mobi
+le Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:16:45.944Z INFO  [http-nio-8080-exec-6] [requestId=cd363cc3-120a-4bf0-9fe9-370580493f1
+7] r.a.v.bitrix.mobile.BitrixCrmSearchService - Mobile CRM search started: memberId=419222a0c1725a38
+175958981810edd7, entityType=LEAD, queryLength=2, phoneLike=false
+2026-08-09T04:16:45.945Z INFO  [http-nio-8080-exec-6] [requestId=cd363cc3-120a-4bf0-9fe9-370580493f1
+7] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a381
+75958981810edd7, method=crm.item.list, parameterNames=[entityTypeId, select, filter, order, start]
+2026-08-09T04:16:45.993Z INFO  [http-nio-8080-exec-6] [requestId=cd363cc3-120a-4bf0-9fe9-370580493f1
+7] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c172
+5a38175958981810edd7, domain=abs7.bitrix24.ru, method=crm.item.list, endpoint=https://abs7.bitrix24.
+ru/rest/crm.item.list.json, tokenExpiresAt=2026-08-09T05:16:42.181421Z
+2026-08-09T04:16:47.125Z INFO  [http-nio-8080-exec-5] [requestId=a71353be-7ece-45a2-9666-b062abc8851
+b] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/bitrix/m
+obile/search, remoteAddress=77.220.52.206, userAgent=Mozilla/5.0 (Linux; Android 13; M2101K7BNY Buil
+d/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.181 Mobi
+le Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:16:47.131Z INFO  [http-nio-8080-exec-5] [requestId=a71353be-7ece-45a2-9666-b062abc8851
+b] r.a.v.bitrix.mobile.BitrixCrmSearchService - Mobile CRM search started: memberId=419222a0c1725a38
+175958981810edd7, entityType=LEAD, queryLength=5, phoneLike=false
+2026-08-09T04:16:47.131Z INFO  [http-nio-8080-exec-5] [requestId=a71353be-7ece-45a2-9666-b062abc8851
+b] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a381
+75958981810edd7, method=crm.item.list, parameterNames=[entityTypeId, select, filter, order, start]
+2026-08-09T04:16:47.198Z INFO  [http-nio-8080-exec-5] [requestId=a71353be-7ece-45a2-9666-b062abc8851
+b] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c172
+5a38175958981810edd7, domain=abs7.bitrix24.ru, method=crm.item.list, endpoint=https://abs7.bitrix24.
+ru/rest/crm.item.list.json, tokenExpiresAt=2026-08-09T05:16:42.181421Z
+2026-08-09T04:16:47.220Z INFO  [http-nio-8080-exec-6] [requestId=cd363cc3-120a-4bf0-9fe9-370580493f1
+7] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST response received: memberId=419222a0c172
+5a38175958981810edd7, method=crm.item.list, durationMs=1227, responseKeys=[result, next, total, time
+]
+2026-08-09T04:16:47.225Z INFO  [http-nio-8080-exec-6] [requestId=cd363cc3-120a-4bf0-9fe9-370580493f1
+7] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call completed: memberId=419222a0c1725a3
+8175958981810edd7, method=crm.item.list, durationMs=1280, responseKeys=[result, next, total, time]
+2026-08-09T04:16:47.234Z INFO  [http-nio-8080-exec-6] [requestId=cd363cc3-120a-4bf0-9fe9-370580493f1
+7] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72076, version=v2, nonExpiring=true
+2026-08-09T04:16:47.235Z INFO  [http-nio-8080-exec-6] [requestId=cd363cc3-120a-4bf0-9fe9-370580493f1
+7] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72074, version=v2, nonExpiring=true
+2026-08-09T04:16:47.235Z INFO  [http-nio-8080-exec-6] [requestId=cd363cc3-120a-4bf0-9fe9-370580493f1
+7] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=71742, version=v2, nonExpiring=true
+2026-08-09T04:16:47.236Z INFO  [http-nio-8080-exec-6] [requestId=cd363cc3-120a-4bf0-9fe9-370580493f1
+7] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=71120, version=v2, nonExpiring=true
+2026-08-09T04:16:47.237Z INFO  [http-nio-8080-exec-6] [requestId=cd363cc3-120a-4bf0-9fe9-370580493f1
+7] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=52430, version=v2, nonExpiring=true
+2026-08-09T04:16:47.238Z INFO  [http-nio-8080-exec-6] [requestId=cd363cc3-120a-4bf0-9fe9-370580493f1
+7] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=59408, version=v2, nonExpiring=true
+2026-08-09T04:16:47.238Z INFO  [http-nio-8080-exec-6] [requestId=cd363cc3-120a-4bf0-9fe9-370580493f1
+7] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=71994, version=v2, nonExpiring=true
+2026-08-09T04:16:47.239Z INFO  [http-nio-8080-exec-6] [requestId=cd363cc3-120a-4bf0-9fe9-370580493f1
+7] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=14876, version=v2, nonExpiring=true
+2026-08-09T04:16:47.239Z INFO  [http-nio-8080-exec-6] [requestId=cd363cc3-120a-4bf0-9fe9-370580493f1
+7] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72072, version=v2, nonExpiring=true
+2026-08-09T04:16:47.240Z INFO  [http-nio-8080-exec-6] [requestId=cd363cc3-120a-4bf0-9fe9-370580493f1
+7] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=64634, version=v2, nonExpiring=true
+2026-08-09T04:16:47.240Z INFO  [http-nio-8080-exec-6] [requestId=cd363cc3-120a-4bf0-9fe9-370580493f1
+7] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72066, version=v2, nonExpiring=true
+2026-08-09T04:16:47.241Z INFO  [http-nio-8080-exec-6] [requestId=cd363cc3-120a-4bf0-9fe9-370580493f1
+7] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=71520, version=v2, nonExpiring=true
+2026-08-09T04:16:47.242Z INFO  [http-nio-8080-exec-6] [requestId=cd363cc3-120a-4bf0-9fe9-370580493f1
+7] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=71122, version=v2, nonExpiring=true
+2026-08-09T04:16:47.242Z INFO  [http-nio-8080-exec-6] [requestId=cd363cc3-120a-4bf0-9fe9-370580493f1
+7] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72070, version=v2, nonExpiring=true
+2026-08-09T04:16:47.243Z INFO  [http-nio-8080-exec-6] [requestId=cd363cc3-120a-4bf0-9fe9-370580493f1
+7] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=25752, version=v2, nonExpiring=true
+2026-08-09T04:16:47.244Z INFO  [http-nio-8080-exec-6] [requestId=cd363cc3-120a-4bf0-9fe9-370580493f1
+7] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72042, version=v2, nonExpiring=true
+2026-08-09T04:16:47.244Z INFO  [http-nio-8080-exec-6] [requestId=cd363cc3-120a-4bf0-9fe9-370580493f1
+7] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=57108, version=v2, nonExpiring=true
+2026-08-09T04:16:47.245Z INFO  [http-nio-8080-exec-6] [requestId=cd363cc3-120a-4bf0-9fe9-370580493f1
+7] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=57516, version=v2, nonExpiring=true
+2026-08-09T04:16:47.246Z INFO  [http-nio-8080-exec-6] [requestId=cd363cc3-120a-4bf0-9fe9-370580493f1
+7] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72032, version=v2, nonExpiring=true
+2026-08-09T04:16:47.246Z INFO  [http-nio-8080-exec-6] [requestId=cd363cc3-120a-4bf0-9fe9-370580493f1
+7] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=71682, version=v2, nonExpiring=true
+2026-08-09T04:16:47.247Z INFO  [http-nio-8080-exec-6] [requestId=cd363cc3-120a-4bf0-9fe9-370580493f1
+7] r.a.v.bitrix.mobile.BitrixCrmSearchService - Mobile CRM search completed: memberId=419222a0c1725a
+38175958981810edd7, entityType=LEAD, queryLength=2, resultCount=20
+2026-08-09T04:16:47.313Z INFO  [http-nio-8080-exec-6] [requestId=cd363cc3-120a-4bf0-9fe9-370580493f1
+7] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/bitrix
+/mobile/search, status=200, durationMs=1373
+2026-08-09T04:16:48.475Z INFO  [http-nio-8080-exec-5] [requestId=a71353be-7ece-45a2-9666-b062abc8851
+b] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST response received: memberId=419222a0c172
+5a38175958981810edd7, method=crm.item.list, durationMs=1276, responseKeys=[result, total, time]
+2026-08-09T04:16:48.476Z INFO  [http-nio-8080-exec-5] [requestId=a71353be-7ece-45a2-9666-b062abc8851
+b] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call completed: memberId=419222a0c1725a3
+8175958981810edd7, method=crm.item.list, durationMs=1344, responseKeys=[result, total, time]
+2026-08-09T04:16:48.477Z INFO  [http-nio-8080-exec-5] [requestId=a71353be-7ece-45a2-9666-b062abc8851
+b] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=64634, version=v2, nonExpiring=true
+2026-08-09T04:16:48.478Z INFO  [http-nio-8080-exec-5] [requestId=a71353be-7ece-45a2-9666-b062abc8851
+b] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=27574, version=v2, nonExpiring=true
+2026-08-09T04:16:48.478Z INFO  [http-nio-8080-exec-5] [requestId=a71353be-7ece-45a2-9666-b062abc8851
+b] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=33082, version=v2, nonExpiring=true
+2026-08-09T04:16:48.478Z INFO  [http-nio-8080-exec-5] [requestId=a71353be-7ece-45a2-9666-b062abc8851
+b] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=58832, version=v2, nonExpiring=true
+2026-08-09T04:16:48.479Z INFO  [http-nio-8080-exec-5] [requestId=a71353be-7ece-45a2-9666-b062abc8851
+b] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=55182, version=v2, nonExpiring=true
+2026-08-09T04:16:48.480Z INFO  [http-nio-8080-exec-5] [requestId=a71353be-7ece-45a2-9666-b062abc8851
+b] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=54314, version=v2, nonExpiring=true
+2026-08-09T04:16:48.480Z INFO  [http-nio-8080-exec-5] [requestId=a71353be-7ece-45a2-9666-b062abc8851
+b] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=53766, version=v2, nonExpiring=true
+2026-08-09T04:16:48.480Z INFO  [http-nio-8080-exec-5] [requestId=a71353be-7ece-45a2-9666-b062abc8851
+b] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=50852, version=v2, nonExpiring=true
+2026-08-09T04:16:48.481Z INFO  [http-nio-8080-exec-5] [requestId=a71353be-7ece-45a2-9666-b062abc8851
+b] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=47520, version=v2, nonExpiring=true
+2026-08-09T04:16:48.481Z INFO  [http-nio-8080-exec-5] [requestId=a71353be-7ece-45a2-9666-b062abc8851
+b] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=41874, version=v2, nonExpiring=true
+2026-08-09T04:16:48.482Z INFO  [http-nio-8080-exec-5] [requestId=a71353be-7ece-45a2-9666-b062abc8851
+b] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=23474, version=v2, nonExpiring=true
+2026-08-09T04:16:48.482Z INFO  [http-nio-8080-exec-5] [requestId=a71353be-7ece-45a2-9666-b062abc8851
+b] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=19668, version=v2, nonExpiring=true
+2026-08-09T04:16:48.483Z INFO  [http-nio-8080-exec-5] [requestId=a71353be-7ece-45a2-9666-b062abc8851
+b] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=9460, version=v2, nonExpiring=true
+2026-08-09T04:16:48.483Z INFO  [http-nio-8080-exec-5] [requestId=a71353be-7ece-45a2-9666-b062abc8851
+b] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=4714, version=v2, nonExpiring=true
+2026-08-09T04:16:48.483Z INFO  [http-nio-8080-exec-5] [requestId=a71353be-7ece-45a2-9666-b062abc8851
+b] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=2264, version=v2, nonExpiring=true
+2026-08-09T04:16:48.484Z INFO  [http-nio-8080-exec-5] [requestId=a71353be-7ece-45a2-9666-b062abc8851
+b] r.a.v.bitrix.mobile.BitrixCrmSearchService - Mobile CRM search completed: memberId=419222a0c1725a
+38175958981810edd7, entityType=LEAD, queryLength=5, resultCount=15
+2026-08-09T04:16:48.486Z INFO  [http-nio-8080-exec-5] [requestId=a71353be-7ece-45a2-9666-b062abc8851
+b] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/bitrix
+/mobile/search, status=200, durationMs=1360
+2026-08-09T04:17:52.291Z INFO  [http-nio-8080-exec-7] [requestId=4ff736f3-c57d-4d36-9334-fe0f00d34cb
+8] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/bitrix/
+app, remoteAddress=77.220.52.206, userAgent=Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.22
+0624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari
+/537.36 BitrixMobile/Version=61
+2026-08-09T04:17:52.294Z INFO  [http-nio-8080-exec-7] [requestId=4ff736f3-c57d-4d36-9334-fe0f00d34cb
+8] r.a.v.bitrix.mobile.BitrixMobileController - Bitrix standalone application opened: parameterNames
+=[DOMAIN, PROTOCOL, LANG, APP_SID, AUTH_ID, AUTH_EXPIRES, REFRESH_ID, SERVER_ENDPOINT, APPLICATION_T
+OKEN, APPLICATION_SCOPE, member_id, status, PLACEMENT, PLACEMENT_OPTIONS], userAgent=Mozilla/5.0 (Li
+nux; Android 13; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Versio
+n/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:17:52.421Z INFO  [http-nio-8080-exec-7] [requestId=4ff736f3-c57d-4d36-9334-fe0f00d34cb
+8] r.a.videooffer.bitrix.BitrixInstallationService - Fresh Bitrix authorization synchronized from wi
+dget callback: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.ru, expiresAt=2026-08
+-09T05:17:52.295733982Z, tokenChanged=true
+2026-08-09T04:17:52.454Z INFO  [http-nio-8080-exec-7] [requestId=4ff736f3-c57d-4d36-9334-fe0f00d34cb
+8] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/bitri
+x/app, status=200, durationMs=162
+2026-08-09T04:17:52.528Z INFO  [http-nio-8080-exec-10] [requestId=d539c09b-5c56-4d9d-8aab-f059d5b237
+94] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/assets/
+bitrix-mobile.js, remoteAddress=77.220.52.206, userAgent=Mozilla/5.0 (Linux; Android 13; M2101K7BNY
+Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.181
+Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:17:52.528Z INFO  [http-nio-8080-exec-9] [requestId=a073dbfd-c27b-46d0-aed6-50357956019
+e] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/assets/b
+itrix-mobile.css, remoteAddress=77.220.52.206, userAgent=Mozilla/5.0 (Linux; Android 13; M2101K7BNY
+Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.181
+Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:17:52.535Z INFO  [http-nio-8080-exec-10] [requestId=d539c09b-5c56-4d9d-8aab-f059d5b237
+94] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/asset
+s/bitrix-mobile.js, status=304, durationMs=7
+2026-08-09T04:17:52.535Z INFO  [http-nio-8080-exec-9] [requestId=a073dbfd-c27b-46d0-aed6-50357956019
+e] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/assets
+/bitrix-mobile.css, status=304, durationMs=7
+2026-08-09T04:17:52.601Z INFO  [http-nio-8080-exec-8] [requestId=1b1c4225-4200-4c25-a963-4e3e6319202
+c] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/bitrix/
+mobile/client-events, remoteAddress=77.220.52.206, userAgent=Mozilla/5.0 (Linux; Android 13; M2101K7
+BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.
+181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:17:52.613Z INFO  [http-nio-8080-exec-8] [requestId=1b1c4225-4200-4c25-a963-4e3e6319202
+c] r.a.v.bitrix.mobile.BitrixMobileController - Bitrix mobile client event: memberId=419222a0c1725a3
+8175958981810edd7, event=CAPABILITIES, details={"mediaDevices":true,"getUserMedia":true,"mediaRecord
+er":true,"mp4":true,"webm":true}, userAgent=Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.22
+0624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari
+/537.36 BitrixMobile/Version=61
+2026-08-09T04:17:52.615Z INFO  [http-nio-8080-exec-8] [requestId=1b1c4225-4200-4c25-a963-4e3e6319202
+c] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/bitri
+x/mobile/client-events, status=200, durationMs=15
+2026-08-09T04:17:57.094Z INFO  [http-nio-8080-exec-1] [requestId=7ad0055e-73d6-4135-86e7-722c834bbcd
+9] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/bitrix/m
+obile/search, remoteAddress=77.220.52.206, userAgent=Mozilla/5.0 (Linux; Android 13; M2101K7BNY Buil
+d/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.181 Mobi
+le Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:17:57.098Z INFO  [http-nio-8080-exec-1] [requestId=7ad0055e-73d6-4135-86e7-722c834bbcd
+9] r.a.v.bitrix.mobile.BitrixCrmSearchService - Mobile CRM search started: memberId=419222a0c1725a38
+175958981810edd7, entityType=LEAD, queryLength=2, phoneLike=false
+2026-08-09T04:17:57.099Z INFO  [http-nio-8080-exec-1] [requestId=7ad0055e-73d6-4135-86e7-722c834bbcd
+9] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a381
+75958981810edd7, method=crm.item.list, parameterNames=[entityTypeId, select, filter, order, start]
+2026-08-09T04:17:57.146Z INFO  [http-nio-8080-exec-1] [requestId=7ad0055e-73d6-4135-86e7-722c834bbcd
+9] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c172
+5a38175958981810edd7, domain=abs7.bitrix24.ru, method=crm.item.list, endpoint=https://abs7.bitrix24.
+ru/rest/crm.item.list.json, tokenExpiresAt=2026-08-09T05:17:52.295734Z
+2026-08-09T04:17:57.579Z INFO  [http-nio-8080-exec-2] [requestId=97e984ed-581e-45dc-91ed-982702df617
+d] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/bitrix/m
+obile/search, remoteAddress=77.220.52.206, userAgent=Mozilla/5.0 (Linux; Android 13; M2101K7BNY Buil
+d/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.181 Mobi
+le Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:17:57.588Z INFO  [http-nio-8080-exec-2] [requestId=97e984ed-581e-45dc-91ed-982702df617
+d] r.a.v.bitrix.mobile.BitrixCrmSearchService - Mobile CRM search started: memberId=419222a0c1725a38
+175958981810edd7, entityType=LEAD, queryLength=3, phoneLike=false
+2026-08-09T04:17:57.589Z INFO  [http-nio-8080-exec-2] [requestId=97e984ed-581e-45dc-91ed-982702df617
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a381
+75958981810edd7, method=crm.item.list, parameterNames=[entityTypeId, select, filter, order, start]
+2026-08-09T04:17:57.614Z INFO  [http-nio-8080-exec-2] [requestId=97e984ed-581e-45dc-91ed-982702df617
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c172
+5a38175958981810edd7, domain=abs7.bitrix24.ru, method=crm.item.list, endpoint=https://abs7.bitrix24.
+ru/rest/crm.item.list.json, tokenExpiresAt=2026-08-09T05:17:52.295734Z
+2026-08-09T04:17:58.004Z INFO  [http-nio-8080-exec-1] [requestId=7ad0055e-73d6-4135-86e7-722c834bbcd
+9] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST response received: memberId=419222a0c172
+5a38175958981810edd7, method=crm.item.list, durationMs=857, responseKeys=[result, next, total, time]
+2026-08-09T04:17:58.005Z INFO  [http-nio-8080-exec-1] [requestId=7ad0055e-73d6-4135-86e7-722c834bbcd
+9] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call completed: memberId=419222a0c1725a3
+8175958981810edd7, method=crm.item.list, durationMs=906, responseKeys=[result, next, total, time]
+2026-08-09T04:17:58.010Z INFO  [http-nio-8080-exec-1] [requestId=7ad0055e-73d6-4135-86e7-722c834bbcd
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72076, version=v2, nonExpiring=true
+2026-08-09T04:17:58.011Z INFO  [http-nio-8080-exec-1] [requestId=7ad0055e-73d6-4135-86e7-722c834bbcd
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72074, version=v2, nonExpiring=true
+2026-08-09T04:17:58.015Z INFO  [http-nio-8080-exec-1] [requestId=7ad0055e-73d6-4135-86e7-722c834bbcd
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=71742, version=v2, nonExpiring=true
+2026-08-09T04:17:58.015Z INFO  [http-nio-8080-exec-1] [requestId=7ad0055e-73d6-4135-86e7-722c834bbcd
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=71120, version=v2, nonExpiring=true
+2026-08-09T04:17:58.018Z INFO  [http-nio-8080-exec-1] [requestId=7ad0055e-73d6-4135-86e7-722c834bbcd
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=52430, version=v2, nonExpiring=true
+2026-08-09T04:17:58.018Z INFO  [http-nio-8080-exec-1] [requestId=7ad0055e-73d6-4135-86e7-722c834bbcd
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=59408, version=v2, nonExpiring=true
+2026-08-09T04:17:58.019Z INFO  [http-nio-8080-exec-1] [requestId=7ad0055e-73d6-4135-86e7-722c834bbcd
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=71994, version=v2, nonExpiring=true
+2026-08-09T04:17:58.019Z INFO  [http-nio-8080-exec-1] [requestId=7ad0055e-73d6-4135-86e7-722c834bbcd
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=14876, version=v2, nonExpiring=true
+2026-08-09T04:17:58.020Z INFO  [http-nio-8080-exec-1] [requestId=7ad0055e-73d6-4135-86e7-722c834bbcd
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72072, version=v2, nonExpiring=true
+2026-08-09T04:17:58.021Z INFO  [http-nio-8080-exec-1] [requestId=7ad0055e-73d6-4135-86e7-722c834bbcd
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=64634, version=v2, nonExpiring=true
+2026-08-09T04:17:58.021Z INFO  [http-nio-8080-exec-1] [requestId=7ad0055e-73d6-4135-86e7-722c834bbcd
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72066, version=v2, nonExpiring=true
+2026-08-09T04:17:58.022Z INFO  [http-nio-8080-exec-1] [requestId=7ad0055e-73d6-4135-86e7-722c834bbcd
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=71520, version=v2, nonExpiring=true
+2026-08-09T04:17:58.022Z INFO  [http-nio-8080-exec-1] [requestId=7ad0055e-73d6-4135-86e7-722c834bbcd
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=71122, version=v2, nonExpiring=true
+2026-08-09T04:17:58.023Z INFO  [http-nio-8080-exec-1] [requestId=7ad0055e-73d6-4135-86e7-722c834bbcd
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72070, version=v2, nonExpiring=true
+2026-08-09T04:17:58.023Z INFO  [http-nio-8080-exec-1] [requestId=7ad0055e-73d6-4135-86e7-722c834bbcd
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=25752, version=v2, nonExpiring=true
+2026-08-09T04:17:58.024Z INFO  [http-nio-8080-exec-1] [requestId=7ad0055e-73d6-4135-86e7-722c834bbcd
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72042, version=v2, nonExpiring=true
+2026-08-09T04:17:58.024Z INFO  [http-nio-8080-exec-1] [requestId=7ad0055e-73d6-4135-86e7-722c834bbcd
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=57108, version=v2, nonExpiring=true
+2026-08-09T04:17:58.025Z INFO  [http-nio-8080-exec-1] [requestId=7ad0055e-73d6-4135-86e7-722c834bbcd
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=57516, version=v2, nonExpiring=true
+2026-08-09T04:17:58.025Z INFO  [http-nio-8080-exec-1] [requestId=7ad0055e-73d6-4135-86e7-722c834bbcd
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72032, version=v2, nonExpiring=true
+2026-08-09T04:17:58.026Z INFO  [http-nio-8080-exec-1] [requestId=7ad0055e-73d6-4135-86e7-722c834bbcd
+9] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=71682, version=v2, nonExpiring=true
+2026-08-09T04:17:58.026Z INFO  [http-nio-8080-exec-1] [requestId=7ad0055e-73d6-4135-86e7-722c834bbcd
+9] r.a.v.bitrix.mobile.BitrixCrmSearchService - Mobile CRM search completed: memberId=419222a0c1725a
+38175958981810edd7, entityType=LEAD, queryLength=2, resultCount=20
+2026-08-09T04:17:58.029Z INFO  [http-nio-8080-exec-1] [requestId=7ad0055e-73d6-4135-86e7-722c834bbcd
+9] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/bitrix
+/mobile/search, status=200, durationMs=934
+2026-08-09T04:17:58.598Z INFO  [http-nio-8080-exec-2] [requestId=97e984ed-581e-45dc-91ed-982702df617
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST response received: memberId=419222a0c172
+5a38175958981810edd7, method=crm.item.list, durationMs=984, responseKeys=[result, next, total, time]
+2026-08-09T04:17:58.599Z INFO  [http-nio-8080-exec-2] [requestId=97e984ed-581e-45dc-91ed-982702df617
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call completed: memberId=419222a0c1725a3
+8175958981810edd7, method=crm.item.list, durationMs=1009, responseKeys=[result, next, total, time]
+2026-08-09T04:17:58.603Z INFO  [http-nio-8080-exec-2] [requestId=97e984ed-581e-45dc-91ed-982702df617
+d] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72076, version=v2, nonExpiring=true
+2026-08-09T04:17:58.603Z INFO  [http-nio-8080-exec-2] [requestId=97e984ed-581e-45dc-91ed-982702df617
+d] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=71120, version=v2, nonExpiring=true
+2026-08-09T04:17:58.603Z INFO  [http-nio-8080-exec-2] [requestId=97e984ed-581e-45dc-91ed-982702df617
+d] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=52430, version=v2, nonExpiring=true
+2026-08-09T04:17:58.604Z INFO  [http-nio-8080-exec-2] [requestId=97e984ed-581e-45dc-91ed-982702df617
+d] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=59408, version=v2, nonExpiring=true
+2026-08-09T04:17:58.605Z INFO  [http-nio-8080-exec-2] [requestId=97e984ed-581e-45dc-91ed-982702df617
+d] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72072, version=v2, nonExpiring=true
+2026-08-09T04:17:58.605Z INFO  [http-nio-8080-exec-2] [requestId=97e984ed-581e-45dc-91ed-982702df617
+d] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=64634, version=v2, nonExpiring=true
+2026-08-09T04:17:58.606Z INFO  [http-nio-8080-exec-2] [requestId=97e984ed-581e-45dc-91ed-982702df617
+d] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=71520, version=v2, nonExpiring=true
+2026-08-09T04:17:58.606Z INFO  [http-nio-8080-exec-2] [requestId=97e984ed-581e-45dc-91ed-982702df617
+d] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=71492, version=v2, nonExpiring=true
+2026-08-09T04:17:58.607Z INFO  [http-nio-8080-exec-2] [requestId=97e984ed-581e-45dc-91ed-982702df617
+d] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72060, version=v2, nonExpiring=true
+2026-08-09T04:17:58.607Z INFO  [http-nio-8080-exec-2] [requestId=97e984ed-581e-45dc-91ed-982702df617
+d] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=71730, version=v2, nonExpiring=true
+2026-08-09T04:17:58.608Z INFO  [http-nio-8080-exec-2] [requestId=97e984ed-581e-45dc-91ed-982702df617
+d] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=55876, version=v2, nonExpiring=true
+2026-08-09T04:17:58.609Z INFO  [http-nio-8080-exec-2] [requestId=97e984ed-581e-45dc-91ed-982702df617
+d] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72026, version=v2, nonExpiring=true
+2026-08-09T04:17:58.609Z INFO  [http-nio-8080-exec-2] [requestId=97e984ed-581e-45dc-91ed-982702df617
+d] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72058, version=v2, nonExpiring=true
+2026-08-09T04:17:58.611Z INFO  [http-nio-8080-exec-2] [requestId=97e984ed-581e-45dc-91ed-982702df617
+d] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=71754, version=v2, nonExpiring=true
+2026-08-09T04:17:58.612Z INFO  [http-nio-8080-exec-2] [requestId=97e984ed-581e-45dc-91ed-982702df617
+d] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72050, version=v2, nonExpiring=true
+2026-08-09T04:17:58.613Z INFO  [http-nio-8080-exec-2] [requestId=97e984ed-581e-45dc-91ed-982702df617
+d] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=71970, version=v2, nonExpiring=true
+2026-08-09T04:17:58.614Z INFO  [http-nio-8080-exec-2] [requestId=97e984ed-581e-45dc-91ed-982702df617
+d] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=71150, version=v2, nonExpiring=true
+2026-08-09T04:17:58.615Z INFO  [http-nio-8080-exec-2] [requestId=97e984ed-581e-45dc-91ed-982702df617
+d] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=71790, version=v2, nonExpiring=true
+2026-08-09T04:17:58.615Z INFO  [http-nio-8080-exec-2] [requestId=97e984ed-581e-45dc-91ed-982702df617
+d] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=61190, version=v2, nonExpiring=true
+2026-08-09T04:17:58.616Z INFO  [http-nio-8080-exec-2] [requestId=97e984ed-581e-45dc-91ed-982702df617
+d] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=72040, version=v2, nonExpiring=true
+2026-08-09T04:17:58.616Z INFO  [http-nio-8080-exec-2] [requestId=97e984ed-581e-45dc-91ed-982702df617
+d] r.a.v.bitrix.mobile.BitrixCrmSearchService - Mobile CRM search completed: memberId=419222a0c1725a
+38175958981810edd7, entityType=LEAD, queryLength=3, resultCount=20
+2026-08-09T04:17:58.620Z INFO  [http-nio-8080-exec-2] [requestId=97e984ed-581e-45dc-91ed-982702df617
+d] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/bitrix
+/mobile/search, status=200, durationMs=1041
+2026-08-09T04:17:59.046Z INFO  [http-nio-8080-exec-3] [requestId=8b2cd0de-685f-4235-8294-0a3c0d4d1c9
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/bitrix/m
+obile/search, remoteAddress=77.220.52.206, userAgent=Mozilla/5.0 (Linux; Android 13; M2101K7BNY Buil
+d/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.181 Mobi
+le Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:17:59.052Z INFO  [http-nio-8080-exec-3] [requestId=8b2cd0de-685f-4235-8294-0a3c0d4d1c9
+2] r.a.v.bitrix.mobile.BitrixCrmSearchService - Mobile CRM search started: memberId=419222a0c1725a38
+175958981810edd7, entityType=LEAD, queryLength=4, phoneLike=false
+2026-08-09T04:17:59.054Z INFO  [http-nio-8080-exec-3] [requestId=8b2cd0de-685f-4235-8294-0a3c0d4d1c9
+2] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a381
+75958981810edd7, method=crm.item.list, parameterNames=[entityTypeId, select, filter, order, start]
+2026-08-09T04:17:59.103Z INFO  [http-nio-8080-exec-3] [requestId=8b2cd0de-685f-4235-8294-0a3c0d4d1c9
+2] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c172
+5a38175958981810edd7, domain=abs7.bitrix24.ru, method=crm.item.list, endpoint=https://abs7.bitrix24.
+ru/rest/crm.item.list.json, tokenExpiresAt=2026-08-09T05:17:52.295734Z
+2026-08-09T04:18:00.106Z INFO  [http-nio-8080-exec-3] [requestId=8b2cd0de-685f-4235-8294-0a3c0d4d1c9
+2] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST response received: memberId=419222a0c172
+5a38175958981810edd7, method=crm.item.list, durationMs=1003, responseKeys=[result, next, total, time
+]
+2026-08-09T04:18:00.106Z INFO  [http-nio-8080-exec-3] [requestId=8b2cd0de-685f-4235-8294-0a3c0d4d1c9
+2] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call completed: memberId=419222a0c1725a3
+8175958981810edd7, method=crm.item.list, durationMs=1052, responseKeys=[result, next, total, time]
+2026-08-09T04:18:00.110Z INFO  [http-nio-8080-exec-3] [requestId=8b2cd0de-685f-4235-8294-0a3c0d4d1c9
+2] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=64634, version=v2, nonExpiring=true
+2026-08-09T04:18:00.111Z INFO  [http-nio-8080-exec-3] [requestId=8b2cd0de-685f-4235-8294-0a3c0d4d1c9
+2] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=71790, version=v2, nonExpiring=true
+2026-08-09T04:18:00.111Z INFO  [http-nio-8080-exec-3] [requestId=8b2cd0de-685f-4235-8294-0a3c0d4d1c9
+2] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=6562, version=v2, nonExpiring=true
+2026-08-09T04:18:00.111Z INFO  [http-nio-8080-exec-3] [requestId=8b2cd0de-685f-4235-8294-0a3c0d4d1c9
+2] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=26508, version=v2, nonExpiring=true
+2026-08-09T04:18:00.112Z INFO  [http-nio-8080-exec-3] [requestId=8b2cd0de-685f-4235-8294-0a3c0d4d1c9
+2] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=27574, version=v2, nonExpiring=true
+2026-08-09T04:18:00.112Z INFO  [http-nio-8080-exec-3] [requestId=8b2cd0de-685f-4235-8294-0a3c0d4d1c9
+2] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=30596, version=v2, nonExpiring=true
+2026-08-09T04:18:00.113Z INFO  [http-nio-8080-exec-3] [requestId=8b2cd0de-685f-4235-8294-0a3c0d4d1c9
+2] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=33082, version=v2, nonExpiring=true
+2026-08-09T04:18:00.113Z INFO  [http-nio-8080-exec-3] [requestId=8b2cd0de-685f-4235-8294-0a3c0d4d1c9
+2] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=33974, version=v2, nonExpiring=true
+2026-08-09T04:18:00.113Z INFO  [http-nio-8080-exec-3] [requestId=8b2cd0de-685f-4235-8294-0a3c0d4d1c9
+2] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=35462, version=v2, nonExpiring=true
+2026-08-09T04:18:00.114Z INFO  [http-nio-8080-exec-3] [requestId=8b2cd0de-685f-4235-8294-0a3c0d4d1c9
+2] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=37056, version=v2, nonExpiring=true
+2026-08-09T04:18:00.117Z INFO  [http-nio-8080-exec-3] [requestId=8b2cd0de-685f-4235-8294-0a3c0d4d1c9
+2] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=37522, version=v2, nonExpiring=true
+2026-08-09T04:18:00.117Z INFO  [http-nio-8080-exec-3] [requestId=8b2cd0de-685f-4235-8294-0a3c0d4d1c9
+2] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=37658, version=v2, nonExpiring=true
+2026-08-09T04:18:00.119Z INFO  [http-nio-8080-exec-3] [requestId=8b2cd0de-685f-4235-8294-0a3c0d4d1c9
+2] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=39026, version=v2, nonExpiring=true
+2026-08-09T04:18:00.120Z INFO  [http-nio-8080-exec-3] [requestId=8b2cd0de-685f-4235-8294-0a3c0d4d1c9
+2] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=39206, version=v2, nonExpiring=true
+2026-08-09T04:18:00.121Z INFO  [http-nio-8080-exec-3] [requestId=8b2cd0de-685f-4235-8294-0a3c0d4d1c9
+2] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=39906, version=v2, nonExpiring=true
+2026-08-09T04:18:00.121Z INFO  [http-nio-8080-exec-3] [requestId=8b2cd0de-685f-4235-8294-0a3c0d4d1c9
+2] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=44328, version=v2, nonExpiring=true
+2026-08-09T04:18:00.122Z INFO  [http-nio-8080-exec-3] [requestId=8b2cd0de-685f-4235-8294-0a3c0d4d1c9
+2] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=54450, version=v2, nonExpiring=true
+2026-08-09T04:18:00.122Z INFO  [http-nio-8080-exec-3] [requestId=8b2cd0de-685f-4235-8294-0a3c0d4d1c9
+2] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=57612, version=v2, nonExpiring=true
+2026-08-09T04:18:00.123Z INFO  [http-nio-8080-exec-3] [requestId=8b2cd0de-685f-4235-8294-0a3c0d4d1c9
+2] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=71502, version=v2, nonExpiring=true
+2026-08-09T04:18:00.124Z INFO  [http-nio-8080-exec-3] [requestId=8b2cd0de-685f-4235-8294-0a3c0d4d1c9
+2] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context signed: memberId=419222a0c1725a381
+75958981810edd7, entityType=LEAD, entityId=64796, version=v2, nonExpiring=true
+2026-08-09T04:18:00.124Z INFO  [http-nio-8080-exec-3] [requestId=8b2cd0de-685f-4235-8294-0a3c0d4d1c9
+2] r.a.v.bitrix.mobile.BitrixCrmSearchService - Mobile CRM search completed: memberId=419222a0c1725a
+38175958981810edd7, entityType=LEAD, queryLength=4, resultCount=20
+2026-08-09T04:18:00.139Z INFO  [http-nio-8080-exec-3] [requestId=8b2cd0de-685f-4235-8294-0a3c0d4d1c9
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/bitrix
+/mobile/search, status=200, durationMs=1093
+2026-08-09T04:18:03.600Z INFO  [http-nio-8080-exec-4] [requestId=017e89c9-93f6-4310-bf87-47e16b4efe7
+0] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/bitrix/
+mobile/client-events, remoteAddress=77.220.52.206, userAgent=Mozilla/5.0 (Linux; Android 13; M2101K7
+BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.
+181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:18:03.606Z INFO  [http-nio-8080-exec-4] [requestId=017e89c9-93f6-4310-bf87-47e16b4efe7
+0] r.a.v.bitrix.mobile.BitrixMobileController - Bitrix mobile client event: memberId=419222a0c1725a3
+8175958981810edd7, event=CAMERA_READY, details=user, userAgent=Mozilla/5.0 (Linux; Android 13; M2101
+K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.787
+1.181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:18:03.608Z INFO  [http-nio-8080-exec-4] [requestId=017e89c9-93f6-4310-bf87-47e16b4efe7
+0] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/bitri
+x/mobile/client-events, status=200, durationMs=8
+2026-08-09T04:18:15.349Z INFO  [http-nio-8080-exec-6] [requestId=90c7057e-18e2-4f8c-8e33-2a70835f3c3
+0] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/bitrix/
+mobile/client-events, remoteAddress=77.220.52.206, userAgent=Mozilla/5.0 (Linux; Android 13; M2101K7
+BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.
+181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:18:15.355Z INFO  [http-nio-8080-exec-6] [requestId=90c7057e-18e2-4f8c-8e33-2a70835f3c3
+0] r.a.v.bitrix.mobile.BitrixMobileController - Bitrix mobile client event: memberId=419222a0c1725a3
+8175958981810edd7, event=CAMERA_READY, details=environment, userAgent=Mozilla/5.0 (Linux; Android 13
+; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/15
+0.0.7871.181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:18:15.357Z INFO  [http-nio-8080-exec-6] [requestId=90c7057e-18e2-4f8c-8e33-2a70835f3c3
+0] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/bitri
+x/mobile/client-events, status=200, durationMs=8
+2026-08-09T04:18:21.809Z INFO  [http-nio-8080-exec-5] [requestId=34ca1ede-82c7-4008-9fe9-10fb482533f
+4] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/bitrix/
+mobile/uploads, remoteAddress=77.220.52.206, userAgent=Mozilla/5.0 (Linux; Android 13; M2101K7BNY Bu
+ild/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.181 Mo
+bile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:18:22.242Z INFO  [http-nio-8080-exec-5] [requestId=34ca1ede-82c7-4008-9fe9-10fb482533f
+4] ru.abs7.videooffer.bitrix.BitrixContextSigner - Bitrix context verified: memberId=419222a0c1725a3
+8175958981810edd7, entityType=LEAD, entityId=64634, version=v2, nonExpiring=true
+2026-08-09T04:18:22.374Z INFO  [http-nio-8080-exec-5] [requestId=34ca1ede-82c7-4008-9fe9-10fb482533f
+4] r.a.v.b.mobile.upload.MobileVideoUploadService - Mobile video upload session created: uploadId=a6
+8fde9b-4b4c-4b0f-ac53-893257f46382, entityType=LEAD, entityId=64634, mimeType=video/mp4;codecs=avc1.
+42e01e,mp4a.40.2, expiresAt=2026-08-10T04:18:22.243906112Z
+2026-08-09T04:18:22.390Z INFO  [http-nio-8080-exec-5] [requestId=34ca1ede-82c7-4008-9fe9-10fb482533f
+4] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/bitri
+x/mobile/uploads, status=201, durationMs=580
+2026-08-09T04:18:22.441Z INFO  [http-nio-8080-exec-7] [requestId=0efb9c7c-4c30-4c69-b1b4-c126a701e0a
+7] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/bitrix/
+mobile/client-events, remoteAddress=77.220.52.206, userAgent=Mozilla/5.0 (Linux; Android 13; M2101K7
+BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.
+181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:18:22.447Z INFO  [http-nio-8080-exec-7] [requestId=0efb9c7c-4c30-4c69-b1b4-c126a701e0a
+7] r.a.v.bitrix.mobile.BitrixMobileController - Bitrix mobile client event: memberId=419222a0c1725a3
+8175958981810edd7, event=RECORDING_STARTED, details=video/mp4;codecs=avc1.42E01E,mp4a.40.2, userAgen
+t=Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, l
+ike Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:18:22.449Z INFO  [http-nio-8080-exec-7] [requestId=0efb9c7c-4c30-4c69-b1b4-c126a701e0a
+7] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/bitri
+x/mobile/client-events, status=200, durationMs=8
+2026-08-09T04:18:26.029Z INFO  [http-nio-8080-exec-9] [requestId=a6f5bee6-0461-4a56-a99e-85ff902fb04
+d] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=PUT, path=/bitrix/m
+obile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/0, remoteAddress=77.220.52.206, userAgent=
+Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, lik
+e Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:18:26.214Z INFO  [http-nio-8080-exec-9] [requestId=a6f5bee6-0461-4a56-a99e-85ff902fb04
+d] r.a.v.b.mobile.upload.MobileVideoUploadService - Mobile video chunk accepted: uploadId=a68fde9b-4
+b4c-4b0f-ac53-893257f46382, sequence=0, chunkBytes=1247, totalBytes=1247
+2026-08-09T04:18:26.217Z INFO  [http-nio-8080-exec-9] [requestId=a6f5bee6-0461-4a56-a99e-85ff902fb04
+d] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=PUT, path=/bitrix
+/mobile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/0, status=200, durationMs=188
+2026-08-09T04:18:29.364Z INFO  [http-nio-8080-exec-10] [requestId=30b0f1fb-76bc-4cae-adb6-dc61f83881
+e5] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=PUT, path=/bitrix/
+mobile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/1, remoteAddress=77.220.52.206, userAgent
+=Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, li
+ke Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:18:30.104Z INFO  [http-nio-8080-exec-10] [requestId=30b0f1fb-76bc-4cae-adb6-dc61f83881
+e5] r.a.v.b.mobile.upload.MobileVideoUploadService - Mobile video chunk accepted: uploadId=a68fde9b-
+4b4c-4b0f-ac53-893257f46382, sequence=1, chunkBytes=2627606, totalBytes=2628853
+2026-08-09T04:18:30.113Z INFO  [http-nio-8080-exec-10] [requestId=30b0f1fb-76bc-4cae-adb6-dc61f83881
+e5] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=PUT, path=/bitri
+x/mobile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/1, status=200, durationMs=749
+2026-08-09T04:18:32.775Z INFO  [http-nio-8080-exec-8] [requestId=90b98caf-e23d-42ed-a4e9-b46223d4425
+e] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=PUT, path=/bitrix/m
+obile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/2, remoteAddress=77.220.52.206, userAgent=
+Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, lik
+e Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:18:33.199Z INFO  [http-nio-8080-exec-8] [requestId=90b98caf-e23d-42ed-a4e9-b46223d4425
+e] r.a.v.b.mobile.upload.MobileVideoUploadService - Mobile video chunk accepted: uploadId=a68fde9b-4
+b4c-4b0f-ac53-893257f46382, sequence=2, chunkBytes=1319545, totalBytes=3948398
+2026-08-09T04:18:33.205Z INFO  [http-nio-8080-exec-8] [requestId=90b98caf-e23d-42ed-a4e9-b46223d4425
+e] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=PUT, path=/bitrix
+/mobile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/2, status=200, durationMs=431
+2026-08-09T04:18:36.251Z INFO  [http-nio-8080-exec-1] [requestId=a9fab327-b8ba-48ce-bb01-eb853c7d966
+d] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=PUT, path=/bitrix/m
+obile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/3, remoteAddress=77.220.52.206, userAgent=
+Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, lik
+e Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:18:36.682Z INFO  [http-nio-8080-exec-1] [requestId=a9fab327-b8ba-48ce-bb01-eb853c7d966
+d] r.a.v.b.mobile.upload.MobileVideoUploadService - Mobile video chunk accepted: uploadId=a68fde9b-4
+b4c-4b0f-ac53-893257f46382, sequence=3, chunkBytes=1318278, totalBytes=5266676
+2026-08-09T04:18:36.684Z INFO  [http-nio-8080-exec-1] [requestId=a9fab327-b8ba-48ce-bb01-eb853c7d966
+d] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=PUT, path=/bitrix
+/mobile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/3, status=200, durationMs=433
+2026-08-09T04:18:39.580Z INFO  [http-nio-8080-exec-2] [requestId=25ebea4a-9d37-4d68-bfb8-87d477de817
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=PUT, path=/bitrix/m
+obile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/4, remoteAddress=77.220.52.206, userAgent=
+Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, lik
+e Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:18:39.949Z INFO  [http-nio-8080-exec-2] [requestId=25ebea4a-9d37-4d68-bfb8-87d477de817
+2] r.a.v.b.mobile.upload.MobileVideoUploadService - Mobile video chunk accepted: uploadId=a68fde9b-4
+b4c-4b0f-ac53-893257f46382, sequence=4, chunkBytes=1320274, totalBytes=6586950
+2026-08-09T04:18:39.956Z INFO  [http-nio-8080-exec-2] [requestId=25ebea4a-9d37-4d68-bfb8-87d477de817
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=PUT, path=/bitrix
+/mobile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/4, status=200, durationMs=380
+2026-08-09T04:18:42.340Z INFO  [http-nio-8080-exec-3] [requestId=b38a6eee-8fcc-4215-bf76-42c95a6600f
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/, remote
+Address=47.84.184.157, userAgent=curl/7.74.0
+2026-08-09T04:18:42.372Z INFO  [http-nio-8080-exec-3] [requestId=b38a6eee-8fcc-4215-bf76-42c95a6600f
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/, stat
+us=200, durationMs=32
+2026-08-09T04:18:42.917Z INFO  [http-nio-8080-exec-4] [requestId=75b9d95e-7327-4043-b5cc-9e84d902868
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=PUT, path=/bitrix/m
+obile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/5, remoteAddress=77.220.52.206, userAgent=
+Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, lik
+e Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:18:43.323Z INFO  [http-nio-8080-exec-4] [requestId=75b9d95e-7327-4043-b5cc-9e84d902868
+2] r.a.v.b.mobile.upload.MobileVideoUploadService - Mobile video chunk accepted: uploadId=a68fde9b-4
+b4c-4b0f-ac53-893257f46382, sequence=5, chunkBytes=1317400, totalBytes=7904350
+2026-08-09T04:18:43.326Z INFO  [http-nio-8080-exec-4] [requestId=75b9d95e-7327-4043-b5cc-9e84d902868
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=PUT, path=/bitrix
+/mobile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/5, status=200, durationMs=409
+2026-08-09T04:18:46.316Z INFO  [http-nio-8080-exec-6] [requestId=da264f44-cc27-443b-9024-fe5e4aa141b
+f] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=PUT, path=/bitrix/m
+obile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/6, remoteAddress=77.220.52.206, userAgent=
+Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, lik
+e Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:18:46.680Z INFO  [http-nio-8080-exec-6] [requestId=da264f44-cc27-443b-9024-fe5e4aa141b
+f] r.a.v.b.mobile.upload.MobileVideoUploadService - Mobile video chunk accepted: uploadId=a68fde9b-4
+b4c-4b0f-ac53-893257f46382, sequence=6, chunkBytes=1320751, totalBytes=9225101
+2026-08-09T04:18:46.686Z INFO  [http-nio-8080-exec-6] [requestId=da264f44-cc27-443b-9024-fe5e4aa141b
+f] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=PUT, path=/bitrix
+/mobile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/6, status=200, durationMs=370
+2026-08-09T04:18:49.682Z INFO  [http-nio-8080-exec-5] [requestId=50fa3803-1a41-4ba7-8db2-e79ad8888c2
+f] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=PUT, path=/bitrix/m
+obile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/7, remoteAddress=77.220.52.206, userAgent=
+Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, lik
+e Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:18:50.072Z INFO  [http-nio-8080-exec-5] [requestId=50fa3803-1a41-4ba7-8db2-e79ad8888c2
+f] r.a.v.b.mobile.upload.MobileVideoUploadService - Mobile video chunk accepted: uploadId=a68fde9b-4
+b4c-4b0f-ac53-893257f46382, sequence=7, chunkBytes=1319305, totalBytes=10544406
+2026-08-09T04:18:50.078Z INFO  [http-nio-8080-exec-5] [requestId=50fa3803-1a41-4ba7-8db2-e79ad8888c2
+f] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=PUT, path=/bitrix
+/mobile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/7, status=200, durationMs=395
+2026-08-09T04:18:53.028Z INFO  [http-nio-8080-exec-7] [requestId=b97c213a-4764-404f-b190-865f8c22003
+6] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=PUT, path=/bitrix/m
+obile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/8, remoteAddress=77.220.52.206, userAgent=
+Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, lik
+e Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:18:53.406Z INFO  [http-nio-8080-exec-7] [requestId=b97c213a-4764-404f-b190-865f8c22003
+6] r.a.v.b.mobile.upload.MobileVideoUploadService - Mobile video chunk accepted: uploadId=a68fde9b-4
+b4c-4b0f-ac53-893257f46382, sequence=8, chunkBytes=1317109, totalBytes=11861515
+2026-08-09T04:18:53.417Z INFO  [http-nio-8080-exec-7] [requestId=b97c213a-4764-404f-b190-865f8c22003
+6] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=PUT, path=/bitrix
+/mobile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/8, status=200, durationMs=388
+2026-08-09T04:18:56.418Z INFO  [http-nio-8080-exec-9] [requestId=56aa04f5-e599-48c8-84e4-28aac3af37e
+b] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=PUT, path=/bitrix/m
+obile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/9, remoteAddress=77.220.52.206, userAgent=
+Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, lik
+e Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:18:56.776Z INFO  [http-nio-8080-exec-9] [requestId=56aa04f5-e599-48c8-84e4-28aac3af37e
+b] r.a.v.b.mobile.upload.MobileVideoUploadService - Mobile video chunk accepted: uploadId=a68fde9b-4
+b4c-4b0f-ac53-893257f46382, sequence=9, chunkBytes=1317317, totalBytes=13178832
+2026-08-09T04:18:56.779Z INFO  [http-nio-8080-exec-9] [requestId=56aa04f5-e599-48c8-84e4-28aac3af37e
+b] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=PUT, path=/bitrix
+/mobile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/9, status=200, durationMs=361
+2026-08-09T04:18:59.757Z INFO  [http-nio-8080-exec-10] [requestId=5db00eb0-7446-4d06-a0c6-9445be96ee
+68] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=PUT, path=/bitrix/
+mobile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/10, remoteAddress=77.220.52.206, userAgen
+t=Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, l
+ike Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:19:00.137Z INFO  [http-nio-8080-exec-10] [requestId=5db00eb0-7446-4d06-a0c6-9445be96ee
+68] r.a.v.b.mobile.upload.MobileVideoUploadService - Mobile video chunk accepted: uploadId=a68fde9b-
+4b4c-4b0f-ac53-893257f46382, sequence=10, chunkBytes=1320305, totalBytes=14499137
+2026-08-09T04:19:00.147Z INFO  [http-nio-8080-exec-10] [requestId=5db00eb0-7446-4d06-a0c6-9445be96ee
+68] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=PUT, path=/bitri
+x/mobile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/10, status=200, durationMs=390
+2026-08-09T04:19:03.144Z INFO  [http-nio-8080-exec-8] [requestId=90dede71-714e-4cbc-8fcc-f8a40ee5c9d
+1] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=PUT, path=/bitrix/m
+obile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/11, remoteAddress=77.220.52.206, userAgent
+=Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, li
+ke Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:19:03.528Z INFO  [http-nio-8080-exec-8] [requestId=90dede71-714e-4cbc-8fcc-f8a40ee5c9d
+1] r.a.v.b.mobile.upload.MobileVideoUploadService - Mobile video chunk accepted: uploadId=a68fde9b-4
+b4c-4b0f-ac53-893257f46382, sequence=11, chunkBytes=1319980, totalBytes=15819117
+2026-08-09T04:19:03.531Z INFO  [http-nio-8080-exec-8] [requestId=90dede71-714e-4cbc-8fcc-f8a40ee5c9d
+1] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=PUT, path=/bitrix
+/mobile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/11, status=200, durationMs=387
+2026-08-09T04:19:06.496Z INFO  [http-nio-8080-exec-1] [requestId=62cc5dde-7f9d-4eb3-809f-40a85d6cb80
+f] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=PUT, path=/bitrix/m
+obile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/12, remoteAddress=77.220.52.206, userAgent
+=Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, li
+ke Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:19:06.871Z INFO  [http-nio-8080-exec-1] [requestId=62cc5dde-7f9d-4eb3-809f-40a85d6cb80
+f] r.a.v.b.mobile.upload.MobileVideoUploadService - Mobile video chunk accepted: uploadId=a68fde9b-4
+b4c-4b0f-ac53-893257f46382, sequence=12, chunkBytes=1314754, totalBytes=17133871
+2026-08-09T04:19:06.875Z INFO  [http-nio-8080-exec-1] [requestId=62cc5dde-7f9d-4eb3-809f-40a85d6cb80
+f] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=PUT, path=/bitrix
+/mobile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/12, status=200, durationMs=378
+2026-08-09T04:19:09.872Z INFO  [http-nio-8080-exec-2] [requestId=34b8cf6e-2879-4354-b925-a867bb98df0
+9] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=PUT, path=/bitrix/m
+obile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/13, remoteAddress=77.220.52.206, userAgent
+=Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, li
+ke Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:19:10.296Z INFO  [http-nio-8080-exec-2] [requestId=34b8cf6e-2879-4354-b925-a867bb98df0
+9] r.a.v.b.mobile.upload.MobileVideoUploadService - Mobile video chunk accepted: uploadId=a68fde9b-4
+b4c-4b0f-ac53-893257f46382, sequence=13, chunkBytes=1314046, totalBytes=18447917
+2026-08-09T04:19:10.305Z INFO  [http-nio-8080-exec-2] [requestId=34b8cf6e-2879-4354-b925-a867bb98df0
+9] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=PUT, path=/bitrix
+/mobile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/13, status=200, durationMs=432
+2026-08-09T04:19:13.232Z INFO  [http-nio-8080-exec-3] [requestId=8b090071-eaa6-482a-97d6-e84e83080ad
+3] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=PUT, path=/bitrix/m
+obile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/14, remoteAddress=77.220.52.206, userAgent
+=Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, li
+ke Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:19:13.578Z INFO  [http-nio-8080-exec-3] [requestId=8b090071-eaa6-482a-97d6-e84e83080ad
+3] r.a.v.b.mobile.upload.MobileVideoUploadService - Mobile video chunk accepted: uploadId=a68fde9b-4
+b4c-4b0f-ac53-893257f46382, sequence=14, chunkBytes=1318391, totalBytes=19766308
+2026-08-09T04:19:13.606Z INFO  [http-nio-8080-exec-3] [requestId=8b090071-eaa6-482a-97d6-e84e83080ad
+3] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=PUT, path=/bitrix
+/mobile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/14, status=200, durationMs=373
+2026-08-09T04:19:16.594Z INFO  [http-nio-8080-exec-4] [requestId=fbd712db-02ea-4be2-9aba-1ecbc7a02e5
+6] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=PUT, path=/bitrix/m
+obile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/15, remoteAddress=77.220.52.206, userAgent
+=Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, li
+ke Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:19:17.005Z INFO  [http-nio-8080-exec-4] [requestId=fbd712db-02ea-4be2-9aba-1ecbc7a02e5
+6] r.a.v.b.mobile.upload.MobileVideoUploadService - Mobile video chunk accepted: uploadId=a68fde9b-4
+b4c-4b0f-ac53-893257f46382, sequence=15, chunkBytes=1317162, totalBytes=21083470
+2026-08-09T04:19:17.013Z INFO  [http-nio-8080-exec-4] [requestId=fbd712db-02ea-4be2-9aba-1ecbc7a02e5
+6] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=PUT, path=/bitrix
+/mobile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/15, status=200, durationMs=418
+2026-08-09T04:19:19.958Z INFO  [http-nio-8080-exec-6] [requestId=4aa32297-024d-4bc4-96b1-9b22bf2bb3e
+5] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=PUT, path=/bitrix/m
+obile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/16, remoteAddress=77.220.52.206, userAgent
+=Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, li
+ke Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:19:20.351Z INFO  [http-nio-8080-exec-6] [requestId=4aa32297-024d-4bc4-96b1-9b22bf2bb3e
+5] r.a.v.b.mobile.upload.MobileVideoUploadService - Mobile video chunk accepted: uploadId=a68fde9b-4
+b4c-4b0f-ac53-893257f46382, sequence=16, chunkBytes=1311532, totalBytes=22395002
+2026-08-09T04:19:20.354Z INFO  [http-nio-8080-exec-6] [requestId=4aa32297-024d-4bc4-96b1-9b22bf2bb3e
+5] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=PUT, path=/bitrix
+/mobile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/16, status=200, durationMs=396
+2026-08-09T04:19:21.243Z INFO  [http-nio-8080-exec-5] [requestId=fc23c627-e886-4592-bda8-e5b2d05a7f0
+e] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=PUT, path=/bitrix/m
+obile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/17, remoteAddress=77.220.52.206, userAgent
+=Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, li
+ke Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:19:21.436Z INFO  [http-nio-8080-exec-5] [requestId=fc23c627-e886-4592-bda8-e5b2d05a7f0
+e] r.a.v.b.mobile.upload.MobileVideoUploadService - Mobile video chunk accepted: uploadId=a68fde9b-4
+b4c-4b0f-ac53-893257f46382, sequence=17, chunkBytes=500819, totalBytes=22895821
+2026-08-09T04:19:21.440Z INFO  [http-nio-8080-exec-5] [requestId=fc23c627-e886-4592-bda8-e5b2d05a7f0
+e] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=PUT, path=/bitrix
+/mobile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/chunks/17, status=200, durationMs=197
+2026-08-09T04:19:21.469Z INFO  [http-nio-8080-exec-7] [requestId=f85064b0-57a7-46a9-b0bc-d4e3a79d040
+9] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/bitrix/
+mobile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/complete, remoteAddress=77.220.52.206, userAgent
+=Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, li
+ke Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:19:21.557Z INFO  [http-nio-8080-exec-7] [requestId=f85064b0-57a7-46a9-b0bc-d4e3a79d040
+9] r.a.v.b.mobile.upload.MobileVideoUploadService - Mobile video upload completed by client: uploadI
+d=a68fde9b-4b4c-4b0f-ac53-893257f46382, bytes=22895821, status=UPLOADED
+2026-08-09T04:19:21.559Z INFO  [http-nio-8080-exec-7] [requestId=f85064b0-57a7-46a9-b0bc-d4e3a79d040
+9] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/bitri
+x/mobile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382/complete, status=200, durationMs=89
+2026-08-09T04:19:21.594Z INFO  [http-nio-8080-exec-9] [requestId=58467779-7b77-40ce-9b46-97c38d28b5e
+b] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/bitrix/m
+obile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382, remoteAddress=77.220.52.206, userAgent=Mozilla/5
+.0 (Linux; Android 13; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko)
+Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:19:21.668Z INFO  [video-offer-2] [requestId=] r.a.v.bitrix.mobile.upload.MobileVideoTr
+anscoder - Waiting for mobile video transcode slot: input=/app/data/mobile-uploads/a68fde9b-4b4c-4b0
+f-ac53-893257f46382.source, availableSlots=1
+2026-08-09T04:19:21.676Z INFO  [http-nio-8080-exec-9] [requestId=58467779-7b77-40ce-9b46-97c38d28b5e
+b] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/bitrix
+/mobile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382, status=200, durationMs=84
+2026-08-09T04:19:21.679Z INFO  [video-offer-2] [requestId=] r.a.v.bitrix.mobile.upload.MobileVideoTr
+anscoder - Starting mobile video normalization: input=/app/data/mobile-uploads/a68fde9b-4b4c-4b0f-ac
+53-893257f46382.source, output=/app/data/mobile-uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382.normali
+zed.mp4, timeoutMinutes=20
+2026-08-09T04:19:21.709Z ERROR [video-offer-2] [requestId=] r.a.v.b.mobile.upload.MobileVideoUploadP
+rocessor - Mobile video normalization failed: uploadId=a68fde9b-4b4c-4b0f-ac53-893257f46382, error=C
+annot run program "ffmpeg": Exec failed, error: 2 (No such file or directory)
+
+java.io.IOException: Cannot run program "ffmpeg": Exec failed, error: 2 (No such file or directory)
+        at java.base/java.lang.ProcessBuilder.start(Unknown Source) ~[na:na]
+        at java.base/java.lang.ProcessBuilder.start(Unknown Source) ~[na:na]
+        at ru.abs7.videooffer.bitrix.mobile.upload.MobileVideoTranscoder.transcodeExclusive(MobileVi
+deoTranscoder.java:92) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.mobile.upload.MobileVideoTranscoder.transcode(MobileVideoTransc
+oder.java:37) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.mobile.upload.MobileVideoUploadProcessor.normalize(MobileVideoU
+ploadProcessor.java:49) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMe
+thodInvocation.java:190) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvo
+cation.java:158) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecut
+ionInterceptor.java:112) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.FutureTask.run(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+Caused by: java.io.IOException: Exec failed, error: 2 (No such file or directory)
+        at java.base/java.lang.ProcessImpl.forkAndExec(Native Method) ~[na:na]
+        at java.base/java.lang.ProcessImpl.<init>(Unknown Source) ~[na:na]
+        at java.base/java.lang.ProcessImpl.start(Unknown Source) ~[na:na]
+        ... 15 common frames omitted
+
+2026-08-09T04:19:22.705Z INFO  [http-nio-8080-exec-10] [requestId=6141a288-5953-40ef-906b-b51a776595
+86] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/bitrix/
+mobile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382, remoteAddress=77.220.52.206, userAgent=Mozilla/
+5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko)
+ Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36 BitrixMobile/Version=61
+2026-08-09T04:19:22.768Z INFO  [http-nio-8080-exec-10] [requestId=6141a288-5953-40ef-906b-b51a776595
+86] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/bitri
+x/mobile/uploads/a68fde9b-4b4c-4b0f-ac53-893257f46382, status=200, durationMs=62

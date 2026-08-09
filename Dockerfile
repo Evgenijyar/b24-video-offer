@@ -9,7 +9,12 @@ RUN mvn -q -DskipTests package
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg \
+    && command -v ffmpeg \
+    && ffmpeg -version | head -n 1 \
+    && rm -rf /var/lib/apt/lists/*
 COPY --from=build /workspace/target/b24-video-offer-*.jar app.jar
-RUN mkdir -p /app/data/videos
+RUN mkdir -p /app/data/videos /app/data/mobile-uploads /app/data/logs
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

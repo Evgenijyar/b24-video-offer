@@ -1,5 +1,6 @@
 package ru.abs7.videooffer.bitrix.mobile.upload;
 
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,12 +22,55 @@ public class MobileVideoTranscoder {
 
     private final Duration timeout;
     private final Semaphore transcodeSlots;
+    private final String ffmpegExecutable;
 
     public MobileVideoTranscoder(
             @Value("${app.mobile-video.ffmpeg-timeout-minutes:20}") long timeoutMinutes,
-            @Value("${app.mobile-video.max-concurrent-transcodes:1}") int maxConcurrentTranscodes) {
+            @Value("${app.mobile-video.max-concurrent-transcodes:1}") int maxConcurrentTranscodes,
+            @Value("${app.mobile-video.ffmpeg-path:/usr/bin/ffmpeg}") String ffmpegExecutable) {
         this.timeout = Duration.ofMinutes(Math.max(2, timeoutMinutes));
         this.transcodeSlots = new Semaphore(Math.max(1, Math.min(4, maxConcurrentTranscodes)), true);
+        this.ffmpegExecutable = ffmpegExecutable == null || ffmpegExecutable.isBlank()
+                ? "/usr/bin/ffmpeg"
+                : ffmpegExecutable.trim();
+    }
+
+    @PostConstruct
+    void verifyFfmpegAvailable() {
+        Path executable = Path.of(ffmpegExecutable);
+        if (!Files.isRegularFile(executable) || !Files.isExecutable(executable)) {
+            throw new IllegalStateException("FFmpeg is required for mobile video processing but is not executable: "
+                    + ffmpegExecutable);
+        }
+
+        Process process = null;
+        try {
+            process = new ProcessBuilder(ffmpegExecutable, "-version")
+                    .redirectErrorStream(true)
+                    .start();
+            boolean finished = process.waitFor(5, TimeUnit.SECONDS);
+            if (!finished) {
+                process.destroyForcibly();
+                throw new IllegalStateException("FFmpeg availability check timed out: " + ffmpegExecutable);
+            }
+            String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            if (process.exitValue() != 0) {
+                throw new IllegalStateException("FFmpeg availability check failed with code " + process.exitValue());
+            }
+            String firstLine = output.lines().findFirst().orElse("ffmpeg available");
+            log.info("FFmpeg ready for mobile video processing: executable={}, version={}",
+                    ffmpegExecutable, firstLine);
+        } catch (IOException error) {
+            throw new IllegalStateException("Cannot start FFmpeg required for mobile video processing: "
+                    + ffmpegExecutable, error);
+        } catch (InterruptedException error) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while checking FFmpeg availability", error);
+        } finally {
+            if (process != null && process.isAlive()) {
+                process.destroyForcibly();
+            }
+        }
     }
 
     public TranscodeResult transcode(Path input, Path output) throws IOException, InterruptedException {
@@ -45,7 +89,7 @@ public class MobileVideoTranscoder {
         Files.deleteIfExists(output);
 
         List<String> command = new ArrayList<>();
-        command.add("ffmpeg");
+        command.add(ffmpegExecutable);
         command.add("-hide_banner");
         command.add("-loglevel");
         command.add("warning");

@@ -62,6 +62,14 @@ public class MobileVideoUploadController {
         return service.status(uploadId, uploadToken);
     }
 
+    @DeleteMapping("/{uploadId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void discard(
+            @PathVariable UUID uploadId,
+            @RequestHeader("X-Upload-Token") String uploadToken) throws IOException {
+        service.discard(uploadId, uploadToken);
+    }
+
     @PostMapping(value = "/{uploadId}/offer", consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<VideoOfferResponse> createOffer(

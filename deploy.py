@@ -12,10 +12,12 @@ def main() -> int:
         run("git", "reset", "--hard", "origin/main")
         run("docker", "compose", "build", "--pull")
         run("docker", "compose", "up", "-d", "--remove-orphans")
-        for _ in range(30):
+        for _ in range(60):
             try:
                 with urllib.request.urlopen("http://127.0.0.1:8080/api/health", timeout=3) as r:
                     if r.status == 200:
+                        run("docker", "compose", "exec", "-T", "app", "sh", "-lc",
+                            "test -x /usr/bin/ffmpeg && /usr/bin/ffmpeg -version | head -n 1")
                         print("Deployment completed successfully.")
                         run("docker", "compose", "ps")
                         return 0

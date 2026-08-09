@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="color-scheme" content="light dark">
     <title>Видео-оффер</title>
-    <link rel="stylesheet" href="/assets/bitrix-mobile.css?v=016">
+    <link rel="stylesheet" href="/assets/bitrix-mobile.css?v=017">
     <script src="//api.bitrix24.com/api/v1/"></script>
 </head>
 <body>
@@ -57,62 +57,54 @@
     </section>
 
     <section id="recorder-section" class="panel recorder-panel" hidden>
-        <div class="section-heading">
+        <div class="section-heading recorder-heading">
             <div>
                 <strong>Запись видео</strong>
-                <span>Камера и микрофон работают только внутри этого экрана.</span>
+                <span>Запишите короткое видео прямо из Bitrix24.</span>
             </div>
-            <div id="recording-timer" class="recording-timer">00:00</div>
         </div>
 
         <div id="camera-stage" class="camera-stage">
-            <video id="camera-preview" autoplay muted playsinline></video>
+            <video id="camera-preview" autoplay muted playsinline preload="metadata"></video>
             <div id="camera-placeholder" class="camera-placeholder">
                 <div class="camera-placeholder-icon">●</div>
                 <strong>Камера выключена</strong>
-                <span>Нажмите «Включить камеру» и разрешите Bitrix24 доступ к камере и микрофону.</span>
+                <span>Для записи нужен доступ Bitrix24 к камере и микрофону.</span>
             </div>
             <div id="recording-badge" class="recording-badge" hidden><i></i> REC</div>
         </div>
 
         <div id="camera-error" class="message message--error" hidden></div>
-        <div id="camera-info" class="message message--info" hidden></div>
 
-        <div class="camera-actions">
-            <button id="start-camera" class="secondary-button" type="button">Включить камеру</button>
-            <button id="switch-camera" class="secondary-button" type="button" hidden>Переключить камеру</button>
-            <button id="start-recording" class="record-button" type="button" hidden><i></i> Начать запись</button>
-            <button id="stop-recording" class="stop-button" type="button" hidden>Остановить запись</button>
+        <div class="recording-controls" aria-label="Управление записью">
+            <button id="switch-camera" class="round-control" type="button" hidden
+                    aria-label="Переключить камеру" title="Переключить камеру">
+                <span aria-hidden="true">↺</span>
+            </button>
+            <button id="record-toggle" class="round-control record-toggle" type="button" hidden
+                    aria-label="Начать запись" title="Начать запись">
+                <span id="record-glyph" class="record-glyph" aria-hidden="true"></span>
+            </button>
+            <button id="play-recording" class="round-control play-control" type="button" hidden
+                    aria-label="Воспроизвести запись" title="Воспроизвести запись">
+                <span id="play-glyph" aria-hidden="true">▶</span>
+            </button>
+            <div id="recording-timer" class="recording-timer">00:00</div>
+            <button id="start-camera" class="camera-retry-button" type="button" hidden>Включить камеру</button>
         </div>
 
         <div class="fallback-row">
             <button id="fallback-file-button" class="text-button fallback-button" type="button">
-                Если встроенная камера недоступна — снять/выбрать видео системно
+                Снять или выбрать видео системной камерой
             </button>
-            <input id="fallback-file" type="file" accept="video/*" hidden>
+            <input id="fallback-file" type="file" accept="video/*" capture="environment" hidden>
         </div>
 
-        <div id="upload-processing" class="upload-processing" hidden>
-            <div class="processing-head">
-                <strong id="upload-status">Сохраняем видео…</strong>
-                <span id="upload-bytes"></span>
-            </div>
-            <div class="progress progress--indeterminate"><div></div></div>
-            <small>После загрузки сервер автоматически приведёт ролик к MP4 / H.264 / AAC.</small>
+        <div id="upload-processing" class="save-state" hidden>
+            <span class="save-spinner" aria-hidden="true"></span>
+            <strong id="upload-status">Сохраняем видео…</strong>
+            <span id="upload-bytes" hidden></span>
         </div>
-    </section>
-
-    <section id="recorded-section" class="panel recorded-panel" hidden>
-        <div class="section-heading">
-            <div>
-                <strong>Видео сохранено</strong>
-                <span>Файл уже сжат на сервере и готов для видеооффера.</span>
-            </div>
-            <span class="ready-pill">MP4</span>
-        </div>
-
-        <video id="recorded-preview" class="recorded-preview" controls playsinline preload="metadata"></video>
-        <button id="retry-recording" class="secondary-button" type="button">Перезаписать видео</button>
     </section>
 
     <section id="offer-section" class="panel offer-panel" hidden>
@@ -170,6 +162,20 @@
         </div>
     </section>
 </main>
-<script src="/assets/bitrix-mobile.js?v=016"></script>
+
+<div id="permission-dialog" class="permission-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="permission-title">
+    <div class="permission-card">
+        <div class="permission-icon">●</div>
+        <h2 id="permission-title">Нужен доступ к камере и микрофону</h2>
+        <p id="permission-message">Разрешите Bitrix24 использовать камеру и микрофон для записи видео.</p>
+        <div class="permission-actions">
+            <button id="open-permissions" class="primary-button" type="button">Открыть настройки Bitrix24</button>
+            <button id="retry-permissions" class="secondary-button" type="button">Проверить снова</button>
+            <button id="close-permissions" class="text-button permission-close" type="button">Закрыть</button>
+        </div>
+        <small id="permission-fallback" hidden>Если настройки не открылись автоматически: Android → Настройки → Приложения → Bitrix24 → Разрешения → разрешите Камеру и Микрофон.</small>
+    </div>
+</div>
+<script src="/assets/bitrix-mobile.js?v=017"></script>
 </body>
 </html>

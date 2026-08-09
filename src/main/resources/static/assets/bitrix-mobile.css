@@ -698,3 +698,185 @@ input:focus, textarea:focus, select:focus {
         background: #173721;
     }
 }
+
+/* v017: compact recorder controls and permission recovery */
+.recording-controls {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    min-height: 50px;
+    margin-top: 12px;
+}
+
+.round-control {
+    display: inline-flex;
+    flex: 0 0 46px;
+    width: 46px;
+    height: 46px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    color: var(--text);
+    background: var(--panel-soft);
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    font-size: 22px;
+    line-height: 1;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+.round-control:active { transform: scale(.96); }
+.round-control:disabled { opacity: .48; transform: none; }
+
+.record-toggle {
+    background: #20272c;
+    border-color: #3b444a;
+}
+
+.record-glyph {
+    display: block;
+    width: 19px;
+    height: 19px;
+    background: #f13d4f;
+    border-radius: 50%;
+    box-shadow: 0 0 0 4px rgba(241,61,79,.08);
+    transition: width .15s ease, height .15s ease, border-radius .15s ease;
+}
+
+.record-toggle.is-recording .record-glyph {
+    width: 17px;
+    height: 17px;
+    border-radius: 3px;
+    box-shadow: none;
+}
+
+.play-control {
+    color: #fff;
+    background: var(--accent-strong);
+    border-color: transparent;
+    font-size: 18px;
+}
+
+.recording-controls .recording-timer {
+    min-width: 58px;
+    padding: 0;
+    color: var(--text);
+    background: transparent;
+    border: 0;
+    font-size: 14px;
+    font-weight: 800;
+    text-align: left;
+}
+
+.camera-retry-button {
+    min-height: 42px;
+    padding: 0 14px;
+    color: var(--accent-strong);
+    background: var(--accent-soft);
+    border: 1px solid rgba(32,183,232,.28);
+    border-radius: 11px;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.save-state {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.save-state strong {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.save-state[hidden] { display: none !important; }
+
+.save-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--line);
+    border-top-color: var(--accent-strong);
+    border-radius: 50%;
+    animation: save-spin .8s linear infinite;
+}
+
+@keyframes save-spin { to { transform: rotate(360deg); } }
+
+.permission-dialog {
+    position: fixed;
+    z-index: 10000;
+    inset: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 18px max(14px, env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+    background: rgba(0,0,0,.58);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+.permission-dialog[hidden] { display: none !important; }
+
+.permission-card {
+    width: min(100%, 520px);
+    padding: 22px 18px 18px;
+    color: var(--text);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    box-shadow: 0 18px 50px rgba(0,0,0,.26);
+}
+
+.permission-icon {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    place-items: center;
+    margin-bottom: 12px;
+    color: #fff;
+    background: #f13d4f;
+    border-radius: 50%;
+    font-size: 12px;
+}
+
+.permission-card h2 {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.25;
+}
+
+.permission-card p {
+    margin: 8px 0 16px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.permission-actions {
+    display: grid;
+    gap: 8px;
+}
+
+.permission-actions .primary-button,
+.permission-actions .secondary-button {
+    width: 100%;
+}
+
+.permission-close { width: 100%; }
+
+#permission-fallback {
+    display: block;
+    margin-top: 13px;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+#permission-fallback[hidden] { display: none !important; }

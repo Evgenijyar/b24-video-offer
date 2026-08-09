@@ -14,11 +14,12 @@ const recorderSection = document.getElementById('recorder-section');
 const cameraPreview = document.getElementById('camera-preview');
 const cameraPlaceholder = document.getElementById('camera-placeholder');
 const cameraError = document.getElementById('camera-error');
-const cameraInfo = document.getElementById('camera-info');
 const startCameraButton = document.getElementById('start-camera');
 const switchCameraButton = document.getElementById('switch-camera');
-const startRecordingButton = document.getElementById('start-recording');
-const stopRecordingButton = document.getElementById('stop-recording');
+const recordToggleButton = document.getElementById('record-toggle');
+const recordGlyph = document.getElementById('record-glyph');
+const playRecordingButton = document.getElementById('play-recording');
+const playGlyph = document.getElementById('play-glyph');
 const recordingBadge = document.getElementById('recording-badge');
 const recordingTimer = document.getElementById('recording-timer');
 const fallbackFileButton = document.getElementById('fallback-file-button');
@@ -27,9 +28,6 @@ const uploadProcessing = document.getElementById('upload-processing');
 const uploadStatus = document.getElementById('upload-status');
 const uploadBytes = document.getElementById('upload-bytes');
 
-const recordedSection = document.getElementById('recorded-section');
-const recordedPreview = document.getElementById('recorded-preview');
-const retryRecordingButton = document.getElementById('retry-recording');
 const offerSection = document.getElementById('offer-section');
 const goalInput = document.getElementById('view-notification-goal');
 const goalPicker = document.getElementById('goal-picker');
@@ -44,6 +42,13 @@ const deliveryStatus = document.getElementById('delivery-status');
 const readyResult = document.getElementById('ready-result');
 const readyMessage = document.getElementById('ready-message');
 const publicLink = document.getElementById('public-link');
+
+const permissionDialog = document.getElementById('permission-dialog');
+const permissionMessage = document.getElementById('permission-message');
+const openPermissionsButton = document.getElementById('open-permissions');
+const retryPermissionsButton = document.getElementById('retry-permissions');
+const closePermissionsButton = document.getElementById('close-permissions');
+const permissionFallback = document.getElementById('permission-fallback');
 
 const isBitrixMobile = /BitrixMobile/i.test(navigator.userAgent || '');
 const MAX_FALLBACK_FILE_BYTES = 512 * 1024 * 1024;
@@ -60,6 +65,9 @@ let mediaRecorder = null;
 let facingMode = 'user';
 let recordingStartedAt = null;
 let timerHandle = null;
+let recordedPreviewUrl = null;
+let permissionReturnPending = false;
+let permissionRetryInFlight = false;
 let wakeLock = null;
 let uploadSession = null;
 let uploadChain = Promise.resolve();
@@ -96,13 +104,6 @@ clearSearchButton.addEventListener('click', () => {
 changeSelectionButton.addEventListener('click', async () => {
     await resetSelection();
     searchInput.scrollIntoView({behavior: 'smooth', block: 'center'});
-});
-
-retryRecordingButton.addEventListener('click', async () => {
-    await resetRecordingState(true);
-    recorderSection.hidden = false;
-    setCameraInfo('Можно записать новый ролик. Предыдущая незавершённая загрузка автоматически удалится сервером позднее.');
-    recorderSection.scrollIntoView({behavior: 'smooth', block: 'start'});
 });
 
 form.addEventListener('submit', async (event) => {
@@ -182,8 +183,8 @@ function initializeGoalPicker() {
 function initializeRecorder() {
     startCameraButton.addEventListener('click', () => startCamera(false));
     switchCameraButton.addEventListener('click', switchCamera);
-    startRecordingButton.addEventListener('click', startRecording);
-    stopRecordingButton.addEventListener('click', stopRecording);
+    recordToggleButton.addEventListener('click', toggleRecording);
+    playRecordingButton.addEventListener('click', toggleRecordedPlayback);
     fallbackFileButton.addEventListener('click', () => fallbackFileInput.click());
     fallbackFileInput.addEventListener('change', () => {
         const file = fallbackFileInput.files && fallbackFileInput.files[0];
@@ -191,11 +192,27 @@ function initializeRecorder() {
         fallbackFileInput.value = '';
     });
 
+    openPermissionsButton.addEventListener('click', openBitrixAndroidSettings);
+    retryPermissionsButton.addEventListener('click', retryPermissionsNow);
+    closePermissionsButton.addEventListener('click', hidePermissionDialog);
+
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) retryCameraAfterPermissionReturn();
+    });
+    window.addEventListener('focus', retryCameraAfterPermissionReturn);
+    window.addEventListener('pageshow', retryCameraAfterPermissionReturn);
+    document.addEventListener('resume', retryCameraAfterPermissionReturn, false);
+
+    cameraPreview.addEventListener('play', updatePlayButtonState);
+    cameraPreview.addEventListener('pause', updatePlayButtonState);
+    cameraPreview.addEventListener('ended', updatePlayButtonState);
+
     if (!supportsEmbeddedRecording()) {
         startCameraButton.hidden = true;
         switchCameraButton.hidden = true;
-        startRecordingButton.hidden = true;
-        setCameraInfo('Встроенная камера недоступна в этом WebView. Используйте системную камеру/галерею ниже.');
+        recordToggleButton.hidden = true;
+        playRecordingButton.hidden = true;
+        setCameraError('Встроенная камера недоступна в этом WebView. Используйте системную камеру ниже.');
     }
 }
 
@@ -299,13 +316,16 @@ async function selectEntity(item) {
         + (item.subtitle ? ' · ' + item.subtitle : '');
     selectedCard.hidden = false;
     recorderSection.hidden = false;
-    recordedSection.hidden = true;
     offerSection.hidden = true;
     searchResults.hidden = true;
     searchState.hidden = true;
     clearCameraMessages();
     recorderSection.scrollIntoView({behavior: 'smooth', block: 'start'});
     fitWindow();
+
+    if (supportsEmbeddedRecording()) {
+        setTimeout(() => startCamera(false), 120);
+    }
 }
 
 async function resetSelection() {
@@ -330,17 +350,26 @@ function setSearchState(message, loading) {
 }
 
 async function startCamera(switching) {
-    if (!selectedEntity) return;
+    if (!selectedEntity) return false;
     if (!supportsEmbeddedRecording()) {
-        setCameraError('Этот WebView не предоставляет MediaRecorder/getUserMedia. Используйте системную камеру.');
-        return;
+        setCameraError('Этот WebView не предоставляет доступ к встроенной камере. Используйте системную камеру.');
+        return false;
     }
 
     clearCameraMessages();
+    hidePermissionDialog();
     startCameraButton.disabled = true;
     startCameraButton.textContent = switching ? 'Переключаем…' : 'Включаем…';
+
     try {
+        const permissionStates = await queryMediaPermissionStates();
+        if (permissionStates.camera === 'denied' || permissionStates.microphone === 'denied') {
+            showPermissionDialog('Для записи Bitrix24 нужен доступ к камере и микрофону. Разрешите оба доступа в настройках приложения.');
+            return false;
+        }
+
         stopCameraStream();
+        clearRecordedPreview();
         const constraints = {
             video: {
                 facingMode: {ideal: facingMode},
@@ -354,24 +383,39 @@ async function startCamera(switching) {
                 channelCount: 1
             }
         };
+
         cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+        cameraPreview.removeAttribute('src');
         cameraPreview.srcObject = cameraStream;
+        cameraPreview.muted = true;
+        cameraPreview.autoplay = true;
+        cameraPreview.playsInline = true;
+        cameraPreview.hidden = false;
         await cameraPreview.play().catch(() => {});
         cameraPlaceholder.hidden = true;
-        cameraPreview.hidden = false;
         startCameraButton.hidden = true;
         switchCameraButton.hidden = false;
-        startRecordingButton.hidden = false;
-        setCameraInfo(facingMode === 'user' ? 'Фронтальная камера готова.' : 'Основная камера готова.');
+        recordToggleButton.hidden = false;
+        playRecordingButton.hidden = true;
+        updateRecordButtonState(false);
+        permissionReturnPending = false;
+        try { sessionStorage.removeItem('b24-awaiting-media-permission'); } catch (_) {}
         reportClientEvent('CAMERA_READY', facingMode);
+        return true;
     } catch (error) {
         stopCameraStream();
         startCameraButton.hidden = false;
         switchCameraButton.hidden = true;
-        startRecordingButton.hidden = true;
+        recordToggleButton.hidden = true;
+        playRecordingButton.hidden = !!recordedPreviewUrl;
         const message = cameraPermissionMessage(error);
         setCameraError(message);
+        const permissionRelated = await isPermissionRelatedCameraError(error);
+        if (permissionRelated) {
+            showPermissionDialog(message);
+        }
         reportClientEvent('CAMERA_ERROR', (error && error.name ? error.name : 'Error') + ': ' + (error && error.message ? error.message : message));
+        return false;
     } finally {
         startCameraButton.disabled = false;
         startCameraButton.textContent = 'Включить камеру';
@@ -379,18 +423,41 @@ async function startCamera(switching) {
 }
 
 async function switchCamera() {
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') return;
+    if (isRecordingActive() || recordingFinalizing) return;
     facingMode = facingMode === 'user' ? 'environment' : 'user';
-    await startCamera(true);
+    switchCameraButton.disabled = true;
+    try {
+        await startCamera(true);
+    } finally {
+        switchCameraButton.disabled = false;
+    }
+}
+
+async function toggleRecording() {
+    if (recordingFinalizing) return;
+    if (isRecordingActive()) {
+        stopRecording();
+        return;
+    }
+
+    if (uploadSession && (uploadSession.status === 'READY' || uploadSession.status === 'ERROR')) {
+        await discardCurrentUpload();
+    }
+
+    if (!cameraStream) {
+        const cameraStarted = await startCamera(false);
+        if (!cameraStarted) return;
+    }
+    await startRecording();
 }
 
 async function startRecording() {
-    if (!selectedEntity || !cameraStream) return;
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') return;
+    if (!selectedEntity || !cameraStream || isRecordingActive()) return;
 
     clearCameraMessages();
+    hidePermissionDialog();
     resetOfferOutput();
-    uploadSession = null;
+    uploadProcessing.hidden = true;
     uploadFailure = null;
     uploadChain = Promise.resolve();
     recordingFinalizing = false;
@@ -414,23 +481,33 @@ async function startRecording() {
         mediaRecorder.addEventListener('error', handleRecorderError);
         mediaRecorder.addEventListener('stop', finalizeRecordedVideo, {once: true});
 
-        mediaRecorder.start(MEDIA_CHUNK_INTERVAL_MS);
-        recordingStartedAt = Date.now();
+        await new Promise((resolve, reject) => {
+            const started = () => resolve();
+            const failed = (event) => reject(event && event.error ? event.error : new Error('MediaRecorder не начал запись'));
+            mediaRecorder.addEventListener('start', started, {once: true});
+            mediaRecorder.addEventListener('error', failed, {once: true});
+            try {
+                mediaRecorder.start(MEDIA_CHUNK_INTERVAL_MS);
+            } catch (error) {
+                reject(error);
+            }
+        });
+
         startTimer();
         await acquireWakeLock();
         reportClientEvent('RECORDING_STARTED', mediaRecorder.mimeType || mimeType || 'default');
-
-        startRecordingButton.hidden = true;
-        switchCameraButton.hidden = true;
-        stopRecordingButton.hidden = false;
+        switchCameraButton.disabled = true;
+        playRecordingButton.hidden = true;
         recordingBadge.hidden = false;
-        uploadProcessing.hidden = false;
-        uploadStatus.textContent = 'Идёт запись и защищённая загрузка на сервер…';
-        uploadBytes.textContent = '0 МБ';
-        setCameraInfo('Видео загружается на сервер небольшими частями прямо во время записи.');
+        updateRecordButtonState(true);
     } catch (error) {
-        setCameraError(error.message || 'Не удалось начать запись');
+        stopTimer();
         mediaRecorder = null;
+        updateRecordButtonState(false);
+        setCameraError(error.message || 'Не удалось начать запись');
+        if (uploadSession) {
+            await discardCurrentUpload();
+        }
     }
 }
 
@@ -448,12 +525,10 @@ function handleRecordedChunk(event) {
     uploadChain = uploadChain.then(async () => {
         if (uploadFailure) return;
         try {
-            const updated = await uploadChunkWithRetry(blob);
-            uploadSession = updated;
-            uploadBytes.textContent = formatBytes(updated.bytesReceived);
+            uploadSession = await uploadChunkWithRetry(blob);
         } catch (error) {
             uploadFailure = error;
-            setCameraError('Потеряна загрузка видео: ' + (error.message || 'ошибка сети'));
+            setCameraError('Не удалось сохранить запись: ' + (error.message || 'ошибка сети'));
             if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                 try { mediaRecorder.stop(); } catch (_) {}
             }
@@ -462,17 +537,19 @@ function handleRecordedChunk(event) {
 }
 
 function stopRecording() {
-    if (!mediaRecorder || mediaRecorder.state === 'inactive' || recordingFinalizing) return;
+    if (!isRecordingActive() || recordingFinalizing) return;
     recordingFinalizing = true;
-    stopRecordingButton.disabled = true;
-    stopRecordingButton.textContent = 'Завершаем…';
-    uploadStatus.textContent = 'Завершаем запись и отправляем последнюю часть…';
+    recordToggleButton.disabled = true;
+    stopTimer();
+    updateRecordButtonState(false);
+    uploadProcessing.hidden = false;
+    uploadStatus.textContent = 'Сохраняем видео…';
     try {
         mediaRecorder.stop();
     } catch (error) {
         recordingFinalizing = false;
-        stopRecordingButton.disabled = false;
-        stopRecordingButton.textContent = 'Остановить запись';
+        recordToggleButton.disabled = false;
+        updateRecordButtonState(true);
         setCameraError(error.message || 'Не удалось остановить запись');
     }
 }
@@ -481,24 +558,27 @@ async function finalizeRecordedVideo() {
     stopTimer();
     await releaseWakeLock();
     recordingBadge.hidden = true;
-    stopRecordingButton.hidden = true;
-    stopRecordingButton.disabled = false;
-    stopRecordingButton.textContent = 'Остановить запись';
+    switchCameraButton.disabled = false;
+    recordToggleButton.disabled = true;
     stopCameraStream();
 
     try {
         await uploadChain;
         if (uploadFailure) throw uploadFailure;
-        uploadStatus.textContent = 'Запись загружена. Сжимаем и переводим в MP4…';
+        uploadStatus.textContent = 'Обрабатываем видео…';
         uploadSession = await completeUploadSession();
         await waitForNormalization();
     } catch (error) {
         setCameraError(error.message || 'Не удалось сохранить видео');
         uploadProcessing.hidden = true;
         startCameraButton.hidden = false;
+        recordToggleButton.hidden = false;
+        playRecordingButton.hidden = true;
+        updateRecordButtonState(false);
     } finally {
         mediaRecorder = null;
         recordingFinalizing = false;
+        recordToggleButton.disabled = false;
     }
 }
 
@@ -513,12 +593,14 @@ async function uploadFallbackFile(file) {
     await resetRecordingState(false);
     recorderSection.hidden = false;
     clearCameraMessages();
+    stopCameraStream();
+    clearRecordedPreview();
     uploadProcessing.hidden = false;
-    uploadStatus.textContent = 'Загружаем выбранное видео…';
-    uploadBytes.textContent = '0%';
+    uploadStatus.textContent = 'Сохраняем видео…';
     startCameraButton.hidden = true;
     switchCameraButton.hidden = true;
-    startRecordingButton.hidden = true;
+    recordToggleButton.hidden = true;
+    playRecordingButton.hidden = true;
 
     try {
         uploadSession = await createUploadSession(file.type || 'application/octet-stream');
@@ -527,16 +609,15 @@ async function uploadFallbackFile(file) {
             const blob = file.slice(offset, Math.min(file.size, offset + FALLBACK_CHUNK_BYTES));
             uploadSession = await uploadChunkWithRetry(blob);
             offset += blob.size;
-            const percent = Math.min(100, Math.round((offset / file.size) * 100));
-            uploadBytes.textContent = percent + '% · ' + formatBytes(offset);
         }
-        uploadStatus.textContent = 'Видео загружено. Сжимаем и переводим в MP4…';
+        uploadStatus.textContent = 'Обрабатываем видео…';
         uploadSession = await completeUploadSession();
         await waitForNormalization();
     } catch (error) {
         setCameraError(error.message || 'Не удалось загрузить видео');
         uploadProcessing.hidden = true;
         startCameraButton.hidden = !supportsEmbeddedRecording();
+        recordToggleButton.hidden = !supportsEmbeddedRecording();
     }
 }
 
@@ -632,24 +713,36 @@ async function waitForNormalization() {
 
 function showNormalizedVideo(data) {
     uploadProcessing.hidden = true;
-    cameraPreview.hidden = true;
-    cameraPlaceholder.hidden = false;
-    startCameraButton.hidden = true;
+    stopCameraStream();
+    recordedPreviewUrl = data.previewUrl || '';
+    cameraPlaceholder.hidden = true;
+    cameraPreview.hidden = false;
+    cameraPreview.autoplay = false;
+    cameraPreview.muted = false;
+    cameraPreview.srcObject = null;
+    cameraPreview.src = recordedPreviewUrl;
+    cameraPreview.load();
     switchCameraButton.hidden = true;
-    startRecordingButton.hidden = true;
-    recordedPreview.src = data.previewUrl || '';
-    recordedSection.hidden = false;
+    switchCameraButton.disabled = false;
+    startCameraButton.hidden = true;
+    recordToggleButton.hidden = false;
+    recordToggleButton.disabled = false;
+    updateRecordButtonState(false);
+    playRecordingButton.hidden = !recordedPreviewUrl;
+    updatePlayButtonState();
     offerSection.hidden = false;
-    setCameraInfo('Видео сохранено на сервере в MP4. Теперь добавьте текст и создайте оффер.');
+    setCameraError(null);
     reportClientEvent('UPLOAD_READY', 'bytes=' + Number(data.bytesReceived || 0));
-    recordedSection.scrollIntoView({behavior: 'smooth', block: 'start'});
     fitWindow();
 }
 
 async function resetRecordingState(showCameraButton) {
-    stopTimer();
+    stopTimer(true);
     clearInterval(normalizationPollTimer);
     clearInterval(offerPollTimer);
+    hidePermissionDialog();
+
+    const uploadToDiscard = uploadSession;
     if (mediaRecorder) {
         mediaRecorder.removeEventListener('dataavailable', handleRecordedChunk);
         mediaRecorder.removeEventListener('error', handleRecorderError);
@@ -665,26 +758,93 @@ async function resetRecordingState(showCameraButton) {
     uploadSession = null;
     uploadFailure = null;
     uploadChain = Promise.resolve();
-    recordedPreview.pause();
-    recordedPreview.removeAttribute('src');
-    recordedPreview.load();
-    recordedSection.hidden = true;
+    clearRecordedPreview();
     offerSection.hidden = true;
     processing.hidden = true;
     readyResult.hidden = true;
     uploadProcessing.hidden = true;
     recordingBadge.hidden = true;
-    recordingTimer.textContent = '00:00';
-    stopRecordingButton.hidden = true;
-    stopRecordingButton.disabled = false;
-    stopRecordingButton.textContent = 'Остановить запись';
     switchCameraButton.hidden = true;
-    startRecordingButton.hidden = true;
+    switchCameraButton.disabled = false;
+    recordToggleButton.hidden = true;
+    recordToggleButton.disabled = false;
+    updateRecordButtonState(false);
+    playRecordingButton.hidden = true;
     startCameraButton.hidden = !showCameraButton || !supportsEmbeddedRecording();
-    cameraPreview.hidden = false;
     cameraPlaceholder.hidden = false;
     clearCameraMessages();
     resetOfferOutput();
+
+    if (uploadToDiscard && uploadToDiscard.status !== 'CONSUMED') {
+        deleteUploadSession(uploadToDiscard).catch(() => {});
+    }
+}
+
+async function discardCurrentUpload() {
+    const previous = uploadSession;
+    uploadSession = null;
+    uploadFailure = null;
+    uploadChain = Promise.resolve();
+    uploadProcessing.hidden = true;
+    offerSection.hidden = true;
+    resetOfferOutput();
+    clearRecordedPreview();
+    if (previous && previous.status !== 'CONSUMED') {
+        await deleteUploadSession(previous).catch(() => {});
+    }
+}
+
+async function deleteUploadSession(session) {
+    if (!session || !session.id || !session.uploadToken) return;
+    const response = await fetch(`/bitrix/mobile/uploads/${encodeURIComponent(session.id)}`, {
+        method: 'DELETE',
+        headers: {'X-Upload-Token': session.uploadToken}
+    });
+    if (!response.ok && response.status !== 404 && response.status !== 409) {
+        const data = await readJson(response);
+        throw new Error(data.message || 'Не удалось удалить предыдущую запись');
+    }
+}
+
+function clearRecordedPreview() {
+    recordedPreviewUrl = null;
+    try { cameraPreview.pause(); } catch (_) {}
+    cameraPreview.removeAttribute('src');
+    cameraPreview.srcObject = null;
+    cameraPreview.muted = true;
+    cameraPreview.autoplay = true;
+    try { cameraPreview.load(); } catch (_) {}
+    playRecordingButton.hidden = true;
+    updatePlayButtonState();
+}
+
+function toggleRecordedPlayback() {
+    if (!recordedPreviewUrl || cameraPreview.srcObject) return;
+    if (cameraPreview.paused || cameraPreview.ended) {
+        if (cameraPreview.ended) cameraPreview.currentTime = 0;
+        cameraPreview.play().catch((error) => setCameraError(error.message || 'Не удалось воспроизвести запись'));
+    } else {
+        cameraPreview.pause();
+    }
+    updatePlayButtonState();
+}
+
+function updatePlayButtonState() {
+    if (!playRecordingButton) return;
+    const playing = !!recordedPreviewUrl && !cameraPreview.paused && !cameraPreview.ended;
+    playGlyph.textContent = playing ? 'Ⅱ' : '▶';
+    playRecordingButton.setAttribute('aria-label', playing ? 'Пауза' : 'Воспроизвести запись');
+    playRecordingButton.title = playing ? 'Пауза' : 'Воспроизвести запись';
+}
+
+function updateRecordButtonState(recording) {
+    recordToggleButton.classList.toggle('is-recording', !!recording);
+    recordToggleButton.setAttribute('aria-label', recording ? 'Остановить запись' : 'Начать запись');
+    recordToggleButton.title = recording ? 'Остановить запись' : 'Начать запись';
+}
+
+function isRecordingActive() {
+    return !!mediaRecorder && mediaRecorder.state !== 'inactive';
 }
 
 function stopCameraStream() {
@@ -721,37 +881,159 @@ function chooseRecorderMimeType() {
     return candidates.find((type) => MediaRecorder.isTypeSupported(type)) || '';
 }
 
+async function queryMediaPermissionStates() {
+    const result = {camera: 'unknown', microphone: 'unknown'};
+    if (!navigator.permissions || typeof navigator.permissions.query !== 'function') {
+        return result;
+    }
+
+    await Promise.all(['camera', 'microphone'].map(async (name) => {
+        try {
+            const status = await navigator.permissions.query({name});
+            result[name] = status && status.state ? status.state : 'unknown';
+        } catch (_) {
+            // Android WebView versions differ in Permissions API support.
+        }
+    }));
+    return result;
+}
+
+async function isPermissionRelatedCameraError(error) {
+    const name = error && error.name ? error.name : '';
+    if (name === 'NotAllowedError' || name === 'PermissionDeniedError' || name === 'SecurityError') {
+        return true;
+    }
+    if (!isBitrixMobile || (name !== 'NotReadableError' && name !== 'TrackStartError')) {
+        return false;
+    }
+
+    // Bitrix Android WebView can report NotReadableError when the host app itself
+    // has no CAMERA/RECORD_AUDIO runtime permission. This was observed on the target device.
+    const states = await queryMediaPermissionStates();
+    return states.camera !== 'granted' || states.microphone !== 'granted';
+}
+
 function cameraPermissionMessage(error) {
     const name = error && error.name ? error.name : '';
-    if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
-        return 'Bitrix24 не дал доступ к камере или микрофону. Разрешите камеру и микрофон для приложения Bitrix24 в настройках телефона и откройте видеооффер снова.';
+    if (name === 'NotAllowedError' || name === 'PermissionDeniedError' || name === 'SecurityError') {
+        return 'Bitrix24 не разрешён доступ к камере или микрофону. Разрешите оба доступа в настройках Android.';
     }
     if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
         return 'Камера или микрофон не найдены на устройстве.';
     }
     if (name === 'NotReadableError' || name === 'TrackStartError') {
-        return 'Камера сейчас занята другим приложением. Закройте его и повторите.';
+        if (isBitrixMobile) {
+            return 'Bitrix24 не смог открыть камеру или микрофон. Проверьте разрешения Bitrix24 в Android; если они уже разрешены, закройте другое приложение, которое может использовать камеру.';
+        }
+        return 'Камера или микрофон сейчас недоступны. Закройте другое приложение, которое может их использовать, и повторите.';
     }
     return 'Не удалось открыть камеру: ' + (error && error.message ? error.message : name || 'неизвестная ошибка');
 }
 
-function startTimer() {
-    stopTimer();
-    const render = () => {
-        if (!recordingStartedAt) return;
-        const seconds = Math.max(0, Math.floor((Date.now() - recordingStartedAt) / 1000));
-        const minutes = String(Math.floor(seconds / 60)).padStart(2, '0');
-        const rest = String(seconds % 60).padStart(2, '0');
-        recordingTimer.textContent = `${minutes}:${rest}`;
-    };
-    render();
-    timerHandle = setInterval(render, 500);
+function showPermissionDialog(message) {
+    permissionMessage.textContent = message || 'Разрешите Bitrix24 использовать камеру и микрофон для записи видео.';
+    permissionFallback.hidden = true;
+    openPermissionsButton.hidden = !isBitrixMobile || !/Android/i.test(navigator.userAgent || '');
+    permissionDialog.hidden = false;
+    fitWindow();
 }
 
-function stopTimer() {
-    clearInterval(timerHandle);
+function hidePermissionDialog() {
+    permissionDialog.hidden = true;
+    permissionFallback.hidden = true;
+}
+
+function openBitrixAndroidSettings() {
+    permissionReturnPending = true;
+    try {
+        sessionStorage.setItem('b24-awaiting-media-permission', '1');
+    } catch (_) {}
+    reportClientEvent('PERMISSION_SETTINGS_REQUESTED', 'android.application.details');
+
+    // A web page inside Bitrix24 cannot call Android Settings APIs directly.
+    // This intent is a best-effort bridge for WebViews that allow external intents.
+    const intentUrl = 'intent:com.bitrix24.android#Intent;scheme=package;action=android.settings.APPLICATION_DETAILS_SETTINGS;end';
+    try {
+        const anchor = document.createElement('a');
+        anchor.href = intentUrl;
+        anchor.target = '_blank';
+        anchor.rel = 'noopener';
+        anchor.style.display = 'none';
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+    } catch (_) {
+        // The fallback instructions below remain available.
+    }
+
+    window.setTimeout(() => {
+        if (!document.hidden) {
+            permissionFallback.hidden = false;
+            fitWindow();
+        }
+    }, 900);
+}
+
+async function retryPermissionsNow() {
+    permissionReturnPending = true;
+    hidePermissionDialog();
+    await retryCameraAfterPermissionReturn(true);
+}
+
+async function retryCameraAfterPermissionReturn(force = false) {
+    if (permissionRetryInFlight || !selectedEntity || !supportsEmbeddedRecording()) return;
+    let awaiting = permissionReturnPending;
+    try {
+        awaiting = awaiting || sessionStorage.getItem('b24-awaiting-media-permission') === '1';
+    } catch (_) {}
+    if (!force && !awaiting) return;
+
+    permissionRetryInFlight = true;
+    try {
+        // Small delay lets Android/WebView refresh runtime permission state after returning.
+        await sleep(250);
+        const started = await startCamera(false);
+        if (started) {
+            permissionReturnPending = false;
+            try { sessionStorage.removeItem('b24-awaiting-media-permission'); } catch (_) {}
+            hidePermissionDialog();
+            reportClientEvent('PERMISSION_RETRY_SUCCEEDED', 'camera+microphone');
+        } else {
+            permissionReturnPending = true;
+        }
+    } finally {
+        permissionRetryInFlight = false;
+    }
+}
+
+function renderTimer() {
+    if (recordingStartedAt == null) return;
+    const elapsedMs = Math.max(0, performance.now() - recordingStartedAt);
+    const seconds = Math.floor(elapsedMs / 1000);
+    const minutes = String(Math.floor(seconds / 60)).padStart(2, '0');
+    const rest = String(seconds % 60).padStart(2, '0');
+    recordingTimer.textContent = `${minutes}:${rest}`;
+}
+
+function startTimer() {
+    stopTimer(true);
+    recordingStartedAt = performance.now();
+    renderTimer();
+    timerHandle = window.setInterval(renderTimer, 250);
+}
+
+function stopTimer(resetDisplay = false) {
+    if (recordingStartedAt != null && !resetDisplay) {
+        renderTimer();
+    }
+    if (timerHandle != null) {
+        clearInterval(timerHandle);
+    }
     timerHandle = null;
     recordingStartedAt = null;
+    if (resetDisplay) {
+        recordingTimer.textContent = '00:00';
+    }
 }
 
 async function acquireWakeLock() {
@@ -771,17 +1053,11 @@ async function releaseWakeLock() {
 
 function clearCameraMessages() {
     setCameraError(null);
-    setCameraInfo(null);
 }
 
 function setCameraError(message) {
     cameraError.hidden = !message;
     cameraError.textContent = message || '';
-}
-
-function setCameraInfo(message) {
-    cameraInfo.hidden = !message;
-    cameraInfo.textContent = message || '';
 }
 
 async function checkOfferStatus() {
