@@ -29,33 +29,17 @@ public class BitrixInstallationService {
             "CRM_LEAD_DETAIL_ACTIVITY",
             "CRM_CONTACT_DETAIL_ACTIVITY");
 
-    /**
-     * Temporary diagnostic placements from releases 011/012. Mobile Bitrix24
-     * does not render them, while on desktop they only add unnecessary entries.
-     * They are removed during installation/startup so the desktop interface is
-     * restored to its original state.
-     */
-    private static final List<String> OBSOLETE_DIAGNOSTIC_PLACEMENTS = List.of(
-            "CRM_DEAL_DETAIL_TOOLBAR",
-            "CRM_LEAD_DETAIL_TOOLBAR",
-            "CRM_CONTACT_DETAIL_TOOLBAR",
-            "CRM_DEAL_DETAIL_TAB",
-            "CRM_LEAD_DETAIL_TAB",
-            "CRM_CONTACT_DETAIL_TAB");
 
     private final BitrixInstallationRepository repository;
     private final BitrixRestClient restClient;
-    private final BitrixPlacementDiagnosticsService diagnosticsService;
     private final String handlerUrl;
 
     public BitrixInstallationService(
             BitrixInstallationRepository repository,
             BitrixRestClient restClient,
-            BitrixPlacementDiagnosticsService diagnosticsService,
             @Value("${app.public-base-url}") String publicBaseUrl) {
         this.repository = repository;
         this.restClient = restClient;
-        this.diagnosticsService = diagnosticsService;
         this.handlerUrl = publicBaseUrl.replaceAll("/+$", "") + "/bitrix/widget";
     }
 
@@ -88,21 +72,20 @@ public class BitrixInstallationService {
         log.info("Bitrix installation authorization persisted: domain={}, memberId={}",
                 auth.domain(), auth.memberId());
 
-        cleanupObsoleteDiagnosticPlacements(auth.memberId());
-        resetDesktopPlacements(auth.memberId());
+        // Do not unbind working desktop placements during installation.
+        // placement.bind is idempotent for our case: existing handlers are kept,
+        // missing handlers are created. This avoids UI disappearing between unbind/bind.
         Map<String, String> results = bindPlacements(auth.memberId());
-        BitrixPlacementDiagnosticsService.PlacementDiagnostics diagnostics =
-                diagnosticsService.diagnose(auth.memberId());
 
-        log.info("Локальное приложение Bitrix24 установлено: domain={}, memberId={}, placements={}",
+        log.info("Локальное приложение Bitrix24 подготовлено: domain={}, memberId={}, placements={}. "
+                        + "Browser must complete installation with BX24.installFinish().",
                 auth.domain(), auth.memberId(), results);
         return new InstallationResult(
                 auth.domain(),
                 auth.memberId(),
                 handlerUrl,
                 applicationScopes,
-                results,
-                diagnostics);
+                results);
     }
 
     public Map<String, String> bindPlacements(String memberId) {
@@ -138,87 +121,27 @@ public class BitrixInstallationService {
     }
 
 
-    public Map<String, String> resetDesktopPlacements(String memberId) {
-        Map<String, String> results = new LinkedHashMap<>();
-        for (String placement : DESKTOP_PLACEMENTS) {
-            try {
-                log.info("Resetting desktop Bitrix placement before fresh bind: memberId={}, placement={}",
-                        memberId, placement);
-                Map<String, Object> response = restClient.call(
-                        memberId,
-                        "placement.unbind",
-                        Map.<String, Object>of("PLACEMENT", placement));
-                results.put(placement, "RESET");
-                log.info("Desktop Bitrix placement reset: memberId={}, placement={}, responseKeys={}",
-                        memberId, placement, response.keySet());
-            } catch (BitrixRestException error) {
-                String status = "ERROR:" + error.getErrorCode() + ":" + safeMessage(error);
-                results.put(placement, status);
-                log.warn("Unable to reset desktop Bitrix placement; a normal bind will still be attempted: "
-                                + "memberId={}, placement={}, errorCode={}, error={}",
-                        memberId, placement, error.getErrorCode(), error.getMessage());
-            } catch (RuntimeException error) {
-                String status = "TRANSPORT_ERROR:" + rootMessage(error);
-                results.put(placement, status);
-                log.warn("Transport failure while resetting desktop Bitrix placement; "
-                                + "a normal bind will still be attempted: memberId={}, placement={}, error={}",
-                        memberId, placement, rootMessage(error));
-            }
-        }
-        return results;
-    }
-
-    public Map<String, String> cleanupObsoleteDiagnosticPlacements(String memberId) {
-        Map<String, String> results = new LinkedHashMap<>();
-        for (String placement : OBSOLETE_DIAGNOSTIC_PLACEMENTS) {
-            try {
-                log.info("Removing obsolete diagnostic Bitrix placement: memberId={}, placement={}",
-                        memberId, placement);
-                Map<String, Object> response = restClient.call(
-                        memberId,
-                        "placement.unbind",
-                        Map.<String, Object>of("PLACEMENT", placement));
-                results.put(placement, "UNBOUND");
-                log.info("Obsolete diagnostic Bitrix placement removed: memberId={}, placement={}, responseKeys={}",
-                        memberId, placement, response.keySet());
-            } catch (BitrixRestException error) {
-                String status = "ERROR:" + error.getErrorCode() + ":" + safeMessage(error);
-                results.put(placement, status);
-                log.warn("Unable to remove obsolete diagnostic Bitrix placement; startup will continue: "
-                                + "memberId={}, placement={}, errorCode={}, error={}",
-                        memberId, placement, error.getErrorCode(), error.getMessage());
-            } catch (RuntimeException error) {
-                String status = "TRANSPORT_ERROR:" + rootMessage(error);
-                results.put(placement, status);
-                log.warn("Transport failure while removing obsolete diagnostic Bitrix placement; "
-                                + "startup will continue: memberId={}, placement={}, error={}",
-                        memberId, placement, rootMessage(error));
-            }
-        }
-        return results;
-    }
-
+    /**
+     * Non-destructive startup self-healing: only creates missing production
+     * placements. Existing handlers are never unbound on restart.
+     */
     @Async
     @EventListener(ApplicationReadyEvent.class)
-    public void rebindPlacementsAfterStartup() {
+    public void ensureDesktopPlacementsAfterStartup() {
         List<BitrixInstallation> installations = repository.findAll();
         if (installations.isEmpty()) {
-            log.info("Bitrix placement startup diagnostics skipped: no installations found");
+            log.info("Bitrix desktop placement startup check skipped: no installations found");
             return;
         }
 
-        log.info("Starting Bitrix placement rebind and diagnostics after application startup: count={}",
-                installations.size());
+        log.info("Ensuring Bitrix desktop placements after startup: count={}", installations.size());
         for (BitrixInstallation installation : installations) {
             try {
-                cleanupObsoleteDiagnosticPlacements(installation.getMemberId());
                 Map<String, String> placements = bindPlacements(installation.getMemberId());
-                BitrixPlacementDiagnosticsService.PlacementDiagnostics diagnostics =
-                        diagnosticsService.diagnose(installation.getMemberId());
-                log.info("Bitrix startup placement check completed: domain={}, memberId={}, placements={}, diagnostics={}",
-                        installation.getPortalDomain(), installation.getMemberId(), placements, diagnostics);
+                log.info("Bitrix desktop placement startup check completed: domain={}, memberId={}, placements={}",
+                        installation.getPortalDomain(), installation.getMemberId(), placements);
             } catch (RuntimeException error) {
-                log.error("Bitrix startup placement check failed: domain={}, memberId={}, error={}",
+                log.error("Bitrix desktop placement startup check failed: domain={}, memberId={}, error={}",
                         installation.getPortalDomain(), installation.getMemberId(),
                         rootMessage(error), error);
             }
@@ -322,8 +245,7 @@ public class BitrixInstallationService {
             String memberId,
             String handler,
             String applicationScopes,
-            Map<String, String> placements,
-            BitrixPlacementDiagnosticsService.PlacementDiagnostics diagnostics) {
+            Map<String, String> placements) {
     }
 
     private record AuthData(

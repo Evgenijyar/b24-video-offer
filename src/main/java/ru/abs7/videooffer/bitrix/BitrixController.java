@@ -22,7 +22,6 @@ import ru.abs7.videooffer.offer.VideoOfferService;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,6 +36,7 @@ public class BitrixController {
     private final BitrixContextSigner contextSigner;
     private final VideoOfferService videoOfferService;
     private final String widgetTemplate;
+    private final String installTemplate;
 
     public BitrixController(
             BitrixInstallationService installationService,
@@ -47,26 +47,33 @@ public class BitrixController {
         this.videoOfferService = videoOfferService;
         this.widgetTemplate = new ClassPathResource("static/bitrix-widget.html")
                 .getContentAsString(StandardCharsets.UTF_8);
+        this.installTemplate = new ClassPathResource("static/bitrix-install.html")
+                .getContentAsString(StandardCharsets.UTF_8);
     }
 
     @PostMapping(
             value = "/install",
-            produces = MediaType.APPLICATION_JSON_VALUE)
-    public BitrixInstallationService.InstallationResult install(
+            produces = MediaType.TEXT_HTML_VALUE)
+    public ResponseEntity<String> install(
             @RequestParam MultiValueMap<String, String> parameters) {
         log.info("Bitrix installation callback received: parameterNames={}", parameters.keySet());
         BitrixInstallationService.InstallationResult result = installationService.install(parameters);
-        log.info("Bitrix installation callback completed: domain={}, memberId={}, applicationScopes={}, placements={}",
+        log.info("Bitrix installation callback completed: domain={}, memberId={}, applicationScopes={}, placements={}. "
+                        + "Returning browser installer page which calls BX24.installFinish().",
                 result.domain(), result.memberId(), result.applicationScopes(), result.placements());
-        return result;
+        return ResponseEntity.ok()
+                .contentType(MediaType.TEXT_HTML)
+                .body(installTemplate);
     }
 
-    @GetMapping(value = "/install", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Map<String, String> installInfo() {
+    @GetMapping(value = "/install", produces = MediaType.TEXT_HTML_VALUE)
+    public ResponseEntity<String> installInfo() {
         log.info("Bitrix installation endpoint opened with GET");
-        return Map.of(
-                "status", "READY",
-                "message", "Этот URL должен вызываться Bitrix24 методом POST при установке приложения");
+        String html = """
+                <!doctype html><html lang=\"ru\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Видео-оффер</title></head>
+                <body style=\"font-family:Arial,sans-serif;padding:24px\"><h1>Видео-оффер</h1><p>Это служебная страница установки. Откройте приложение из Bitrix24.</p></body></html>
+                """;
+        return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(html);
     }
 
     @PostMapping(

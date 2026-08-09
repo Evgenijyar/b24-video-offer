@@ -1,0 +1,1454 @@
+﻿Last login: Sun Aug  9 03:18:50 2026 from 216.57.105.22
+root@VM-397286:~# cd /opt/b24-video-offer && docker compose restart app
+[+] restart 0/1
+ ⠹ Container b24-video-offer Restarting                                                        11.2s
+root@VM-397286:/opt/b24-video-offer# docker logs -f --tail=10 b24-video-offer
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.0.5)
+
+2026-08-09T03:19:41.765Z INFO  [main] [requestId=] ru.abs7.videooffer.B24VideoOfferApplication - Sta
+rting B24VideoOfferApplication v0.1.0-SNAPSHOT using Java 21.0.11 with PID 1 (/app/app.jar started b
+y root in /app)
+2026-08-09T03:19:41.776Z INFO  [main] [requestId=] ru.abs7.videooffer.B24VideoOfferApplication - No
+active profile set, falling back to 1 default profile: "default"
+2026-08-09T03:19:48.782Z INFO  [main] [requestId=] o.s.d.r.config.RepositoryConfigurationDelegate -
+Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-08-09T03:19:49.195Z INFO  [main] [requestId=] o.s.d.r.config.RepositoryConfigurationDelegate -
+Finished Spring Data repository scanning in 331 ms. Found 4 JPA repository interfaces.
+2026-08-09T03:19:53.222Z INFO  [main] [requestId=] org.springframework.boot.tomcat.TomcatWebServer -
+ Tomcat initialized with port 8080 (http)
+2026-08-09T03:19:53.311Z INFO  [main] [requestId=] org.apache.catalina.core.StandardService - Starti
+ng service [Tomcat]
+2026-08-09T03:19:53.312Z INFO  [main] [requestId=] org.apache.catalina.core.StandardEngine - Startin
+g Servlet engine: [Apache Tomcat/11.0.20]
+2026-08-09T03:19:53.485Z INFO  [main] [requestId=] o.s.b.w.c.s.WebApplicationContextInitializer - Ro
+ot WebApplicationContext: initialization completed in 11109 ms
+2026-08-09T03:19:57.288Z INFO  [main] [requestId=] com.zaxxer.hikari.HikariDataSource - HikariPool-1
+ - Starting...
+2026-08-09T03:19:59.878Z INFO  [main] [requestId=] com.zaxxer.hikari.pool.HikariPool - HikariPool-1
+- Added connection org.postgresql.jdbc.PgConnection@9f0fc36
+2026-08-09T03:19:59.884Z INFO  [main] [requestId=] com.zaxxer.hikari.HikariDataSource - HikariPool-1
+ - Start completed.
+2026-08-09T03:20:00.188Z INFO  [main] [requestId=] org.flywaydb.core.FlywayExecutor - Database: jdbc
+:postgresql://45.11.92.142:5433/b24_video_offer (PostgreSQL 16.14)
+2026-08-09T03:20:00.904Z INFO  [main] [requestId=] org.flywaydb.core.internal.command.DbValidate - S
+uccessfully validated 3 migrations (execution time 00:00.198s)
+2026-08-09T03:20:01.237Z INFO  [main] [requestId=] org.flywaydb.core.internal.command.DbMigrate - Cu
+rrent version of schema "public": 3
+2026-08-09T03:20:01.282Z INFO  [main] [requestId=] org.flywaydb.core.internal.command.DbMigrate - Sc
+hema "public" is up to date. No migration necessary.
+2026-08-09T03:20:02.184Z INFO  [main] [requestId=] org.hibernate.orm.jpa - HHH008540: Processing Per
+sistenceUnitInfo [name: default]
+2026-08-09T03:20:02.584Z INFO  [main] [requestId=] org.hibernate.orm.core - HHH000001: Hibernate ORM
+ core version 7.2.7.Final
+2026-08-09T03:20:05.829Z INFO  [main] [requestId=] o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTime
+Weaver setup: ignoring JPA class transformer
+2026-08-09T03:20:06.661Z INFO  [main] [requestId=] org.hibernate.orm.connections.pooling - HHH100010
+05: Database info:
+        Database JDBC URL [jdbc:postgresql://45.11.92.142:5433/b24_video_offer]
+        Database driver: PostgreSQL JDBC Driver
+        Database dialect: PostgreSQLDialect
+        Database version: 16.14
+        Default catalog/schema: b24_video_offer/public
+        Autocommit mode: undefined/unknown
+        Isolation level: READ_COMMITTED [default READ_COMMITTED]
+        JDBC fetch size: none
+        Pool: DataSourceConnectionProvider
+        Minimum pool size: undefined/unknown
+        Maximum pool size: undefined/unknown
+2026-08-09T03:20:12.167Z INFO  [main] [requestId=] org.hibernate.orm.core - HHH000489: No JTA platfo
+rm available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-08-09T03:20:12.437Z INFO  [main] [requestId=] o.s.o.jpa.LocalContainerEntityManagerFactoryBean
+- Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-08-09T03:20:12.916Z INFO  [main] [requestId=] o.s.d.j.repository.query.QueryEnhancerFactories -
+ Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-08-09T03:20:16.989Z INFO  [main] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader -
+ Kontur HTTP transport configured: mode=DIRECT, connectTimeoutSeconds=15, readTimeoutSeconds=120
+2026-08-09T03:20:17.154Z INFO  [main] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader -
+ Kontur downloader initialized: baseUrl=https://rko7.ktalk.ru/, storageDir=./data/videos, connectTim
+eoutSeconds=15, readTimeoutSeconds=120, stallWarningSeconds=30, maxParallelParts=8, parallelThreshol
+dBytes=33554432, proxyEnabled=false, proxyHost=direct, proxyPort=null, proxyAuthenticationConfigured
+=true
+2026-08-09T03:20:17.303Z INFO  [main] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitr
+ix HTTP transport configured: mode=DIRECT, proxySource=NONE, proxyHost=direct, proxyPort=null, proxy
+AuthenticationConfigured=false, connectTimeoutSeconds=15, readTimeoutSeconds=45, proactiveRefreshAhe
+adSeconds=120
+2026-08-09T03:20:17.575Z INFO  [main] [requestId=] ru.abs7.videooffer.offer.VideoOfferService - Vide
+oOfferService initialized: publicBaseUrl=https://offer.abs7.ru, retentionDays=7
+2026-08-09T03:20:18.409Z INFO  [main] [requestId=] o.s.b.w.autoconfigure.WelcomePageHandlerMapping -
+ Adding welcome page: class path resource [static/index.html]
+2026-08-09T03:20:20.684Z INFO  [main] [requestId=] org.springframework.boot.tomcat.TomcatWebServer -
+ Tomcat started on port 8080 (http) with context path '/'
+2026-08-09T03:20:20.778Z INFO  [main] [requestId=] ru.abs7.videooffer.B24VideoOfferApplication - Sta
+rted B24VideoOfferApplication in 43.075 seconds (process running for 47.043)
+2026-08-09T03:20:20.803Z INFO  [main] [requestId=] r.a.videooffer.offer.VideoOfferLifecycleService -
+ Checking interrupted video offers after application startup
+2026-08-09T03:20:21.815Z INFO  [main] [requestId=] ru.abs7.videooffer.offer.VideoOfferService - Pend
+ing video offers selected for recovery: count=0
+2026-08-09T03:20:21.885Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Starting Bitrix placement rebind and diagnostics after application startup: count=1
+2026-08-09T03:20:21.885Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Removing obsolete diagnostic Bitrix placement: memberId=419222a0c1725a38175958981810edd7,
+placement=CRM_DEAL_DETAIL_TOOLBAR
+2026-08-09T03:20:21.886Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call started: memberId=419222a0c1725a38175958981810edd7, method=placement.unbind, p
+arameterNames=[PLACEMENT]
+2026-08-09T03:20:21.936Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix access token is expired or near expiry; refreshing before REST call: memberId=419222a0c1
+725a38175958981810edd7, method=placement.unbind, tokenExpiresAt=2026-08-08T23:27:50.353856Z
+2026-08-09T03:20:21.979Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Refreshing Bitrix OAuth tokens: memberId=419222a0c1725a38175958981810edd7, force=false, current
+ExpiresAt=2026-08-08T23:27:50.353856Z
+2026-08-09T03:20:23.520Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - OAuth-токены Bitrix24 обновлены: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix2
+4.ru, expiresAt=2026-08-09T04:20:22Z, durationMs=1567
+2026-08-09T03:20:23.524Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Executing Bitrix REST request: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.
+ru, method=placement.unbind, endpoint=https://abs7.bitrix24.ru/rest/placement.unbind.json, tokenExpi
+resAt=2026-08-09T04:20:22Z
+2026-08-09T03:20:23.929Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST response received: memberId=419222a0c1725a38175958981810edd7, method=placement.unbi
+nd, durationMs=407, responseKeys=[result, time]
+2026-08-09T03:20:23.930Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call completed: memberId=419222a0c1725a38175958981810edd7, method=placement.unbind,
+ durationMs=2044, responseKeys=[result, time]
+2026-08-09T03:20:23.930Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Obsolete diagnostic Bitrix placement removed: memberId=419222a0c1725a38175958981810edd7, p
+lacement=CRM_DEAL_DETAIL_TOOLBAR, responseKeys=[result, time]
+2026-08-09T03:20:23.931Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Removing obsolete diagnostic Bitrix placement: memberId=419222a0c1725a38175958981810edd7,
+placement=CRM_LEAD_DETAIL_TOOLBAR
+2026-08-09T03:20:23.931Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call started: memberId=419222a0c1725a38175958981810edd7, method=placement.unbind, p
+arameterNames=[PLACEMENT]
+2026-08-09T03:20:23.956Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Executing Bitrix REST request: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.
+ru, method=placement.unbind, endpoint=https://abs7.bitrix24.ru/rest/placement.unbind.json, tokenExpi
+resAt=2026-08-09T04:20:22Z
+2026-08-09T03:20:24.029Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST response received: memberId=419222a0c1725a38175958981810edd7, method=placement.unbi
+nd, durationMs=72, responseKeys=[result, time]
+2026-08-09T03:20:24.029Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call completed: memberId=419222a0c1725a38175958981810edd7, method=placement.unbind,
+ durationMs=97, responseKeys=[result, time]
+2026-08-09T03:20:24.034Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Obsolete diagnostic Bitrix placement removed: memberId=419222a0c1725a38175958981810edd7, p
+lacement=CRM_LEAD_DETAIL_TOOLBAR, responseKeys=[result, time]
+2026-08-09T03:20:24.035Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Removing obsolete diagnostic Bitrix placement: memberId=419222a0c1725a38175958981810edd7,
+placement=CRM_CONTACT_DETAIL_TOOLBAR
+2026-08-09T03:20:24.035Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call started: memberId=419222a0c1725a38175958981810edd7, method=placement.unbind, p
+arameterNames=[PLACEMENT]
+2026-08-09T03:20:24.060Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Executing Bitrix REST request: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.
+ru, method=placement.unbind, endpoint=https://abs7.bitrix24.ru/rest/placement.unbind.json, tokenExpi
+resAt=2026-08-09T04:20:22Z
+2026-08-09T03:20:24.125Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST response received: memberId=419222a0c1725a38175958981810edd7, method=placement.unbi
+nd, durationMs=64, responseKeys=[result, time]
+2026-08-09T03:20:24.126Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call completed: memberId=419222a0c1725a38175958981810edd7, method=placement.unbind,
+ durationMs=90, responseKeys=[result, time]
+2026-08-09T03:20:24.126Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Obsolete diagnostic Bitrix placement removed: memberId=419222a0c1725a38175958981810edd7, p
+lacement=CRM_CONTACT_DETAIL_TOOLBAR, responseKeys=[result, time]
+2026-08-09T03:20:24.126Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Removing obsolete diagnostic Bitrix placement: memberId=419222a0c1725a38175958981810edd7,
+placement=CRM_DEAL_DETAIL_TAB
+2026-08-09T03:20:24.126Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call started: memberId=419222a0c1725a38175958981810edd7, method=placement.unbind, p
+arameterNames=[PLACEMENT]
+2026-08-09T03:20:24.149Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Executing Bitrix REST request: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.
+ru, method=placement.unbind, endpoint=https://abs7.bitrix24.ru/rest/placement.unbind.json, tokenExpi
+resAt=2026-08-09T04:20:22Z
+2026-08-09T03:20:24.216Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST response received: memberId=419222a0c1725a38175958981810edd7, method=placement.unbi
+nd, durationMs=66, responseKeys=[result, time]
+2026-08-09T03:20:24.217Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call completed: memberId=419222a0c1725a38175958981810edd7, method=placement.unbind,
+ durationMs=90, responseKeys=[result, time]
+2026-08-09T03:20:24.217Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Obsolete diagnostic Bitrix placement removed: memberId=419222a0c1725a38175958981810edd7, p
+lacement=CRM_DEAL_DETAIL_TAB, responseKeys=[result, time]
+2026-08-09T03:20:24.218Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Removing obsolete diagnostic Bitrix placement: memberId=419222a0c1725a38175958981810edd7,
+placement=CRM_LEAD_DETAIL_TAB
+2026-08-09T03:20:24.218Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call started: memberId=419222a0c1725a38175958981810edd7, method=placement.unbind, p
+arameterNames=[PLACEMENT]
+2026-08-09T03:20:24.249Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Executing Bitrix REST request: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.
+ru, method=placement.unbind, endpoint=https://abs7.bitrix24.ru/rest/placement.unbind.json, tokenExpi
+resAt=2026-08-09T04:20:22Z
+2026-08-09T03:20:24.341Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST response received: memberId=419222a0c1725a38175958981810edd7, method=placement.unbi
+nd, durationMs=92, responseKeys=[result, time]
+2026-08-09T03:20:24.342Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call completed: memberId=419222a0c1725a38175958981810edd7, method=placement.unbind,
+ durationMs=124, responseKeys=[result, time]
+2026-08-09T03:20:24.343Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Obsolete diagnostic Bitrix placement removed: memberId=419222a0c1725a38175958981810edd7, p
+lacement=CRM_LEAD_DETAIL_TAB, responseKeys=[result, time]
+2026-08-09T03:20:24.344Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Removing obsolete diagnostic Bitrix placement: memberId=419222a0c1725a38175958981810edd7,
+placement=CRM_CONTACT_DETAIL_TAB
+2026-08-09T03:20:24.344Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call started: memberId=419222a0c1725a38175958981810edd7, method=placement.unbind, p
+arameterNames=[PLACEMENT]
+2026-08-09T03:20:24.369Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Executing Bitrix REST request: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.
+ru, method=placement.unbind, endpoint=https://abs7.bitrix24.ru/rest/placement.unbind.json, tokenExpi
+resAt=2026-08-09T04:20:22Z
+2026-08-09T03:20:24.441Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST response received: memberId=419222a0c1725a38175958981810edd7, method=placement.unbi
+nd, durationMs=72, responseKeys=[result, time]
+2026-08-09T03:20:24.444Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call completed: memberId=419222a0c1725a38175958981810edd7, method=placement.unbind,
+ durationMs=99, responseKeys=[result, time]
+2026-08-09T03:20:24.444Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Obsolete diagnostic Bitrix placement removed: memberId=419222a0c1725a38175958981810edd7, p
+lacement=CRM_CONTACT_DETAIL_TAB, responseKeys=[result, time]
+2026-08-09T03:20:24.445Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Binding Bitrix placement: memberId=419222a0c1725a38175958981810edd7, placement=CRM_DEAL_DE
+TAIL_ACTIVITY, handler=https://offer.abs7.ru/bitrix/widget
+2026-08-09T03:20:24.446Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call started: memberId=419222a0c1725a38175958981810edd7, method=placement.bind, par
+ameterNames=[PLACEMENT, HANDLER, TITLE, LANG_ALL]
+2026-08-09T03:20:24.469Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Executing Bitrix REST request: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.
+ru, method=placement.bind, endpoint=https://abs7.bitrix24.ru/rest/placement.bind.json, tokenExpiresA
+t=2026-08-09T04:20:22Z
+2026-08-09T03:20:24.634Z ERROR [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix HTTP error response: memberId=419222a0c1725a38175958981810edd7, method=placement.bind, e
+ndpoint=https://abs7.bitrix24.ru/rest/placement.bind.json, status=400 BAD_REQUEST, durationMs=164, r
+esponseBody={"error":"ERROR_CORE","error_description":"Unable to set placement handler: Handler alre
+ady binded"}
+
+org.springframework.web.client.HttpClientErrorException$BadRequest: 400 Bad Request: "{"error":"ERRO
+R_CORE","error_description":"Unable to set placement handler: Handler already binded"}"
+        at org.springframework.web.client.HttpClientErrorException.create(HttpClientErrorException.j
+ava:106) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.createException(StatusHandler.java:132) ~[sp
+ring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.lambda$createDefaultStatusHandler$1(StatusHa
+ndler.java:107) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.handle(StatusHandler.java:75) ~[spring-web-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.applyStatusHandlers(
+DefaultRestClient.java:940) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$readBody$0(De
+faultRestClient.java:929) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient.readWithMessageConverters(DefaultRestCli
+ent.java:224) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.readBody(DefaultRest
+Client.java:928) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$body$1(Defaul
+tRestClient.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeIntern
+al(DefaultRestClient.java:617) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(Defau
+ltRestClient.java:572) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747
+) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(De
+faultRestClient.java:921) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClie
+nt.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:234) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:180) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:114) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.rebindPlacementsAfterStartup(BitrixIn
+stallationService.java:215) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMe
+thodInvocation.java:190) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvo
+cation.java:158) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecut
+ionInterceptor.java:112) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.FutureTask.run(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-09T03:20:24.648Z ERROR [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call failed: memberId=419222a0c1725a38175958981810edd7, method=placement.bind, erro
+rCode=HTTP_400, durationMs=202, error={"error":"ERROR_CORE","error_description":"Unable to set place
+ment handler: Handler already binded"}
+
+ru.abs7.videooffer.bitrix.BitrixRestException: {"error":"ERROR_CORE","error_description":"Unable to
+set placement handler: Handler already binded"}
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:248) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:180) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:114) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.rebindPlacementsAfterStartup(BitrixIn
+stallationService.java:215) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMe
+thodInvocation.java:190) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvo
+cation.java:158) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecut
+ionInterceptor.java:112) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.FutureTask.run(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-09T03:20:24.653Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Bitrix placement already bound: memberId=419222a0c1725a38175958981810edd7, placement=CRM_D
+EAL_DETAIL_ACTIVITY
+2026-08-09T03:20:24.653Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Binding Bitrix placement: memberId=419222a0c1725a38175958981810edd7, placement=CRM_LEAD_DE
+TAIL_ACTIVITY, handler=https://offer.abs7.ru/bitrix/widget
+2026-08-09T03:20:24.654Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call started: memberId=419222a0c1725a38175958981810edd7, method=placement.bind, par
+ameterNames=[PLACEMENT, HANDLER, TITLE, LANG_ALL]
+2026-08-09T03:20:24.678Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Executing Bitrix REST request: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.
+ru, method=placement.bind, endpoint=https://abs7.bitrix24.ru/rest/placement.bind.json, tokenExpiresA
+t=2026-08-09T04:20:22Z
+2026-08-09T03:20:24.755Z ERROR [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix HTTP error response: memberId=419222a0c1725a38175958981810edd7, method=placement.bind, e
+ndpoint=https://abs7.bitrix24.ru/rest/placement.bind.json, status=400 BAD_REQUEST, durationMs=77, re
+sponseBody={"error":"ERROR_CORE","error_description":"Unable to set placement handler: Handler alrea
+dy binded"}
+
+org.springframework.web.client.HttpClientErrorException$BadRequest: 400 Bad Request: "{"error":"ERRO
+R_CORE","error_description":"Unable to set placement handler: Handler already binded"}"
+        at org.springframework.web.client.HttpClientErrorException.create(HttpClientErrorException.j
+ava:106) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.createException(StatusHandler.java:132) ~[sp
+ring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.lambda$createDefaultStatusHandler$1(StatusHa
+ndler.java:107) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.handle(StatusHandler.java:75) ~[spring-web-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.applyStatusHandlers(
+DefaultRestClient.java:940) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$readBody$0(De
+faultRestClient.java:929) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient.readWithMessageConverters(DefaultRestCli
+ent.java:224) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.readBody(DefaultRest
+Client.java:928) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$body$1(Defaul
+tRestClient.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeIntern
+al(DefaultRestClient.java:617) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(Defau
+ltRestClient.java:572) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747
+) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(De
+faultRestClient.java:921) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClie
+nt.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:234) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:180) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:114) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.rebindPlacementsAfterStartup(BitrixIn
+stallationService.java:215) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMe
+thodInvocation.java:190) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvo
+cation.java:158) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecut
+ionInterceptor.java:112) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.FutureTask.run(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-09T03:20:24.759Z ERROR [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call failed: memberId=419222a0c1725a38175958981810edd7, method=placement.bind, erro
+rCode=HTTP_400, durationMs=105, error={"error":"ERROR_CORE","error_description":"Unable to set place
+ment handler: Handler already binded"}
+
+ru.abs7.videooffer.bitrix.BitrixRestException: {"error":"ERROR_CORE","error_description":"Unable to
+set placement handler: Handler already binded"}
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:248) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:180) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:114) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.rebindPlacementsAfterStartup(BitrixIn
+stallationService.java:215) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMe
+thodInvocation.java:190) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvo
+cation.java:158) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecut
+ionInterceptor.java:112) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.FutureTask.run(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-09T03:20:24.764Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Bitrix placement already bound: memberId=419222a0c1725a38175958981810edd7, placement=CRM_L
+EAD_DETAIL_ACTIVITY
+2026-08-09T03:20:24.765Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Binding Bitrix placement: memberId=419222a0c1725a38175958981810edd7, placement=CRM_CONTACT
+_DETAIL_ACTIVITY, handler=https://offer.abs7.ru/bitrix/widget
+2026-08-09T03:20:24.765Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call started: memberId=419222a0c1725a38175958981810edd7, method=placement.bind, par
+ameterNames=[PLACEMENT, HANDLER, TITLE, LANG_ALL]
+2026-08-09T03:20:24.794Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Executing Bitrix REST request: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.
+ru, method=placement.bind, endpoint=https://abs7.bitrix24.ru/rest/placement.bind.json, tokenExpiresA
+t=2026-08-09T04:20:22Z
+2026-08-09T03:20:24.882Z ERROR [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix HTTP error response: memberId=419222a0c1725a38175958981810edd7, method=placement.bind, e
+ndpoint=https://abs7.bitrix24.ru/rest/placement.bind.json, status=400 BAD_REQUEST, durationMs=88, re
+sponseBody={"error":"ERROR_CORE","error_description":"Unable to set placement handler: Handler alrea
+dy binded"}
+
+org.springframework.web.client.HttpClientErrorException$BadRequest: 400 Bad Request: "{"error":"ERRO
+R_CORE","error_description":"Unable to set placement handler: Handler already binded"}"
+        at org.springframework.web.client.HttpClientErrorException.create(HttpClientErrorException.j
+ava:106) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.createException(StatusHandler.java:132) ~[sp
+ring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.lambda$createDefaultStatusHandler$1(StatusHa
+ndler.java:107) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.handle(StatusHandler.java:75) ~[spring-web-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.applyStatusHandlers(
+DefaultRestClient.java:940) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$readBody$0(De
+faultRestClient.java:929) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient.readWithMessageConverters(DefaultRestCli
+ent.java:224) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.readBody(DefaultRest
+Client.java:928) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$body$1(Defaul
+tRestClient.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeIntern
+al(DefaultRestClient.java:617) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(Defau
+ltRestClient.java:572) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747
+) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(De
+faultRestClient.java:921) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClie
+nt.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:234) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:180) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:114) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.rebindPlacementsAfterStartup(BitrixIn
+stallationService.java:215) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMe
+thodInvocation.java:190) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvo
+cation.java:158) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecut
+ionInterceptor.java:112) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.FutureTask.run(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-09T03:20:24.884Z ERROR [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call failed: memberId=419222a0c1725a38175958981810edd7, method=placement.bind, erro
+rCode=HTTP_400, durationMs=118, error={"error":"ERROR_CORE","error_description":"Unable to set place
+ment handler: Handler already binded"}
+
+ru.abs7.videooffer.bitrix.BitrixRestException: {"error":"ERROR_CORE","error_description":"Unable to
+set placement handler: Handler already binded"}
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:248) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:180) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:114) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.rebindPlacementsAfterStartup(BitrixIn
+stallationService.java:215) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMe
+thodInvocation.java:190) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvo
+cation.java:158) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecut
+ionInterceptor.java:112) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.FutureTask.run(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-09T03:20:24.885Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Bitrix placement already bound: memberId=419222a0c1725a38175958981810edd7, placement=CRM_C
+ONTACT_DETAIL_ACTIVITY
+2026-08-09T03:20:24.911Z INFO  [video-offer-1] [requestId=] r.a.v.bitrix.BitrixPlacementDiagnosticsS
+ervice - Starting Bitrix placement diagnostics: memberId=419222a0c1725a38175958981810edd7, domain=ab
+s7.bitrix24.ru
+2026-08-09T03:20:24.912Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call started: memberId=419222a0c1725a38175958981810edd7, method=placement.list, par
+ameterNames=[SCOPE]
+2026-08-09T03:20:24.940Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Executing Bitrix REST request: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.
+ru, method=placement.list, endpoint=https://abs7.bitrix24.ru/rest/placement.list.json, tokenExpiresA
+t=2026-08-09T04:20:22Z
+2026-08-09T03:20:25.028Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST response received: memberId=419222a0c1725a38175958981810edd7, method=placement.list
+, durationMs=88, responseKeys=[result, time]
+2026-08-09T03:20:25.034Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call completed: memberId=419222a0c1725a38175958981810edd7, method=placement.list, d
+urationMs=121, responseKeys=[result, time]
+2026-08-09T03:20:25.035Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call started: memberId=419222a0c1725a38175958981810edd7, method=placement.list, par
+ameterNames=[SCOPE]
+2026-08-09T03:20:25.061Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Executing Bitrix REST request: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.
+ru, method=placement.list, endpoint=https://abs7.bitrix24.ru/rest/placement.list.json, tokenExpiresA
+t=2026-08-09T04:20:22Z
+2026-08-09T03:20:25.126Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST response received: memberId=419222a0c1725a38175958981810edd7, method=placement.list
+, durationMs=64, responseKeys=[result, time]
+2026-08-09T03:20:25.126Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call completed: memberId=419222a0c1725a38175958981810edd7, method=placement.list, d
+urationMs=91, responseKeys=[result, time]
+2026-08-09T03:20:25.127Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call started: memberId=419222a0c1725a38175958981810edd7, method=placement.list, par
+ameterNames=[FULL]
+2026-08-09T03:20:25.151Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Executing Bitrix REST request: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.
+ru, method=placement.list, endpoint=https://abs7.bitrix24.ru/rest/placement.list.json, tokenExpiresA
+t=2026-08-09T04:20:22Z
+2026-08-09T03:20:25.220Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST response received: memberId=419222a0c1725a38175958981810edd7, method=placement.list
+, durationMs=68, responseKeys=[result, time]
+2026-08-09T03:20:25.220Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call completed: memberId=419222a0c1725a38175958981810edd7, method=placement.list, d
+urationMs=93, responseKeys=[result, time]
+2026-08-09T03:20:25.220Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call started: memberId=419222a0c1725a38175958981810edd7, method=placement.get, para
+meterNames=[]
+2026-08-09T03:20:25.247Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Executing Bitrix REST request: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.
+ru, method=placement.get, endpoint=https://abs7.bitrix24.ru/rest/placement.get.json, tokenExpiresAt=
+2026-08-09T04:20:22Z
+2026-08-09T03:20:25.324Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST response received: memberId=419222a0c1725a38175958981810edd7, method=placement.get,
+ durationMs=77, responseKeys=[result, time]
+2026-08-09T03:20:25.324Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call completed: memberId=419222a0c1725a38175958981810edd7, method=placement.get, du
+rationMs=103, responseKeys=[result, time]
+2026-08-09T03:20:25.325Z INFO  [video-offer-1] [requestId=] r.a.v.bitrix.BitrixPlacementDiagnosticsS
+ervice - Bitrix placement diagnostics completed: memberId=419222a0c1725a38175958981810edd7, diagnost
+ics=PlacementDiagnostics[generatedAt=2026-08-09T03:20:25.325075035Z, domain=abs7.bitrix24.ru, member
+Id=419222a0c1725a38175958981810edd7, desiredPlacements=[CRM_DEAL_DETAIL_ACTIVITY, CRM_LEAD_DETAIL_AC
+TIVITY, CRM_CONTACT_DETAIL_ACTIVITY], calls={availableCrmPlacements=DiagnosticCall[success=true, res
+ponse={result=[CRM_DEAL_LIST_TOOLBAR, CRM_LEAD_LIST_TOOLBAR, CRM_CONTACT_LIST_TOOLBAR, CRM_COMPANY_L
+IST_TOOLBAR, CRM_INVOICE_LIST_TOOLBAR, CRM_QUOTE_LIST_TOOLBAR, CRM_ORDER_LIST_TOOLBAR, CRM_DYNAMIC_1
+042_LIST_TOOLBAR, CRM_DYNAMIC_1046_LIST_TOOLBAR, CRM_DYNAMIC_1054_LIST_TOOLBAR, CRM_DYNAMIC_1058_LIS
+T_TOOLBAR, CRM_DYNAMIC_1062_LIST_TOOLBAR, CRM_DYNAMIC_1070_LIST_TOOLBAR, CRM_DYNAMIC_1074_LIST_TOOLB
+AR, CRM_DYNAMIC_1078_LIST_TOOLBAR, CRM_DYNAMIC_1082_LIST_TOOLBAR, CRM_DYNAMIC_1086_LIST_TOOLBAR, CRM
+_DYNAMIC_1090_LIST_TOOLBAR, CRM_DYNAMIC_1094_LIST_TOOLBAR, CRM_DYNAMIC_1098_LIST_TOOLBAR, CRM_DYNAMI
+C_1102_LIST_TOOLBAR, CRM_DYNAMIC_1106_LIST_TOOLBAR, CRM_DYNAMIC_1112_LIST_TOOLBAR, CRM_DYNAMIC_1116_
+LIST_TOOLBAR, CRM_DYNAMIC_1120_LIST_TOOLBAR, CRM_SMART_INVOICE_LIST_TOOLBAR, CRM_DEAL_DETAIL_TOOLBAR
+, CRM_LEAD_DETAIL_TOOLBAR, CRM_CONTACT_DETAIL_TOOLBAR, CRM_COMPANY_DETAIL_TOOLBAR, CRM_INVOICE_DETAI
+L_TOOLBAR, CRM_QUOTE_DETAIL_TOOLBAR, CRM_DYNAMIC_1042_DETAIL_TOOLBAR, CRM_DYNAMIC_1046_DETAIL_TOOLBA
+R, CRM_DYNAMIC_1054_DETAIL_TOOLBAR, CRM_DYNAMIC_1058_DETAIL_TOOLBAR, CRM_DYNAMIC_1062_DETAIL_TOOLBAR
+, CRM_DYNAMIC_1070_DETAIL_TOOLBAR, CRM_DYNAMIC_1074_DETAIL_TOOLBAR, CRM_DYNAMIC_1078_DETAIL_TOOLBAR,
+ CRM_DYNAMIC_1082_DETAIL_TOOLBAR, CRM_DYNAMIC_1086_DETAIL_TOOLBAR, CRM_DYNAMIC_1090_DETAIL_TOOLBAR,
+CRM_DYNAMIC_1094_DETAIL_TOOLBAR, CRM_DYNAMIC_1098_DETAIL_TOOLBAR, CRM_DYNAMIC_1102_DETAIL_TOOLBAR, C
+RM_DYNAMIC_1106_DETAIL_TOOLBAR, CRM_DYNAMIC_1112_DETAIL_TOOLBAR, CRM_DYNAMIC_1116_DETAIL_TOOLBAR, CR
+M_DYNAMIC_1120_DETAIL_TOOLBAR, CRM_SMART_INVOICE_DETAIL_TOOLBAR, CRM_DEAL_ACTIVITY_TIMELINE_MENU, CR
+M_LEAD_ACTIVITY_TIMELINE_MENU, CRM_QUOTE_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1042_ACTIVITY_TIMELINE_
+MENU, CRM_DYNAMIC_1046_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1054_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_
+1058_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1062_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1070_ACTIVITY_TIME
+LINE_MENU, CRM_DYNAMIC_1074_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1078_ACTIVITY_TIMELINE_MENU, CRM_DYN
+AMIC_1082_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1086_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1090_ACTIVITY
+_TIMELINE_MENU, CRM_DYNAMIC_1094_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1098_ACTIVITY_TIMELINE_MENU, CR
+M_DYNAMIC_1102_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1106_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1112_ACT
+IVITY_TIMELINE_MENU, CRM_DYNAMIC_1116_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1120_ACTIVITY_TIMELINE_MEN
+U, CRM_SMART_INVOICE_ACTIVITY_TIMELINE_MENU, CRM_DEAL_DOCUMENTGENERATOR_BUTTON, CRM_LEAD_DOCUMENTGEN
+ERATOR_BUTTON, CRM_CONTACT_DOCUMENTGENERATOR_BUTTON, CRM_COMPANY_DOCUMENTGENERATOR_BUTTON, CRM_INVOI
+CE_DOCUMENTGENERATOR_BUTTON, CRM_QUOTE_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1042_DOCUMENTGENERATOR_
+BUTTON, CRM_DYNAMIC_1046_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1054_DOCUMENTGENERATOR_BUTTON, CRM_DY
+NAMIC_1058_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1062_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1070_DOC
+UMENTGENERATOR_BUTTON, CRM_DYNAMIC_1074_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1078_DOCUMENTGENERATOR
+_BUTTON, CRM_DYNAMIC_1082_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1086_DOCUMENTGENERATOR_BUTTON, CRM_D
+YNAMIC_1090_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1094_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1098_DO
+CUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1102_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1106_DOCUMENTGENERATO
+R_BUTTON, CRM_DYNAMIC_1112_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1116_DOCUMENTGENERATOR_BUTTON, CRM_
+DYNAMIC_1120_DOCUMENTGENERATOR_BUTTON, CRM_SMART_INVOICE_DOCUMENTGENERATOR_BUTTON, CRM_ANALYTICS_TOO
+LBAR, CRM_FUNNELS_TOOLBAR, CRM_DYNAMIC_1042_FUNNELS_TOOLBAR, CRM_DYNAMIC_1046_FUNNELS_TOOLBAR, CRM_D
+YNAMIC_1054_FUNNELS_TOOLBAR, CRM_DYNAMIC_1058_FUNNELS_TOOLBAR, CRM_DYNAMIC_1062_FUNNELS_TOOLBAR, CRM
+_DYNAMIC_1070_FUNNELS_TOOLBAR, CRM_DYNAMIC_1074_FUNNELS_TOOLBAR, CRM_DYNAMIC_1078_FUNNELS_TOOLBAR, C
+RM_DYNAMIC_1082_FUNNELS_TOOLBAR, CRM_DYNAMIC_1086_FUNNELS_TOOLBAR, CRM_DYNAMIC_1090_FUNNELS_TOOLBAR,
+ CRM_DYNAMIC_1094_FUNNELS_TOOLBAR, CRM_DYNAMIC_1098_FUNNELS_TOOLBAR, CRM_DYNAMIC_1102_FUNNELS_TOOLBA
+R, CRM_DYNAMIC_1106_FUNNELS_TOOLBAR, CRM_DYNAMIC_1112_FUNNELS_TOOLBAR, CRM_DYNAMIC_1116_FUNNELS_TOOL
+BAR, CRM_DYNAMIC_1120_FUNNELS_TOOLBAR, CRM_SMART_INVOICE_FUNNELS_TOOLBAR, CRM_LEAD_ROBOT_DESIGNER_TO
+OLBAR, CRM_DEAL_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1042_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1046_RO
+BOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1054_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1058_ROBOT_DESIGNER_TOOLB
+AR, CRM_DYNAMIC_1062_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1070_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_10
+74_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1078_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1082_ROBOT_DESIGNER_
+TOOLBAR, CRM_DYNAMIC_1086_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1090_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAM
+IC_1094_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1098_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1102_ROBOT_DESI
+GNER_TOOLBAR, CRM_DYNAMIC_1106_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1112_ROBOT_DESIGNER_TOOLBAR, CRM_
+DYNAMIC_1116_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1120_ROBOT_DESIGNER_TOOLBAR, CRM_SMART_INVOICE_ROBO
+T_DESIGNER_TOOLBAR, CRM_DYNAMIC_1042_LIST_MENU, CRM_DYNAMIC_1046_LIST_MENU, CRM_DYNAMIC_1054_LIST_ME
+NU, CRM_DYNAMIC_1058_LIST_MENU, CRM_DYNAMIC_1062_LIST_MENU, CRM_DYNAMIC_1070_LIST_MENU, CRM_DYNAMIC_
+1074_LIST_MENU, CRM_DYNAMIC_1078_LIST_MENU, CRM_DYNAMIC_1082_LIST_MENU, CRM_DYNAMIC_1086_LIST_MENU,
+CRM_DYNAMIC_1090_LIST_MENU, CRM_DYNAMIC_1094_LIST_MENU, CRM_DYNAMIC_1098_LIST_MENU, CRM_DYNAMIC_1102
+_LIST_MENU, CRM_DYNAMIC_1106_LIST_MENU, CRM_DYNAMIC_1112_LIST_MENU, CRM_DYNAMIC_1116_LIST_MENU, CRM_
+DYNAMIC_1120_LIST_MENU, CRM_SMART_INVOICE_LIST_MENU, CRM_LEAD_LIST_MENU, CRM_DEAL_LIST_MENU, CRM_INV
+OICE_LIST_MENU, CRM_QUOTE_LIST_MENU, CRM_CONTACT_LIST_MENU, CRM_COMPANY_LIST_MENU, CRM_ACTIVITY_LIST
+_MENU, CRM_LEAD_DETAIL_TAB, CRM_DEAL_DETAIL_TAB, CRM_QUOTE_DETAIL_TAB, CRM_CONTACT_DETAIL_TAB, CRM_C
+OMPANY_DETAIL_TAB, CRM_ORDER_DETAIL_TAB, CRM_SMART_INVOICE_DETAIL_TAB, CRM_DYNAMIC_1042_DETAIL_TAB,
+CRM_DYNAMIC_1046_DETAIL_TAB, CRM_DYNAMIC_1054_DETAIL_TAB, CRM_DYNAMIC_1058_DETAIL_TAB, CRM_DYNAMIC_1
+062_DETAIL_TAB, CRM_DYNAMIC_1070_DETAIL_TAB, CRM_DYNAMIC_1074_DETAIL_TAB, CRM_DYNAMIC_1078_DETAIL_TA
+B, CRM_DYNAMIC_1082_DETAIL_TAB, CRM_DYNAMIC_1086_DETAIL_TAB, CRM_DYNAMIC_1090_DETAIL_TAB, CRM_DYNAMI
+C_1094_DETAIL_TAB, CRM_DYNAMIC_1098_DETAIL_TAB, CRM_DYNAMIC_1102_DETAIL_TAB, CRM_DYNAMIC_1106_DETAIL
+_TAB, CRM_DYNAMIC_1112_DETAIL_TAB, CRM_DYNAMIC_1116_DETAIL_TAB, CRM_DYNAMIC_1120_DETAIL_TAB, CRM_LEA
+D_DETAIL_ACTIVITY, CRM_DEAL_DETAIL_ACTIVITY, CRM_QUOTE_DETAIL_ACTIVITY, CRM_CONTACT_DETAIL_ACTIVITY,
+ CRM_COMPANY_DETAIL_ACTIVITY, CRM_ORDER_DETAIL_ACTIVITY, CRM_SMART_INVOICE_DETAIL_ACTIVITY, CRM_DYNA
+MIC_1042_DETAIL_ACTIVITY, CRM_DYNAMIC_1046_DETAIL_ACTIVITY, CRM_DYNAMIC_1054_DETAIL_ACTIVITY, CRM_DY
+NAMIC_1058_DETAIL_ACTIVITY, CRM_DYNAMIC_1062_DETAIL_ACTIVITY, CRM_DYNAMIC_1070_DETAIL_ACTIVITY, CRM_
+DYNAMIC_1074_DETAIL_ACTIVITY, CRM_DYNAMIC_1078_DETAIL_ACTIVITY, CRM_DYNAMIC_1082_DETAIL_ACTIVITY, CR
+M_DYNAMIC_1086_DETAIL_ACTIVITY, CRM_DYNAMIC_1090_DETAIL_ACTIVITY, CRM_DYNAMIC_1094_DETAIL_ACTIVITY,
+CRM_DYNAMIC_1098_DETAIL_ACTIVITY, CRM_DYNAMIC_1102_DETAIL_ACTIVITY, CRM_DYNAMIC_1106_DETAIL_ACTIVITY
+, CRM_DYNAMIC_1112_DETAIL_ACTIVITY, CRM_DYNAMIC_1116_DETAIL_ACTIVITY, CRM_DYNAMIC_1120_DETAIL_ACTIVI
+TY, CRM_ANALYTICS_MENU, CRM_REQUISITE_EDIT_FORM, 1C_PAGE, CRM_DETAIL_SEARCH, CRM_REQUISITE_AUTOCOMPL
+ETE, CRM_BANK_DETAIL_AUTOCOMPLETE], time={start=1786245624, finish=1.786245625002224E9, duration=1.0
+022239685058594, processing=0, date_start=2026-08-09T06:20:24+03:00, date_finish=2026-08-09T06:20:25
++03:00, operating_reset_at=1786246225, operating=0}}, errorCode=null, errorMessage=null], availableM
+obilePlacements=DiagnosticCall[success=true, response={result=[], time={start=1786245625, finish=1.7
+8624562511611E9, duration=0.11611008644104004, processing=0, date_start=2026-08-09T06:20:25+03:00, d
+ate_finish=2026-08-09T06:20:25+03:00, operating_reset_at=1786246225, operating=0}}, errorCode=null,
+errorMessage=null], availableAllPlacements=DiagnosticCall[success=true, response={result=[REST_APP_U
+RI, IMMOBILE_CONTEXT_MENU, IM_CONTEXT_MENU, IM_NAVIGATION, IM_TEXTAREA, IM_SIDEBAR, IM_SMILES_SELECT
+OR, PAGE_BACKGROUND_WORKER, LEFT_MENU, HCMLINK_SALARY_VACATION, CATALOG_EXTERNAL_PRODUCT, SETTING_CO
+NNECTOR, CALL_CARD, TELEPHONY_ANALYTICS_MENU, TASK_TOP_MENU, TASK_LIST_CONTEXT_MENU, TASK_VIEW_MODE,
+ TASK_VIEW_TAB, TASK_VIEW_SIDEBAR, TASK_VIEW_TOP_PANEL, TASK_VIEW_MENU_ADD, TASK_ROBOT_DESIGNER_TOOL
+BAR, TASK_USER_LIST_TOOLBAR, TASK_GROUP_LIST_TOOLBAR, SONET_GROUP_DETAIL_TAB, SONET_GROUP_TOOLBAR, S
+ONET_GROUP_ROBOT_DESIGNER_TOOLBAR, USER_PROFILE_MENU, USER_PROFILE_TOOLBAR, CONTACT_CENTER, CRM_DEAL
+_LIST_TOOLBAR, CRM_LEAD_LIST_TOOLBAR, CRM_CONTACT_LIST_TOOLBAR, CRM_COMPANY_LIST_TOOLBAR, CRM_INVOIC
+E_LIST_TOOLBAR, CRM_QUOTE_LIST_TOOLBAR, CRM_ORDER_LIST_TOOLBAR, CRM_DYNAMIC_1042_LIST_TOOLBAR, CRM_D
+YNAMIC_1046_LIST_TOOLBAR, CRM_DYNAMIC_1054_LIST_TOOLBAR, CRM_DYNAMIC_1058_LIST_TOOLBAR, CRM_DYNAMIC_
+1062_LIST_TOOLBAR, CRM_DYNAMIC_1070_LIST_TOOLBAR, CRM_DYNAMIC_1074_LIST_TOOLBAR, CRM_DYNAMIC_1078_LI
+ST_TOOLBAR, CRM_DYNAMIC_1082_LIST_TOOLBAR, CRM_DYNAMIC_1086_LIST_TOOLBAR, CRM_DYNAMIC_1090_LIST_TOOL
+BAR, CRM_DYNAMIC_1094_LIST_TOOLBAR, CRM_DYNAMIC_1098_LIST_TOOLBAR, CRM_DYNAMIC_1102_LIST_TOOLBAR, CR
+M_DYNAMIC_1106_LIST_TOOLBAR, CRM_DYNAMIC_1112_LIST_TOOLBAR, CRM_DYNAMIC_1116_LIST_TOOLBAR, CRM_DYNAM
+IC_1120_LIST_TOOLBAR, CRM_SMART_INVOICE_LIST_TOOLBAR, CRM_DEAL_DETAIL_TOOLBAR, CRM_LEAD_DETAIL_TOOLB
+AR, CRM_CONTACT_DETAIL_TOOLBAR, CRM_COMPANY_DETAIL_TOOLBAR, CRM_INVOICE_DETAIL_TOOLBAR, CRM_QUOTE_DE
+TAIL_TOOLBAR, CRM_DYNAMIC_1042_DETAIL_TOOLBAR, CRM_DYNAMIC_1046_DETAIL_TOOLBAR, CRM_DYNAMIC_1054_DET
+AIL_TOOLBAR, CRM_DYNAMIC_1058_DETAIL_TOOLBAR, CRM_DYNAMIC_1062_DETAIL_TOOLBAR, CRM_DYNAMIC_1070_DETA
+IL_TOOLBAR, CRM_DYNAMIC_1074_DETAIL_TOOLBAR, CRM_DYNAMIC_1078_DETAIL_TOOLBAR, CRM_DYNAMIC_1082_DETAI
+L_TOOLBAR, CRM_DYNAMIC_1086_DETAIL_TOOLBAR, CRM_DYNAMIC_1090_DETAIL_TOOLBAR, CRM_DYNAMIC_1094_DETAIL
+_TOOLBAR, CRM_DYNAMIC_1098_DETAIL_TOOLBAR, CRM_DYNAMIC_1102_DETAIL_TOOLBAR, CRM_DYNAMIC_1106_DETAIL_
+TOOLBAR, CRM_DYNAMIC_1112_DETAIL_TOOLBAR, CRM_DYNAMIC_1116_DETAIL_TOOLBAR, CRM_DYNAMIC_1120_DETAIL_T
+OOLBAR, CRM_SMART_INVOICE_DETAIL_TOOLBAR, CRM_DEAL_ACTIVITY_TIMELINE_MENU, CRM_LEAD_ACTIVITY_TIMELIN
+E_MENU, CRM_QUOTE_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1042_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1046_
+ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1054_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1058_ACTIVITY_TIMELINE_
+MENU, CRM_DYNAMIC_1062_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1070_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_
+1074_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1078_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1082_ACTIVITY_TIME
+LINE_MENU, CRM_DYNAMIC_1086_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1090_ACTIVITY_TIMELINE_MENU, CRM_DYN
+AMIC_1094_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1098_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1102_ACTIVITY
+_TIMELINE_MENU, CRM_DYNAMIC_1106_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1112_ACTIVITY_TIMELINE_MENU, CR
+M_DYNAMIC_1116_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1120_ACTIVITY_TIMELINE_MENU, CRM_SMART_INVOICE_AC
+TIVITY_TIMELINE_MENU, CRM_DEAL_DOCUMENTGENERATOR_BUTTON, CRM_LEAD_DOCUMENTGENERATOR_BUTTON, CRM_CONT
+ACT_DOCUMENTGENERATOR_BUTTON, CRM_COMPANY_DOCUMENTGENERATOR_BUTTON, CRM_INVOICE_DOCUMENTGENERATOR_BU
+TTON, CRM_QUOTE_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1042_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_104
+6_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1054_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1058_DOCUMENTGENE
+RATOR_BUTTON, CRM_DYNAMIC_1062_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1070_DOCUMENTGENERATOR_BUTTON,
+CRM_DYNAMIC_1074_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1078_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_10
+82_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1086_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1090_DOCUMENTGEN
+ERATOR_BUTTON, CRM_DYNAMIC_1094_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1098_DOCUMENTGENERATOR_BUTTON,
+ CRM_DYNAMIC_1102_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1106_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1
+112_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1116_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1120_DOCUMENTGE
+NERATOR_BUTTON, CRM_SMART_INVOICE_DOCUMENTGENERATOR_BUTTON, CRM_ANALYTICS_TOOLBAR, CRM_FUNNELS_TOOLB
+AR, CRM_DYNAMIC_1042_FUNNELS_TOOLBAR, CRM_DYNAMIC_1046_FUNNELS_TOOLBAR, CRM_DYNAMIC_1054_FUNNELS_TOO
+LBAR, CRM_DYNAMIC_1058_FUNNELS_TOOLBAR, CRM_DYNAMIC_1062_FUNNELS_TOOLBAR, CRM_DYNAMIC_1070_FUNNELS_T
+OOLBAR, CRM_DYNAMIC_1074_FUNNELS_TOOLBAR, CRM_DYNAMIC_1078_FUNNELS_TOOLBAR, CRM_DYNAMIC_1082_FUNNELS
+_TOOLBAR, CRM_DYNAMIC_1086_FUNNELS_TOOLBAR, CRM_DYNAMIC_1090_FUNNELS_TOOLBAR, CRM_DYNAMIC_1094_FUNNE
+LS_TOOLBAR, CRM_DYNAMIC_1098_FUNNELS_TOOLBAR, CRM_DYNAMIC_1102_FUNNELS_TOOLBAR, CRM_DYNAMIC_1106_FUN
+NELS_TOOLBAR, CRM_DYNAMIC_1112_FUNNELS_TOOLBAR, CRM_DYNAMIC_1116_FUNNELS_TOOLBAR, CRM_DYNAMIC_1120_F
+UNNELS_TOOLBAR, CRM_SMART_INVOICE_FUNNELS_TOOLBAR, CRM_LEAD_ROBOT_DESIGNER_TOOLBAR, CRM_DEAL_ROBOT_D
+ESIGNER_TOOLBAR, CRM_DYNAMIC_1042_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1046_ROBOT_DESIGNER_TOOLBAR, C
+RM_DYNAMIC_1054_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1058_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1062_RO
+BOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1070_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1074_ROBOT_DESIGNER_TOOLB
+AR, CRM_DYNAMIC_1078_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1082_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_10
+86_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1090_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1094_ROBOT_DESIGNER_
+TOOLBAR, CRM_DYNAMIC_1098_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1102_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAM
+IC_1106_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1112_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1116_ROBOT_DESI
+GNER_TOOLBAR, CRM_DYNAMIC_1120_ROBOT_DESIGNER_TOOLBAR, CRM_SMART_INVOICE_ROBOT_DESIGNER_TOOLBAR, CRM
+_DYNAMIC_1042_LIST_MENU, CRM_DYNAMIC_1046_LIST_MENU, CRM_DYNAMIC_1054_LIST_MENU, CRM_DYNAMIC_1058_LI
+ST_MENU, CRM_DYNAMIC_1062_LIST_MENU, CRM_DYNAMIC_1070_LIST_MENU, CRM_DYNAMIC_1074_LIST_MENU, CRM_DYN
+AMIC_1078_LIST_MENU, CRM_DYNAMIC_1082_LIST_MENU, CRM_DYNAMIC_1086_LIST_MENU, CRM_DYNAMIC_1090_LIST_M
+ENU, CRM_DYNAMIC_1094_LIST_MENU, CRM_DYNAMIC_1098_LIST_MENU, CRM_DYNAMIC_1102_LIST_MENU, CRM_DYNAMIC
+_1106_LIST_MENU, CRM_DYNAMIC_1112_LIST_MENU, CRM_DYNAMIC_1116_LIST_MENU, CRM_DYNAMIC_1120_LIST_MENU,
+ CRM_SMART_INVOICE_LIST_MENU, CRM_LEAD_LIST_MENU, CRM_DEAL_LIST_MENU, CRM_INVOICE_LIST_MENU, CRM_QUO
+TE_LIST_MENU, CRM_CONTACT_LIST_MENU, CRM_COMPANY_LIST_MENU, CRM_ACTIVITY_LIST_MENU, CRM_LEAD_DETAIL_
+TAB, CRM_DEAL_DETAIL_TAB, CRM_QUOTE_DETAIL_TAB, CRM_CONTACT_DETAIL_TAB, CRM_COMPANY_DETAIL_TAB, CRM_
+ORDER_DETAIL_TAB, CRM_SMART_INVOICE_DETAIL_TAB, CRM_DYNAMIC_1042_DETAIL_TAB, CRM_DYNAMIC_1046_DETAIL
+_TAB, CRM_DYNAMIC_1054_DETAIL_TAB, CRM_DYNAMIC_1058_DETAIL_TAB, CRM_DYNAMIC_1062_DETAIL_TAB, CRM_DYN
+AMIC_1070_DETAIL_TAB, CRM_DYNAMIC_1074_DETAIL_TAB, CRM_DYNAMIC_1078_DETAIL_TAB, CRM_DYNAMIC_1082_DET
+AIL_TAB, CRM_DYNAMIC_1086_DETAIL_TAB, CRM_DYNAMIC_1090_DETAIL_TAB, CRM_DYNAMIC_1094_DETAIL_TAB, CRM_
+DYNAMIC_1098_DETAIL_TAB, CRM_DYNAMIC_1102_DETAIL_TAB, CRM_DYNAMIC_1106_DETAIL_TAB, CRM_DYNAMIC_1112_
+DETAIL_TAB, CRM_DYNAMIC_1116_DETAIL_TAB, CRM_DYNAMIC_1120_DETAIL_TAB, CRM_LEAD_DETAIL_ACTIVITY, CRM_
+DEAL_DETAIL_ACTIVITY, CRM_QUOTE_DETAIL_ACTIVITY, CRM_CONTACT_DETAIL_ACTIVITY, CRM_COMPANY_DETAIL_ACT
+IVITY, CRM_ORDER_DETAIL_ACTIVITY, CRM_SMART_INVOICE_DETAIL_ACTIVITY, CRM_DYNAMIC_1042_DETAIL_ACTIVIT
+Y, CRM_DYNAMIC_1046_DETAIL_ACTIVITY, CRM_DYNAMIC_1054_DETAIL_ACTIVITY, CRM_DYNAMIC_1058_DETAIL_ACTIV
+ITY, CRM_DYNAMIC_1062_DETAIL_ACTIVITY, CRM_DYNAMIC_1070_DETAIL_ACTIVITY, CRM_DYNAMIC_1074_DETAIL_ACT
+IVITY, CRM_DYNAMIC_1078_DETAIL_ACTIVITY, CRM_DYNAMIC_1082_DETAIL_ACTIVITY, CRM_DYNAMIC_1086_DETAIL_A
+CTIVITY, CRM_DYNAMIC_1090_DETAIL_ACTIVITY, CRM_DYNAMIC_1094_DETAIL_ACTIVITY, CRM_DYNAMIC_1098_DETAIL
+_ACTIVITY, CRM_DYNAMIC_1102_DETAIL_ACTIVITY, CRM_DYNAMIC_1106_DETAIL_ACTIVITY, CRM_DYNAMIC_1112_DETA
+IL_ACTIVITY, CRM_DYNAMIC_1116_DETAIL_ACTIVITY, CRM_DYNAMIC_1120_DETAIL_ACTIVITY, CRM_ANALYTICS_MENU,
+ CRM_REQUISITE_EDIT_FORM, 1C_PAGE, CRM_DETAIL_SEARCH, CRM_REQUISITE_AUTOCOMPLETE, CRM_BANK_DETAIL_AU
+TOCOMPLETE, CALENDAR_GRIDVIEW], time={start=1786245625, finish=1.786245625210855E9, duration=0.21085
+500717163086, processing=0, date_start=2026-08-09T06:20:25+03:00, date_finish=2026-08-09T06:20:25+03
+:00, operating_reset_at=1786246225, operating=0}}, errorCode=null, errorMessage=null], registeredPla
+cements=DiagnosticCall[success=true, response={result=[{id=606, placement=CRM_DEAL_DETAIL_ACTIVITY,
+userId=0, handler=https://offer.abs7.ru/bitrix/widget, options={useBuiltInInterface=, newUserNotific
+ationText=, newUserNotificationTitle=}, title=Создать видеооффер, description=, langAll={en={TITLE=C
+reate video offer, DESCRIPTION=, GROUP_NAME=}, ru={TITLE=Создать видеооффер, DESCRIPTION=, GROUP_NAM
+E=}}}, {id=608, placement=CRM_LEAD_DETAIL_ACTIVITY, userId=0, handler=https://offer.abs7.ru/bitrix/w
+idget, options={useBuiltInInterface=, newUserNotificationText=, newUserNotificationTitle=}, title=Со
+здать видеооффер, description=, langAll={en={TITLE=Create video offer, DESCRIPTION=, GROUP_NAME=}, r
+u={TITLE=Создать видеооффер, DESCRIPTION=, GROUP_NAME=}}}, {id=610, placement=CRM_CONTACT_DETAIL_ACT
+IVITY, userId=0, handler=https://offer.abs7.ru/bitrix/widget, options={useBuiltInInterface=, newUser
+NotificationText=, newUserNotificationTitle=}, title=Создать видеооффер, description=, langAll={en={
+TITLE=Create video offer, DESCRIPTION=, GROUP_NAME=}, ru={TITLE=Создать видеооффер, DESCRIPTION=, GR
+OUP_NAME=}}}], time={start=1786245625, finish=1.786245625315779E9, duration=0.3157789707183838, proc
+essing=0, date_start=2026-08-09T06:20:25+03:00, date_finish=2026-08-09T06:20:25+03:00, operating_res
+et_at=1786246225, operating=0}}, errorCode=null, errorMessage=null]}]
+2026-08-09T03:20:25.378Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Bitrix startup placement check completed: domain=abs7.bitrix24.ru, memberId=419222a0c1725a
+38175958981810edd7, placements={CRM_DEAL_DETAIL_ACTIVITY=ALREADY_BOUND, CRM_LEAD_DETAIL_ACTIVITY=ALR
+EADY_BOUND, CRM_CONTACT_DETAIL_ACTIVITY=ALREADY_BOUND}, diagnostics=PlacementDiagnostics[generatedAt
+=2026-08-09T03:20:25.325075035Z, domain=abs7.bitrix24.ru, memberId=419222a0c1725a38175958981810edd7,
+ desiredPlacements=[CRM_DEAL_DETAIL_ACTIVITY, CRM_LEAD_DETAIL_ACTIVITY, CRM_CONTACT_DETAIL_ACTIVITY]
+, calls={availableCrmPlacements=DiagnosticCall[success=true, response={result=[CRM_DEAL_LIST_TOOLBAR
+, CRM_LEAD_LIST_TOOLBAR, CRM_CONTACT_LIST_TOOLBAR, CRM_COMPANY_LIST_TOOLBAR, CRM_INVOICE_LIST_TOOLBA
+R, CRM_QUOTE_LIST_TOOLBAR, CRM_ORDER_LIST_TOOLBAR, CRM_DYNAMIC_1042_LIST_TOOLBAR, CRM_DYNAMIC_1046_L
+IST_TOOLBAR, CRM_DYNAMIC_1054_LIST_TOOLBAR, CRM_DYNAMIC_1058_LIST_TOOLBAR, CRM_DYNAMIC_1062_LIST_TOO
+LBAR, CRM_DYNAMIC_1070_LIST_TOOLBAR, CRM_DYNAMIC_1074_LIST_TOOLBAR, CRM_DYNAMIC_1078_LIST_TOOLBAR, C
+RM_DYNAMIC_1082_LIST_TOOLBAR, CRM_DYNAMIC_1086_LIST_TOOLBAR, CRM_DYNAMIC_1090_LIST_TOOLBAR, CRM_DYNA
+MIC_1094_LIST_TOOLBAR, CRM_DYNAMIC_1098_LIST_TOOLBAR, CRM_DYNAMIC_1102_LIST_TOOLBAR, CRM_DYNAMIC_110
+6_LIST_TOOLBAR, CRM_DYNAMIC_1112_LIST_TOOLBAR, CRM_DYNAMIC_1116_LIST_TOOLBAR, CRM_DYNAMIC_1120_LIST_
+TOOLBAR, CRM_SMART_INVOICE_LIST_TOOLBAR, CRM_DEAL_DETAIL_TOOLBAR, CRM_LEAD_DETAIL_TOOLBAR, CRM_CONTA
+CT_DETAIL_TOOLBAR, CRM_COMPANY_DETAIL_TOOLBAR, CRM_INVOICE_DETAIL_TOOLBAR, CRM_QUOTE_DETAIL_TOOLBAR,
+ CRM_DYNAMIC_1042_DETAIL_TOOLBAR, CRM_DYNAMIC_1046_DETAIL_TOOLBAR, CRM_DYNAMIC_1054_DETAIL_TOOLBAR,
+CRM_DYNAMIC_1058_DETAIL_TOOLBAR, CRM_DYNAMIC_1062_DETAIL_TOOLBAR, CRM_DYNAMIC_1070_DETAIL_TOOLBAR, C
+RM_DYNAMIC_1074_DETAIL_TOOLBAR, CRM_DYNAMIC_1078_DETAIL_TOOLBAR, CRM_DYNAMIC_1082_DETAIL_TOOLBAR, CR
+M_DYNAMIC_1086_DETAIL_TOOLBAR, CRM_DYNAMIC_1090_DETAIL_TOOLBAR, CRM_DYNAMIC_1094_DETAIL_TOOLBAR, CRM
+_DYNAMIC_1098_DETAIL_TOOLBAR, CRM_DYNAMIC_1102_DETAIL_TOOLBAR, CRM_DYNAMIC_1106_DETAIL_TOOLBAR, CRM_
+DYNAMIC_1112_DETAIL_TOOLBAR, CRM_DYNAMIC_1116_DETAIL_TOOLBAR, CRM_DYNAMIC_1120_DETAIL_TOOLBAR, CRM_S
+MART_INVOICE_DETAIL_TOOLBAR, CRM_DEAL_ACTIVITY_TIMELINE_MENU, CRM_LEAD_ACTIVITY_TIMELINE_MENU, CRM_Q
+UOTE_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1042_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1046_ACTIVITY_TIME
+LINE_MENU, CRM_DYNAMIC_1054_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1058_ACTIVITY_TIMELINE_MENU, CRM_DYN
+AMIC_1062_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1070_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1074_ACTIVITY
+_TIMELINE_MENU, CRM_DYNAMIC_1078_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1082_ACTIVITY_TIMELINE_MENU, CR
+M_DYNAMIC_1086_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1090_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1094_ACT
+IVITY_TIMELINE_MENU, CRM_DYNAMIC_1098_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1102_ACTIVITY_TIMELINE_MEN
+U, CRM_DYNAMIC_1106_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1112_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_111
+6_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1120_ACTIVITY_TIMELINE_MENU, CRM_SMART_INVOICE_ACTIVITY_TIMELI
+NE_MENU, CRM_DEAL_DOCUMENTGENERATOR_BUTTON, CRM_LEAD_DOCUMENTGENERATOR_BUTTON, CRM_CONTACT_DOCUMENTG
+ENERATOR_BUTTON, CRM_COMPANY_DOCUMENTGENERATOR_BUTTON, CRM_INVOICE_DOCUMENTGENERATOR_BUTTON, CRM_QUO
+TE_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1042_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1046_DOCUMENTGEN
+ERATOR_BUTTON, CRM_DYNAMIC_1054_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1058_DOCUMENTGENERATOR_BUTTON,
+ CRM_DYNAMIC_1062_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1070_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1
+074_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1078_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1082_DOCUMENTGE
+NERATOR_BUTTON, CRM_DYNAMIC_1086_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1090_DOCUMENTGENERATOR_BUTTON
+, CRM_DYNAMIC_1094_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1098_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_
+1102_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1106_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1112_DOCUMENTG
+ENERATOR_BUTTON, CRM_DYNAMIC_1116_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1120_DOCUMENTGENERATOR_BUTTO
+N, CRM_SMART_INVOICE_DOCUMENTGENERATOR_BUTTON, CRM_ANALYTICS_TOOLBAR, CRM_FUNNELS_TOOLBAR, CRM_DYNAM
+IC_1042_FUNNELS_TOOLBAR, CRM_DYNAMIC_1046_FUNNELS_TOOLBAR, CRM_DYNAMIC_1054_FUNNELS_TOOLBAR, CRM_DYN
+AMIC_1058_FUNNELS_TOOLBAR, CRM_DYNAMIC_1062_FUNNELS_TOOLBAR, CRM_DYNAMIC_1070_FUNNELS_TOOLBAR, CRM_D
+YNAMIC_1074_FUNNELS_TOOLBAR, CRM_DYNAMIC_1078_FUNNELS_TOOLBAR, CRM_DYNAMIC_1082_FUNNELS_TOOLBAR, CRM
+_DYNAMIC_1086_FUNNELS_TOOLBAR, CRM_DYNAMIC_1090_FUNNELS_TOOLBAR, CRM_DYNAMIC_1094_FUNNELS_TOOLBAR, C
+RM_DYNAMIC_1098_FUNNELS_TOOLBAR, CRM_DYNAMIC_1102_FUNNELS_TOOLBAR, CRM_DYNAMIC_1106_FUNNELS_TOOLBAR,
+ CRM_DYNAMIC_1112_FUNNELS_TOOLBAR, CRM_DYNAMIC_1116_FUNNELS_TOOLBAR, CRM_DYNAMIC_1120_FUNNELS_TOOLBA
+R, CRM_SMART_INVOICE_FUNNELS_TOOLBAR, CRM_LEAD_ROBOT_DESIGNER_TOOLBAR, CRM_DEAL_ROBOT_DESIGNER_TOOLB
+AR, CRM_DYNAMIC_1042_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1046_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_10
+54_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1058_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1062_ROBOT_DESIGNER_
+TOOLBAR, CRM_DYNAMIC_1070_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1074_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAM
+IC_1078_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1082_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1086_ROBOT_DESI
+GNER_TOOLBAR, CRM_DYNAMIC_1090_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1094_ROBOT_DESIGNER_TOOLBAR, CRM_
+DYNAMIC_1098_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1102_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1106_ROBOT
+_DESIGNER_TOOLBAR, CRM_DYNAMIC_1112_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1116_ROBOT_DESIGNER_TOOLBAR,
+ CRM_DYNAMIC_1120_ROBOT_DESIGNER_TOOLBAR, CRM_SMART_INVOICE_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1042
+_LIST_MENU, CRM_DYNAMIC_1046_LIST_MENU, CRM_DYNAMIC_1054_LIST_MENU, CRM_DYNAMIC_1058_LIST_MENU, CRM_
+DYNAMIC_1062_LIST_MENU, CRM_DYNAMIC_1070_LIST_MENU, CRM_DYNAMIC_1074_LIST_MENU, CRM_DYNAMIC_1078_LIS
+T_MENU, CRM_DYNAMIC_1082_LIST_MENU, CRM_DYNAMIC_1086_LIST_MENU, CRM_DYNAMIC_1090_LIST_MENU, CRM_DYNA
+MIC_1094_LIST_MENU, CRM_DYNAMIC_1098_LIST_MENU, CRM_DYNAMIC_1102_LIST_MENU, CRM_DYNAMIC_1106_LIST_ME
+NU, CRM_DYNAMIC_1112_LIST_MENU, CRM_DYNAMIC_1116_LIST_MENU, CRM_DYNAMIC_1120_LIST_MENU, CRM_SMART_IN
+VOICE_LIST_MENU, CRM_LEAD_LIST_MENU, CRM_DEAL_LIST_MENU, CRM_INVOICE_LIST_MENU, CRM_QUOTE_LIST_MENU,
+ CRM_CONTACT_LIST_MENU, CRM_COMPANY_LIST_MENU, CRM_ACTIVITY_LIST_MENU, CRM_LEAD_DETAIL_TAB, CRM_DEAL
+_DETAIL_TAB, CRM_QUOTE_DETAIL_TAB, CRM_CONTACT_DETAIL_TAB, CRM_COMPANY_DETAIL_TAB, CRM_ORDER_DETAIL_
+TAB, CRM_SMART_INVOICE_DETAIL_TAB, CRM_DYNAMIC_1042_DETAIL_TAB, CRM_DYNAMIC_1046_DETAIL_TAB, CRM_DYN
+AMIC_1054_DETAIL_TAB, CRM_DYNAMIC_1058_DETAIL_TAB, CRM_DYNAMIC_1062_DETAIL_TAB, CRM_DYNAMIC_1070_DET
+AIL_TAB, CRM_DYNAMIC_1074_DETAIL_TAB, CRM_DYNAMIC_1078_DETAIL_TAB, CRM_DYNAMIC_1082_DETAIL_TAB, CRM_
+DYNAMIC_1086_DETAIL_TAB, CRM_DYNAMIC_1090_DETAIL_TAB, CRM_DYNAMIC_1094_DETAIL_TAB, CRM_DYNAMIC_1098_
+DETAIL_TAB, CRM_DYNAMIC_1102_DETAIL_TAB, CRM_DYNAMIC_1106_DETAIL_TAB, CRM_DYNAMIC_1112_DETAIL_TAB, C
+RM_DYNAMIC_1116_DETAIL_TAB, CRM_DYNAMIC_1120_DETAIL_TAB, CRM_LEAD_DETAIL_ACTIVITY, CRM_DEAL_DETAIL_A
+CTIVITY, CRM_QUOTE_DETAIL_ACTIVITY, CRM_CONTACT_DETAIL_ACTIVITY, CRM_COMPANY_DETAIL_ACTIVITY, CRM_OR
+DER_DETAIL_ACTIVITY, CRM_SMART_INVOICE_DETAIL_ACTIVITY, CRM_DYNAMIC_1042_DETAIL_ACTIVITY, CRM_DYNAMI
+C_1046_DETAIL_ACTIVITY, CRM_DYNAMIC_1054_DETAIL_ACTIVITY, CRM_DYNAMIC_1058_DETAIL_ACTIVITY, CRM_DYNA
+MIC_1062_DETAIL_ACTIVITY, CRM_DYNAMIC_1070_DETAIL_ACTIVITY, CRM_DYNAMIC_1074_DETAIL_ACTIVITY, CRM_DY
+NAMIC_1078_DETAIL_ACTIVITY, CRM_DYNAMIC_1082_DETAIL_ACTIVITY, CRM_DYNAMIC_1086_DETAIL_ACTIVITY, CRM_
+DYNAMIC_1090_DETAIL_ACTIVITY, CRM_DYNAMIC_1094_DETAIL_ACTIVITY, CRM_DYNAMIC_1098_DETAIL_ACTIVITY, CR
+M_DYNAMIC_1102_DETAIL_ACTIVITY, CRM_DYNAMIC_1106_DETAIL_ACTIVITY, CRM_DYNAMIC_1112_DETAIL_ACTIVITY,
+CRM_DYNAMIC_1116_DETAIL_ACTIVITY, CRM_DYNAMIC_1120_DETAIL_ACTIVITY, CRM_ANALYTICS_MENU, CRM_REQUISIT
+E_EDIT_FORM, 1C_PAGE, CRM_DETAIL_SEARCH, CRM_REQUISITE_AUTOCOMPLETE, CRM_BANK_DETAIL_AUTOCOMPLETE],
+time={start=1786245624, finish=1.786245625002224E9, duration=1.0022239685058594, processing=0, date_
+start=2026-08-09T06:20:24+03:00, date_finish=2026-08-09T06:20:25+03:00, operating_reset_at=178624622
+5, operating=0}}, errorCode=null, errorMessage=null], availableMobilePlacements=DiagnosticCall[succe
+ss=true, response={result=[], time={start=1786245625, finish=1.78624562511611E9, duration=0.11611008
+644104004, processing=0, date_start=2026-08-09T06:20:25+03:00, date_finish=2026-08-09T06:20:25+03:00
+, operating_reset_at=1786246225, operating=0}}, errorCode=null, errorMessage=null], availableAllPlac
+ements=DiagnosticCall[success=true, response={result=[REST_APP_URI, IMMOBILE_CONTEXT_MENU, IM_CONTEX
+T_MENU, IM_NAVIGATION, IM_TEXTAREA, IM_SIDEBAR, IM_SMILES_SELECTOR, PAGE_BACKGROUND_WORKER, LEFT_MEN
+U, HCMLINK_SALARY_VACATION, CATALOG_EXTERNAL_PRODUCT, SETTING_CONNECTOR, CALL_CARD, TELEPHONY_ANALYT
+ICS_MENU, TASK_TOP_MENU, TASK_LIST_CONTEXT_MENU, TASK_VIEW_MODE, TASK_VIEW_TAB, TASK_VIEW_SIDEBAR, T
+ASK_VIEW_TOP_PANEL, TASK_VIEW_MENU_ADD, TASK_ROBOT_DESIGNER_TOOLBAR, TASK_USER_LIST_TOOLBAR, TASK_GR
+OUP_LIST_TOOLBAR, SONET_GROUP_DETAIL_TAB, SONET_GROUP_TOOLBAR, SONET_GROUP_ROBOT_DESIGNER_TOOLBAR, U
+SER_PROFILE_MENU, USER_PROFILE_TOOLBAR, CONTACT_CENTER, CRM_DEAL_LIST_TOOLBAR, CRM_LEAD_LIST_TOOLBAR
+, CRM_CONTACT_LIST_TOOLBAR, CRM_COMPANY_LIST_TOOLBAR, CRM_INVOICE_LIST_TOOLBAR, CRM_QUOTE_LIST_TOOLB
+AR, CRM_ORDER_LIST_TOOLBAR, CRM_DYNAMIC_1042_LIST_TOOLBAR, CRM_DYNAMIC_1046_LIST_TOOLBAR, CRM_DYNAMI
+C_1054_LIST_TOOLBAR, CRM_DYNAMIC_1058_LIST_TOOLBAR, CRM_DYNAMIC_1062_LIST_TOOLBAR, CRM_DYNAMIC_1070_
+LIST_TOOLBAR, CRM_DYNAMIC_1074_LIST_TOOLBAR, CRM_DYNAMIC_1078_LIST_TOOLBAR, CRM_DYNAMIC_1082_LIST_TO
+OLBAR, CRM_DYNAMIC_1086_LIST_TOOLBAR, CRM_DYNAMIC_1090_LIST_TOOLBAR, CRM_DYNAMIC_1094_LIST_TOOLBAR,
+CRM_DYNAMIC_1098_LIST_TOOLBAR, CRM_DYNAMIC_1102_LIST_TOOLBAR, CRM_DYNAMIC_1106_LIST_TOOLBAR, CRM_DYN
+AMIC_1112_LIST_TOOLBAR, CRM_DYNAMIC_1116_LIST_TOOLBAR, CRM_DYNAMIC_1120_LIST_TOOLBAR, CRM_SMART_INVO
+ICE_LIST_TOOLBAR, CRM_DEAL_DETAIL_TOOLBAR, CRM_LEAD_DETAIL_TOOLBAR, CRM_CONTACT_DETAIL_TOOLBAR, CRM_
+COMPANY_DETAIL_TOOLBAR, CRM_INVOICE_DETAIL_TOOLBAR, CRM_QUOTE_DETAIL_TOOLBAR, CRM_DYNAMIC_1042_DETAI
+L_TOOLBAR, CRM_DYNAMIC_1046_DETAIL_TOOLBAR, CRM_DYNAMIC_1054_DETAIL_TOOLBAR, CRM_DYNAMIC_1058_DETAIL
+_TOOLBAR, CRM_DYNAMIC_1062_DETAIL_TOOLBAR, CRM_DYNAMIC_1070_DETAIL_TOOLBAR, CRM_DYNAMIC_1074_DETAIL_
+TOOLBAR, CRM_DYNAMIC_1078_DETAIL_TOOLBAR, CRM_DYNAMIC_1082_DETAIL_TOOLBAR, CRM_DYNAMIC_1086_DETAIL_T
+OOLBAR, CRM_DYNAMIC_1090_DETAIL_TOOLBAR, CRM_DYNAMIC_1094_DETAIL_TOOLBAR, CRM_DYNAMIC_1098_DETAIL_TO
+OLBAR, CRM_DYNAMIC_1102_DETAIL_TOOLBAR, CRM_DYNAMIC_1106_DETAIL_TOOLBAR, CRM_DYNAMIC_1112_DETAIL_TOO
+LBAR, CRM_DYNAMIC_1116_DETAIL_TOOLBAR, CRM_DYNAMIC_1120_DETAIL_TOOLBAR, CRM_SMART_INVOICE_DETAIL_TOO
+LBAR, CRM_DEAL_ACTIVITY_TIMELINE_MENU, CRM_LEAD_ACTIVITY_TIMELINE_MENU, CRM_QUOTE_ACTIVITY_TIMELINE_
+MENU, CRM_DYNAMIC_1042_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1046_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_
+1054_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1058_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1062_ACTIVITY_TIME
+LINE_MENU, CRM_DYNAMIC_1070_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1074_ACTIVITY_TIMELINE_MENU, CRM_DYN
+AMIC_1078_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1082_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1086_ACTIVITY
+_TIMELINE_MENU, CRM_DYNAMIC_1090_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1094_ACTIVITY_TIMELINE_MENU, CR
+M_DYNAMIC_1098_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1102_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1106_ACT
+IVITY_TIMELINE_MENU, CRM_DYNAMIC_1112_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1116_ACTIVITY_TIMELINE_MEN
+U, CRM_DYNAMIC_1120_ACTIVITY_TIMELINE_MENU, CRM_SMART_INVOICE_ACTIVITY_TIMELINE_MENU, CRM_DEAL_DOCUM
+ENTGENERATOR_BUTTON, CRM_LEAD_DOCUMENTGENERATOR_BUTTON, CRM_CONTACT_DOCUMENTGENERATOR_BUTTON, CRM_CO
+MPANY_DOCUMENTGENERATOR_BUTTON, CRM_INVOICE_DOCUMENTGENERATOR_BUTTON, CRM_QUOTE_DOCUMENTGENERATOR_BU
+TTON, CRM_DYNAMIC_1042_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1046_DOCUMENTGENERATOR_BUTTON, CRM_DYNA
+MIC_1054_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1058_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1062_DOCUM
+ENTGENERATOR_BUTTON, CRM_DYNAMIC_1070_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1074_DOCUMENTGENERATOR_B
+UTTON, CRM_DYNAMIC_1078_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1082_DOCUMENTGENERATOR_BUTTON, CRM_DYN
+AMIC_1086_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1090_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1094_DOCU
+MENTGENERATOR_BUTTON, CRM_DYNAMIC_1098_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1102_DOCUMENTGENERATOR_
+BUTTON, CRM_DYNAMIC_1106_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1112_DOCUMENTGENERATOR_BUTTON, CRM_DY
+NAMIC_1116_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1120_DOCUMENTGENERATOR_BUTTON, CRM_SMART_INVOICE_DO
+CUMENTGENERATOR_BUTTON, CRM_ANALYTICS_TOOLBAR, CRM_FUNNELS_TOOLBAR, CRM_DYNAMIC_1042_FUNNELS_TOOLBAR
+, CRM_DYNAMIC_1046_FUNNELS_TOOLBAR, CRM_DYNAMIC_1054_FUNNELS_TOOLBAR, CRM_DYNAMIC_1058_FUNNELS_TOOLB
+AR, CRM_DYNAMIC_1062_FUNNELS_TOOLBAR, CRM_DYNAMIC_1070_FUNNELS_TOOLBAR, CRM_DYNAMIC_1074_FUNNELS_TOO
+LBAR, CRM_DYNAMIC_1078_FUNNELS_TOOLBAR, CRM_DYNAMIC_1082_FUNNELS_TOOLBAR, CRM_DYNAMIC_1086_FUNNELS_T
+OOLBAR, CRM_DYNAMIC_1090_FUNNELS_TOOLBAR, CRM_DYNAMIC_1094_FUNNELS_TOOLBAR, CRM_DYNAMIC_1098_FUNNELS
+_TOOLBAR, CRM_DYNAMIC_1102_FUNNELS_TOOLBAR, CRM_DYNAMIC_1106_FUNNELS_TOOLBAR, CRM_DYNAMIC_1112_FUNNE
+LS_TOOLBAR, CRM_DYNAMIC_1116_FUNNELS_TOOLBAR, CRM_DYNAMIC_1120_FUNNELS_TOOLBAR, CRM_SMART_INVOICE_FU
+NNELS_TOOLBAR, CRM_LEAD_ROBOT_DESIGNER_TOOLBAR, CRM_DEAL_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1042_RO
+BOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1046_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1054_ROBOT_DESIGNER_TOOLB
+AR, CRM_DYNAMIC_1058_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1062_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_10
+70_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1074_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1078_ROBOT_DESIGNER_
+TOOLBAR, CRM_DYNAMIC_1082_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1086_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAM
+IC_1090_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1094_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1098_ROBOT_DESI
+GNER_TOOLBAR, CRM_DYNAMIC_1102_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1106_ROBOT_DESIGNER_TOOLBAR, CRM_
+DYNAMIC_1112_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1116_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1120_ROBOT
+_DESIGNER_TOOLBAR, CRM_SMART_INVOICE_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1042_LIST_MENU, CRM_DYNAMIC
+_1046_LIST_MENU, CRM_DYNAMIC_1054_LIST_MENU, CRM_DYNAMIC_1058_LIST_MENU, CRM_DYNAMIC_1062_LIST_MENU,
+ CRM_DYNAMIC_1070_LIST_MENU, CRM_DYNAMIC_1074_LIST_MENU, CRM_DYNAMIC_1078_LIST_MENU, CRM_DYNAMIC_108
+2_LIST_MENU, CRM_DYNAMIC_1086_LIST_MENU, CRM_DYNAMIC_1090_LIST_MENU, CRM_DYNAMIC_1094_LIST_MENU, CRM
+_DYNAMIC_1098_LIST_MENU, CRM_DYNAMIC_1102_LIST_MENU, CRM_DYNAMIC_1106_LIST_MENU, CRM_DYNAMIC_1112_LI
+ST_MENU, CRM_DYNAMIC_1116_LIST_MENU, CRM_DYNAMIC_1120_LIST_MENU, CRM_SMART_INVOICE_LIST_MENU, CRM_LE
+AD_LIST_MENU, CRM_DEAL_LIST_MENU, CRM_INVOICE_LIST_MENU, CRM_QUOTE_LIST_MENU, CRM_CONTACT_LIST_MENU,
+ CRM_COMPANY_LIST_MENU, CRM_ACTIVITY_LIST_MENU, CRM_LEAD_DETAIL_TAB, CRM_DEAL_DETAIL_TAB, CRM_QUOTE_
+DETAIL_TAB, CRM_CONTACT_DETAIL_TAB, CRM_COMPANY_DETAIL_TAB, CRM_ORDER_DETAIL_TAB, CRM_SMART_INVOICE_
+DETAIL_TAB, CRM_DYNAMIC_1042_DETAIL_TAB, CRM_DYNAMIC_1046_DETAIL_TAB, CRM_DYNAMIC_1054_DETAIL_TAB, C
+RM_DYNAMIC_1058_DETAIL_TAB, CRM_DYNAMIC_1062_DETAIL_TAB, CRM_DYNAMIC_1070_DETAIL_TAB, CRM_DYNAMIC_10
+74_DETAIL_TAB, CRM_DYNAMIC_1078_DETAIL_TAB, CRM_DYNAMIC_1082_DETAIL_TAB, CRM_DYNAMIC_1086_DETAIL_TAB
+, CRM_DYNAMIC_1090_DETAIL_TAB, CRM_DYNAMIC_1094_DETAIL_TAB, CRM_DYNAMIC_1098_DETAIL_TAB, CRM_DYNAMIC
+_1102_DETAIL_TAB, CRM_DYNAMIC_1106_DETAIL_TAB, CRM_DYNAMIC_1112_DETAIL_TAB, CRM_DYNAMIC_1116_DETAIL_
+TAB, CRM_DYNAMIC_1120_DETAIL_TAB, CRM_LEAD_DETAIL_ACTIVITY, CRM_DEAL_DETAIL_ACTIVITY, CRM_QUOTE_DETA
+IL_ACTIVITY, CRM_CONTACT_DETAIL_ACTIVITY, CRM_COMPANY_DETAIL_ACTIVITY, CRM_ORDER_DETAIL_ACTIVITY, CR
+M_SMART_INVOICE_DETAIL_ACTIVITY, CRM_DYNAMIC_1042_DETAIL_ACTIVITY, CRM_DYNAMIC_1046_DETAIL_ACTIVITY,
+ CRM_DYNAMIC_1054_DETAIL_ACTIVITY, CRM_DYNAMIC_1058_DETAIL_ACTIVITY, CRM_DYNAMIC_1062_DETAIL_ACTIVIT
+Y, CRM_DYNAMIC_1070_DETAIL_ACTIVITY, CRM_DYNAMIC_1074_DETAIL_ACTIVITY, CRM_DYNAMIC_1078_DETAIL_ACTIV
+ITY, CRM_DYNAMIC_1082_DETAIL_ACTIVITY, CRM_DYNAMIC_1086_DETAIL_ACTIVITY, CRM_DYNAMIC_1090_DETAIL_ACT
+IVITY, CRM_DYNAMIC_1094_DETAIL_ACTIVITY, CRM_DYNAMIC_1098_DETAIL_ACTIVITY, CRM_DYNAMIC_1102_DETAIL_A
+CTIVITY, CRM_DYNAMIC_1106_DETAIL_ACTIVITY, CRM_DYNAMIC_1112_DETAIL_ACTIVITY, CRM_DYNAMIC_1116_DETAIL
+_ACTIVITY, CRM_DYNAMIC_1120_DETAIL_ACTIVITY, CRM_ANALYTICS_MENU, CRM_REQUISITE_EDIT_FORM, 1C_PAGE, C
+RM_DETAIL_SEARCH, CRM_REQUISITE_AUTOCOMPLETE, CRM_BANK_DETAIL_AUTOCOMPLETE, CALENDAR_GRIDVIEW], time
+={start=1786245625, finish=1.786245625210855E9, duration=0.21085500717163086, processing=0, date_sta
+rt=2026-08-09T06:20:25+03:00, date_finish=2026-08-09T06:20:25+03:00, operating_reset_at=1786246225,
+operating=0}}, errorCode=null, errorMessage=null], registeredPlacements=DiagnosticCall[success=true,
+ response={result=[{id=606, placement=CRM_DEAL_DETAIL_ACTIVITY, userId=0, handler=https://offer.abs7
+.ru/bitrix/widget, options={useBuiltInInterface=, newUserNotificationText=, newUserNotificationTitle
+=}, title=Создать видеооффер, description=, langAll={en={TITLE=Create video offer, DESCRIPTION=, GRO
+UP_NAME=}, ru={TITLE=Создать видеооффер, DESCRIPTION=, GROUP_NAME=}}}, {id=608, placement=CRM_LEAD_D
+ETAIL_ACTIVITY, userId=0, handler=https://offer.abs7.ru/bitrix/widget, options={useBuiltInInterface=
+, newUserNotificationText=, newUserNotificationTitle=}, title=Создать видеооффер, description=, lang
+All={en={TITLE=Create video offer, DESCRIPTION=, GROUP_NAME=}, ru={TITLE=Создать видеооффер, DESCRIP
+TION=, GROUP_NAME=}}}, {id=610, placement=CRM_CONTACT_DETAIL_ACTIVITY, userId=0, handler=https://off
+er.abs7.ru/bitrix/widget, options={useBuiltInInterface=, newUserNotificationText=, newUserNotificati
+onTitle=}, title=Создать видеооффер, description=, langAll={en={TITLE=Create video offer, DESCRIPTIO
+N=, GROUP_NAME=}, ru={TITLE=Создать видеооффер, DESCRIPTION=, GROUP_NAME=}}}], time={start=178624562
+5, finish=1.786245625315779E9, duration=0.3157789707183838, processing=0, date_start=2026-08-09T06:2
+0:25+03:00, date_finish=2026-08-09T06:20:25+03:00, operating_reset_at=1786246225, operating=0}}, err
+orCode=null, errorMessage=null]}]
+2026-08-09T03:24:20.471Z INFO  [http-nio-8080-exec-1] [requestId=] o.a.c.c.ContainerBase.[Tomcat].[l
+ocalhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-08-09T03:24:20.478Z INFO  [http-nio-8080-exec-1] [requestId=] o.springframework.web.servlet.Dis
+patcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-08-09T03:24:20.500Z INFO  [http-nio-8080-exec-1] [requestId=] o.springframework.web.servlet.Dis
+patcherServlet - Completed initialization in 17 ms
+2026-08-09T03:24:20.587Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/bitrix/
+install, remoteAddress=77.220.52.206, userAgent=Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1
+A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Sa
+fari/537.36 BitrixMobile/Version=61
+2026-08-09T03:24:20.770Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixController - Bitrix installation callback received: parameterName
+s=[DOMAIN, PROTOCOL, LANG, APP_SID, AUTH_ID, AUTH_EXPIRES, REFRESH_ID, SERVER_ENDPOINT, APPLICATION_
+TOKEN, APPLICATION_SCOPE, member_id, status, PLACEMENT, PLACEMENT_OPTIONS]
+2026-08-09T03:24:20.771Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.videooffer.bitrix.BitrixInstallationService - Starting Bitrix installation: parameterNames=[D
+OMAIN, PROTOCOL, LANG, APP_SID, AUTH_ID, AUTH_EXPIRES, REFRESH_ID, SERVER_ENDPOINT, APPLICATION_TOKE
+N, APPLICATION_SCOPE, member_id, status, PLACEMENT, PLACEMENT_OPTIONS]
+2026-08-09T03:24:20.773Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.videooffer.bitrix.BitrixInstallationService - Bitrix auth data parsed: domain=abs7.bitrix24.r
+u, memberId=419222a0c1725a38175958981810edd7, expiresAt=2026-08-09T04:24:20.773609526Z, applicationS
+copes=crm,placement,mobile,tasksmobile, accessTokenPresent=true, refreshTokenPresent=true
+2026-08-09T03:24:20.893Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.videooffer.bitrix.BitrixInstallationService - Bitrix installation authorization persisted: do
+main=abs7.bitrix24.ru, memberId=419222a0c1725a38175958981810edd7
+2026-08-09T03:24:20.893Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.videooffer.bitrix.BitrixInstallationService - Removing obsolete diagnostic Bitrix placement:
+memberId=419222a0c1725a38175958981810edd7, placement=CRM_DEAL_DETAIL_TOOLBAR
+2026-08-09T03:24:20.893Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a381
+75958981810edd7, method=placement.unbind, parameterNames=[PLACEMENT]
+2026-08-09T03:24:20.925Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c172
+5a38175958981810edd7, domain=abs7.bitrix24.ru, method=placement.unbind, endpoint=https://abs7.bitrix
+24.ru/rest/placement.unbind.json, tokenExpiresAt=2026-08-09T04:24:20.773610Z
+2026-08-09T03:24:21.077Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST response received: memberId=419222a0c172
+5a38175958981810edd7, method=placement.unbind, durationMs=152, responseKeys=[result, time]
+2026-08-09T03:24:21.078Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call completed: memberId=419222a0c1725a3
+8175958981810edd7, method=placement.unbind, durationMs=184, responseKeys=[result, time]
+2026-08-09T03:24:21.078Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.videooffer.bitrix.BitrixInstallationService - Obsolete diagnostic Bitrix placement removed: m
+emberId=419222a0c1725a38175958981810edd7, placement=CRM_DEAL_DETAIL_TOOLBAR, responseKeys=[result, t
+ime]
+2026-08-09T03:24:21.078Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.videooffer.bitrix.BitrixInstallationService - Removing obsolete diagnostic Bitrix placement:
+memberId=419222a0c1725a38175958981810edd7, placement=CRM_LEAD_DETAIL_TOOLBAR
+2026-08-09T03:24:21.078Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a381
+75958981810edd7, method=placement.unbind, parameterNames=[PLACEMENT]
+2026-08-09T03:24:21.108Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c172
+5a38175958981810edd7, domain=abs7.bitrix24.ru, method=placement.unbind, endpoint=https://abs7.bitrix
+24.ru/rest/placement.unbind.json, tokenExpiresAt=2026-08-09T04:24:20.773610Z
+2026-08-09T03:24:21.179Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST response received: memberId=419222a0c172
+5a38175958981810edd7, method=placement.unbind, durationMs=70, responseKeys=[result, time]
+2026-08-09T03:24:21.180Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call completed: memberId=419222a0c1725a3
+8175958981810edd7, method=placement.unbind, durationMs=101, responseKeys=[result, time]
+2026-08-09T03:24:21.181Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.videooffer.bitrix.BitrixInstallationService - Obsolete diagnostic Bitrix placement removed: m
+emberId=419222a0c1725a38175958981810edd7, placement=CRM_LEAD_DETAIL_TOOLBAR, responseKeys=[result, t
+ime]
+2026-08-09T03:24:21.182Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.videooffer.bitrix.BitrixInstallationService - Removing obsolete diagnostic Bitrix placement:
+memberId=419222a0c1725a38175958981810edd7, placement=CRM_CONTACT_DETAIL_TOOLBAR
+2026-08-09T03:24:21.182Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a381
+75958981810edd7, method=placement.unbind, parameterNames=[PLACEMENT]
+2026-08-09T03:24:21.209Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c172
+5a38175958981810edd7, domain=abs7.bitrix24.ru, method=placement.unbind, endpoint=https://abs7.bitrix
+24.ru/rest/placement.unbind.json, tokenExpiresAt=2026-08-09T04:24:20.773610Z
+2026-08-09T03:24:21.283Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST response received: memberId=419222a0c172
+5a38175958981810edd7, method=placement.unbind, durationMs=74, responseKeys=[result, time]
+2026-08-09T03:24:21.286Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call completed: memberId=419222a0c1725a3
+8175958981810edd7, method=placement.unbind, durationMs=104, responseKeys=[result, time]
+2026-08-09T03:24:21.287Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.videooffer.bitrix.BitrixInstallationService - Obsolete diagnostic Bitrix placement removed: m
+emberId=419222a0c1725a38175958981810edd7, placement=CRM_CONTACT_DETAIL_TOOLBAR, responseKeys=[result
+, time]
+2026-08-09T03:24:21.287Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.videooffer.bitrix.BitrixInstallationService - Removing obsolete diagnostic Bitrix placement:
+memberId=419222a0c1725a38175958981810edd7, placement=CRM_DEAL_DETAIL_TAB
+2026-08-09T03:24:21.288Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a381
+75958981810edd7, method=placement.unbind, parameterNames=[PLACEMENT]
+2026-08-09T03:24:21.315Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c172
+5a38175958981810edd7, domain=abs7.bitrix24.ru, method=placement.unbind, endpoint=https://abs7.bitrix
+24.ru/rest/placement.unbind.json, tokenExpiresAt=2026-08-09T04:24:20.773610Z
+2026-08-09T03:24:21.381Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST response received: memberId=419222a0c172
+5a38175958981810edd7, method=placement.unbind, durationMs=65, responseKeys=[result, time]
+2026-08-09T03:24:21.381Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call completed: memberId=419222a0c1725a3
+8175958981810edd7, method=placement.unbind, durationMs=93, responseKeys=[result, time]
+2026-08-09T03:24:21.382Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.videooffer.bitrix.BitrixInstallationService - Obsolete diagnostic Bitrix placement removed: m
+emberId=419222a0c1725a38175958981810edd7, placement=CRM_DEAL_DETAIL_TAB, responseKeys=[result, time]
+2026-08-09T03:24:21.382Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.videooffer.bitrix.BitrixInstallationService - Removing obsolete diagnostic Bitrix placement:
+memberId=419222a0c1725a38175958981810edd7, placement=CRM_LEAD_DETAIL_TAB
+2026-08-09T03:24:21.382Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a381
+75958981810edd7, method=placement.unbind, parameterNames=[PLACEMENT]
+2026-08-09T03:24:21.410Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c172
+5a38175958981810edd7, domain=abs7.bitrix24.ru, method=placement.unbind, endpoint=https://abs7.bitrix
+24.ru/rest/placement.unbind.json, tokenExpiresAt=2026-08-09T04:24:20.773610Z
+2026-08-09T03:24:21.476Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST response received: memberId=419222a0c172
+5a38175958981810edd7, method=placement.unbind, durationMs=65, responseKeys=[result, time]
+2026-08-09T03:24:21.476Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call completed: memberId=419222a0c1725a3
+8175958981810edd7, method=placement.unbind, durationMs=94, responseKeys=[result, time]
+2026-08-09T03:24:21.477Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.videooffer.bitrix.BitrixInstallationService - Obsolete diagnostic Bitrix placement removed: m
+emberId=419222a0c1725a38175958981810edd7, placement=CRM_LEAD_DETAIL_TAB, responseKeys=[result, time]
+2026-08-09T03:24:21.477Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.videooffer.bitrix.BitrixInstallationService - Removing obsolete diagnostic Bitrix placement:
+memberId=419222a0c1725a38175958981810edd7, placement=CRM_CONTACT_DETAIL_TAB
+2026-08-09T03:24:21.477Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a381
+75958981810edd7, method=placement.unbind, parameterNames=[PLACEMENT]
+2026-08-09T03:24:21.500Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c172
+5a38175958981810edd7, domain=abs7.bitrix24.ru, method=placement.unbind, endpoint=https://abs7.bitrix
+24.ru/rest/placement.unbind.json, tokenExpiresAt=2026-08-09T04:24:20.773610Z
+2026-08-09T03:24:21.580Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST response received: memberId=419222a0c172
+5a38175958981810edd7, method=placement.unbind, durationMs=79, responseKeys=[result, time]
+2026-08-09T03:24:21.581Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call completed: memberId=419222a0c1725a3
+8175958981810edd7, method=placement.unbind, durationMs=103, responseKeys=[result, time]
+2026-08-09T03:24:21.581Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.videooffer.bitrix.BitrixInstallationService - Obsolete diagnostic Bitrix placement removed: m
+emberId=419222a0c1725a38175958981810edd7, placement=CRM_CONTACT_DETAIL_TAB, responseKeys=[result, ti
+me]
+2026-08-09T03:24:21.592Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.videooffer.bitrix.BitrixInstallationService - Resetting desktop Bitrix placement before fresh
+ bind: memberId=419222a0c1725a38175958981810edd7, placement=CRM_DEAL_DETAIL_ACTIVITY
+2026-08-09T03:24:21.593Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a381
+75958981810edd7, method=placement.unbind, parameterNames=[PLACEMENT]
+2026-08-09T03:24:21.624Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c172
+5a38175958981810edd7, domain=abs7.bitrix24.ru, method=placement.unbind, endpoint=https://abs7.bitrix
+24.ru/rest/placement.unbind.json, tokenExpiresAt=2026-08-09T04:24:20.773610Z
+2026-08-09T03:24:21.699Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST response received: memberId=419222a0c172
+5a38175958981810edd7, method=placement.unbind, durationMs=75, responseKeys=[result, time]
+2026-08-09T03:24:21.700Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call completed: memberId=419222a0c1725a3
+8175958981810edd7, method=placement.unbind, durationMs=107, responseKeys=[result, time]
+2026-08-09T03:24:21.701Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.videooffer.bitrix.BitrixInstallationService - Desktop Bitrix placement reset: memberId=419222
+a0c1725a38175958981810edd7, placement=CRM_DEAL_DETAIL_ACTIVITY, responseKeys=[result, time]
+2026-08-09T03:24:21.701Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.videooffer.bitrix.BitrixInstallationService - Resetting desktop Bitrix placement before fresh
+ bind: memberId=419222a0c1725a38175958981810edd7, placement=CRM_LEAD_DETAIL_ACTIVITY
+2026-08-09T03:24:21.701Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a381
+75958981810edd7, method=placement.unbind, parameterNames=[PLACEMENT]
+2026-08-09T03:24:21.723Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c172
+5a38175958981810edd7, domain=abs7.bitrix24.ru, method=placement.unbind, endpoint=https://abs7.bitrix
+24.ru/rest/placement.unbind.json, tokenExpiresAt=2026-08-09T04:24:20.773610Z
+2026-08-09T03:24:21.800Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST response received: memberId=419222a0c172
+5a38175958981810edd7, method=placement.unbind, durationMs=76, responseKeys=[result, time]
+2026-08-09T03:24:21.801Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call completed: memberId=419222a0c1725a3
+8175958981810edd7, method=placement.unbind, durationMs=99, responseKeys=[result, time]
+2026-08-09T03:24:21.801Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.videooffer.bitrix.BitrixInstallationService - Desktop Bitrix placement reset: memberId=419222
+a0c1725a38175958981810edd7, placement=CRM_LEAD_DETAIL_ACTIVITY, responseKeys=[result, time]
+2026-08-09T03:24:21.801Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.videooffer.bitrix.BitrixInstallationService - Resetting desktop Bitrix placement before fresh
+ bind: memberId=419222a0c1725a38175958981810edd7, placement=CRM_CONTACT_DETAIL_ACTIVITY
+2026-08-09T03:24:21.802Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a381
+75958981810edd7, method=placement.unbind, parameterNames=[PLACEMENT]
+2026-08-09T03:24:21.827Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c172
+5a38175958981810edd7, domain=abs7.bitrix24.ru, method=placement.unbind, endpoint=https://abs7.bitrix
+24.ru/rest/placement.unbind.json, tokenExpiresAt=2026-08-09T04:24:20.773610Z
+2026-08-09T03:24:21.900Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST response received: memberId=419222a0c172
+5a38175958981810edd7, method=placement.unbind, durationMs=72, responseKeys=[result, time]
+2026-08-09T03:24:21.900Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call completed: memberId=419222a0c1725a3
+8175958981810edd7, method=placement.unbind, durationMs=98, responseKeys=[result, time]
+2026-08-09T03:24:21.900Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.videooffer.bitrix.BitrixInstallationService - Desktop Bitrix placement reset: memberId=419222
+a0c1725a38175958981810edd7, placement=CRM_CONTACT_DETAIL_ACTIVITY, responseKeys=[result, time]
+2026-08-09T03:24:21.901Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.videooffer.bitrix.BitrixInstallationService - Binding Bitrix placement: memberId=419222a0c172
+5a38175958981810edd7, placement=CRM_DEAL_DETAIL_ACTIVITY, handler=https://offer.abs7.ru/bitrix/widge
+t
+2026-08-09T03:24:21.901Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a381
+75958981810edd7, method=placement.bind, parameterNames=[PLACEMENT, HANDLER, TITLE, LANG_ALL]
+2026-08-09T03:24:21.929Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c172
+5a38175958981810edd7, domain=abs7.bitrix24.ru, method=placement.bind, endpoint=https://abs7.bitrix24
+.ru/rest/placement.bind.json, tokenExpiresAt=2026-08-09T04:24:20.773610Z
+2026-08-09T03:24:22.022Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST response received: memberId=419222a0c172
+5a38175958981810edd7, method=placement.bind, durationMs=92, responseKeys=[result, time]
+2026-08-09T03:24:22.023Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call completed: memberId=419222a0c1725a3
+8175958981810edd7, method=placement.bind, durationMs=121, responseKeys=[result, time]
+2026-08-09T03:24:22.024Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.videooffer.bitrix.BitrixInstallationService - Bitrix placement bound: memberId=419222a0c1725a
+38175958981810edd7, placement=CRM_DEAL_DETAIL_ACTIVITY
+2026-08-09T03:24:22.025Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.videooffer.bitrix.BitrixInstallationService - Binding Bitrix placement: memberId=419222a0c172
+5a38175958981810edd7, placement=CRM_LEAD_DETAIL_ACTIVITY, handler=https://offer.abs7.ru/bitrix/widge
+t
+2026-08-09T03:24:22.025Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a381
+75958981810edd7, method=placement.bind, parameterNames=[PLACEMENT, HANDLER, TITLE, LANG_ALL]
+2026-08-09T03:24:22.054Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c172
+5a38175958981810edd7, domain=abs7.bitrix24.ru, method=placement.bind, endpoint=https://abs7.bitrix24
+.ru/rest/placement.bind.json, tokenExpiresAt=2026-08-09T04:24:20.773610Z
+2026-08-09T03:24:22.154Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST response received: memberId=419222a0c172
+5a38175958981810edd7, method=placement.bind, durationMs=99, responseKeys=[result, time]
+2026-08-09T03:24:22.155Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call completed: memberId=419222a0c1725a3
+8175958981810edd7, method=placement.bind, durationMs=130, responseKeys=[result, time]
+2026-08-09T03:24:22.157Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.videooffer.bitrix.BitrixInstallationService - Bitrix placement bound: memberId=419222a0c1725a
+38175958981810edd7, placement=CRM_LEAD_DETAIL_ACTIVITY
+2026-08-09T03:24:22.158Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.videooffer.bitrix.BitrixInstallationService - Binding Bitrix placement: memberId=419222a0c172
+5a38175958981810edd7, placement=CRM_CONTACT_DETAIL_ACTIVITY, handler=https://offer.abs7.ru/bitrix/wi
+dget
+2026-08-09T03:24:22.158Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a381
+75958981810edd7, method=placement.bind, parameterNames=[PLACEMENT, HANDLER, TITLE, LANG_ALL]
+2026-08-09T03:24:22.184Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c172
+5a38175958981810edd7, domain=abs7.bitrix24.ru, method=placement.bind, endpoint=https://abs7.bitrix24
+.ru/rest/placement.bind.json, tokenExpiresAt=2026-08-09T04:24:20.773610Z
+2026-08-09T03:24:22.264Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST response received: memberId=419222a0c172
+5a38175958981810edd7, method=placement.bind, durationMs=79, responseKeys=[result, time]
+2026-08-09T03:24:22.264Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call completed: memberId=419222a0c1725a3
+8175958981810edd7, method=placement.bind, durationMs=106, responseKeys=[result, time]
+2026-08-09T03:24:22.265Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.videooffer.bitrix.BitrixInstallationService - Bitrix placement bound: memberId=419222a0c1725a
+38175958981810edd7, placement=CRM_CONTACT_DETAIL_ACTIVITY
+2026-08-09T03:24:22.292Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.v.bitrix.BitrixPlacementDiagnosticsService - Starting Bitrix placement diagnostics: memberId=
+419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.ru
+2026-08-09T03:24:22.295Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a381
+75958981810edd7, method=placement.list, parameterNames=[SCOPE]
+2026-08-09T03:24:22.320Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c172
+5a38175958981810edd7, domain=abs7.bitrix24.ru, method=placement.list, endpoint=https://abs7.bitrix24
+.ru/rest/placement.list.json, tokenExpiresAt=2026-08-09T04:24:20.773610Z
+2026-08-09T03:24:22.391Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST response received: memberId=419222a0c172
+5a38175958981810edd7, method=placement.list, durationMs=70, responseKeys=[result, time]
+2026-08-09T03:24:22.392Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call completed: memberId=419222a0c1725a3
+8175958981810edd7, method=placement.list, durationMs=97, responseKeys=[result, time]
+2026-08-09T03:24:22.394Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a381
+75958981810edd7, method=placement.list, parameterNames=[SCOPE]
+2026-08-09T03:24:22.420Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c172
+5a38175958981810edd7, domain=abs7.bitrix24.ru, method=placement.list, endpoint=https://abs7.bitrix24
+.ru/rest/placement.list.json, tokenExpiresAt=2026-08-09T04:24:20.773610Z
+2026-08-09T03:24:22.582Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST response received: memberId=419222a0c172
+5a38175958981810edd7, method=placement.list, durationMs=161, responseKeys=[result, time]
+2026-08-09T03:24:22.583Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call completed: memberId=419222a0c1725a3
+8175958981810edd7, method=placement.list, durationMs=188, responseKeys=[result, time]
+2026-08-09T03:24:22.584Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a381
+75958981810edd7, method=placement.list, parameterNames=[FULL]
+2026-08-09T03:24:22.611Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c172
+5a38175958981810edd7, domain=abs7.bitrix24.ru, method=placement.list, endpoint=https://abs7.bitrix24
+.ru/rest/placement.list.json, tokenExpiresAt=2026-08-09T04:24:20.773610Z
+2026-08-09T03:24:23.078Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST response received: memberId=419222a0c172
+5a38175958981810edd7, method=placement.list, durationMs=467, responseKeys=[result, time]
+2026-08-09T03:24:23.079Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call completed: memberId=419222a0c1725a3
+8175958981810edd7, method=placement.list, durationMs=494, responseKeys=[result, time]
+2026-08-09T03:24:23.080Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a381
+75958981810edd7, method=placement.get, parameterNames=[]
+2026-08-09T03:24:23.104Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c172
+5a38175958981810edd7, domain=abs7.bitrix24.ru, method=placement.get, endpoint=https://abs7.bitrix24.
+ru/rest/placement.get.json, tokenExpiresAt=2026-08-09T04:24:20.773610Z
+2026-08-09T03:24:23.576Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST response received: memberId=419222a0c172
+5a38175958981810edd7, method=placement.get, durationMs=472, responseKeys=[result, time]
+2026-08-09T03:24:23.586Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call completed: memberId=419222a0c1725a3
+8175958981810edd7, method=placement.get, durationMs=506, responseKeys=[result, time]
+2026-08-09T03:24:23.587Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.v.bitrix.BitrixPlacementDiagnosticsService - Bitrix placement diagnostics completed: memberId
+=419222a0c1725a38175958981810edd7, diagnostics=PlacementDiagnostics[generatedAt=2026-08-09T03:24:23.
+586988096Z, domain=abs7.bitrix24.ru, memberId=419222a0c1725a38175958981810edd7, desiredPlacements=[C
+RM_DEAL_DETAIL_ACTIVITY, CRM_LEAD_DETAIL_ACTIVITY, CRM_CONTACT_DETAIL_ACTIVITY], calls={availableCrm
+Placements=DiagnosticCall[success=true, response={result=[CRM_DEAL_LIST_TOOLBAR, CRM_LEAD_LIST_TOOLB
+AR, CRM_CONTACT_LIST_TOOLBAR, CRM_COMPANY_LIST_TOOLBAR, CRM_INVOICE_LIST_TOOLBAR, CRM_QUOTE_LIST_TOO
+LBAR, CRM_ORDER_LIST_TOOLBAR, CRM_DYNAMIC_1042_LIST_TOOLBAR, CRM_DYNAMIC_1046_LIST_TOOLBAR, CRM_DYNA
+MIC_1054_LIST_TOOLBAR, CRM_DYNAMIC_1058_LIST_TOOLBAR, CRM_DYNAMIC_1062_LIST_TOOLBAR, CRM_DYNAMIC_107
+0_LIST_TOOLBAR, CRM_DYNAMIC_1074_LIST_TOOLBAR, CRM_DYNAMIC_1078_LIST_TOOLBAR, CRM_DYNAMIC_1082_LIST_
+TOOLBAR, CRM_DYNAMIC_1086_LIST_TOOLBAR, CRM_DYNAMIC_1090_LIST_TOOLBAR, CRM_DYNAMIC_1094_LIST_TOOLBAR
+, CRM_DYNAMIC_1098_LIST_TOOLBAR, CRM_DYNAMIC_1102_LIST_TOOLBAR, CRM_DYNAMIC_1106_LIST_TOOLBAR, CRM_D
+YNAMIC_1112_LIST_TOOLBAR, CRM_DYNAMIC_1116_LIST_TOOLBAR, CRM_DYNAMIC_1120_LIST_TOOLBAR, CRM_SMART_IN
+VOICE_LIST_TOOLBAR, CRM_DEAL_DETAIL_TOOLBAR, CRM_LEAD_DETAIL_TOOLBAR, CRM_CONTACT_DETAIL_TOOLBAR, CR
+M_COMPANY_DETAIL_TOOLBAR, CRM_INVOICE_DETAIL_TOOLBAR, CRM_QUOTE_DETAIL_TOOLBAR, CRM_DYNAMIC_1042_DET
+AIL_TOOLBAR, CRM_DYNAMIC_1046_DETAIL_TOOLBAR, CRM_DYNAMIC_1054_DETAIL_TOOLBAR, CRM_DYNAMIC_1058_DETA
+IL_TOOLBAR, CRM_DYNAMIC_1062_DETAIL_TOOLBAR, CRM_DYNAMIC_1070_DETAIL_TOOLBAR, CRM_DYNAMIC_1074_DETAI
+L_TOOLBAR, CRM_DYNAMIC_1078_DETAIL_TOOLBAR, CRM_DYNAMIC_1082_DETAIL_TOOLBAR, CRM_DYNAMIC_1086_DETAIL
+_TOOLBAR, CRM_DYNAMIC_1090_DETAIL_TOOLBAR, CRM_DYNAMIC_1094_DETAIL_TOOLBAR, CRM_DYNAMIC_1098_DETAIL_
+TOOLBAR, CRM_DYNAMIC_1102_DETAIL_TOOLBAR, CRM_DYNAMIC_1106_DETAIL_TOOLBAR, CRM_DYNAMIC_1112_DETAIL_T
+OOLBAR, CRM_DYNAMIC_1116_DETAIL_TOOLBAR, CRM_DYNAMIC_1120_DETAIL_TOOLBAR, CRM_SMART_INVOICE_DETAIL_T
+OOLBAR, CRM_DEAL_ACTIVITY_TIMELINE_MENU, CRM_LEAD_ACTIVITY_TIMELINE_MENU, CRM_QUOTE_ACTIVITY_TIMELIN
+E_MENU, CRM_DYNAMIC_1042_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1046_ACTIVITY_TIMELINE_MENU, CRM_DYNAMI
+C_1054_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1058_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1062_ACTIVITY_TI
+MELINE_MENU, CRM_DYNAMIC_1070_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1074_ACTIVITY_TIMELINE_MENU, CRM_D
+YNAMIC_1078_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1082_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1086_ACTIVI
+TY_TIMELINE_MENU, CRM_DYNAMIC_1090_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1094_ACTIVITY_TIMELINE_MENU,
+CRM_DYNAMIC_1098_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1102_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1106_A
+CTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1112_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1116_ACTIVITY_TIMELINE_M
+ENU, CRM_DYNAMIC_1120_ACTIVITY_TIMELINE_MENU, CRM_SMART_INVOICE_ACTIVITY_TIMELINE_MENU, CRM_DEAL_DOC
+UMENTGENERATOR_BUTTON, CRM_LEAD_DOCUMENTGENERATOR_BUTTON, CRM_CONTACT_DOCUMENTGENERATOR_BUTTON, CRM_
+COMPANY_DOCUMENTGENERATOR_BUTTON, CRM_INVOICE_DOCUMENTGENERATOR_BUTTON, CRM_QUOTE_DOCUMENTGENERATOR_
+BUTTON, CRM_DYNAMIC_1042_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1046_DOCUMENTGENERATOR_BUTTON, CRM_DY
+NAMIC_1054_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1058_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1062_DOC
+UMENTGENERATOR_BUTTON, CRM_DYNAMIC_1070_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1074_DOCUMENTGENERATOR
+_BUTTON, CRM_DYNAMIC_1078_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1082_DOCUMENTGENERATOR_BUTTON, CRM_D
+YNAMIC_1086_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1090_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1094_DO
+CUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1098_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1102_DOCUMENTGENERATO
+R_BUTTON, CRM_DYNAMIC_1106_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1112_DOCUMENTGENERATOR_BUTTON, CRM_
+DYNAMIC_1116_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1120_DOCUMENTGENERATOR_BUTTON, CRM_SMART_INVOICE_
+DOCUMENTGENERATOR_BUTTON, CRM_ANALYTICS_TOOLBAR, CRM_FUNNELS_TOOLBAR, CRM_DYNAMIC_1042_FUNNELS_TOOLB
+AR, CRM_DYNAMIC_1046_FUNNELS_TOOLBAR, CRM_DYNAMIC_1054_FUNNELS_TOOLBAR, CRM_DYNAMIC_1058_FUNNELS_TOO
+LBAR, CRM_DYNAMIC_1062_FUNNELS_TOOLBAR, CRM_DYNAMIC_1070_FUNNELS_TOOLBAR, CRM_DYNAMIC_1074_FUNNELS_T
+OOLBAR, CRM_DYNAMIC_1078_FUNNELS_TOOLBAR, CRM_DYNAMIC_1082_FUNNELS_TOOLBAR, CRM_DYNAMIC_1086_FUNNELS
+_TOOLBAR, CRM_DYNAMIC_1090_FUNNELS_TOOLBAR, CRM_DYNAMIC_1094_FUNNELS_TOOLBAR, CRM_DYNAMIC_1098_FUNNE
+LS_TOOLBAR, CRM_DYNAMIC_1102_FUNNELS_TOOLBAR, CRM_DYNAMIC_1106_FUNNELS_TOOLBAR, CRM_DYNAMIC_1112_FUN
+NELS_TOOLBAR, CRM_DYNAMIC_1116_FUNNELS_TOOLBAR, CRM_DYNAMIC_1120_FUNNELS_TOOLBAR, CRM_SMART_INVOICE_
+FUNNELS_TOOLBAR, CRM_LEAD_ROBOT_DESIGNER_TOOLBAR, CRM_DEAL_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1042_
+ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1046_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1054_ROBOT_DESIGNER_TOO
+LBAR, CRM_DYNAMIC_1058_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1062_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_
+1070_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1074_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1078_ROBOT_DESIGNE
+R_TOOLBAR, CRM_DYNAMIC_1082_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1086_ROBOT_DESIGNER_TOOLBAR, CRM_DYN
+AMIC_1090_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1094_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1098_ROBOT_DE
+SIGNER_TOOLBAR, CRM_DYNAMIC_1102_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1106_ROBOT_DESIGNER_TOOLBAR, CR
+M_DYNAMIC_1112_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1116_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1120_ROB
+OT_DESIGNER_TOOLBAR, CRM_SMART_INVOICE_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1042_LIST_MENU, CRM_DYNAM
+IC_1046_LIST_MENU, CRM_DYNAMIC_1054_LIST_MENU, CRM_DYNAMIC_1058_LIST_MENU, CRM_DYNAMIC_1062_LIST_MEN
+U, CRM_DYNAMIC_1070_LIST_MENU, CRM_DYNAMIC_1074_LIST_MENU, CRM_DYNAMIC_1078_LIST_MENU, CRM_DYNAMIC_1
+082_LIST_MENU, CRM_DYNAMIC_1086_LIST_MENU, CRM_DYNAMIC_1090_LIST_MENU, CRM_DYNAMIC_1094_LIST_MENU, C
+RM_DYNAMIC_1098_LIST_MENU, CRM_DYNAMIC_1102_LIST_MENU, CRM_DYNAMIC_1106_LIST_MENU, CRM_DYNAMIC_1112_
+LIST_MENU, CRM_DYNAMIC_1116_LIST_MENU, CRM_DYNAMIC_1120_LIST_MENU, CRM_SMART_INVOICE_LIST_MENU, CRM_
+LEAD_LIST_MENU, CRM_DEAL_LIST_MENU, CRM_INVOICE_LIST_MENU, CRM_QUOTE_LIST_MENU, CRM_CONTACT_LIST_MEN
+U, CRM_COMPANY_LIST_MENU, CRM_ACTIVITY_LIST_MENU, CRM_LEAD_DETAIL_TAB, CRM_DEAL_DETAIL_TAB, CRM_QUOT
+E_DETAIL_TAB, CRM_CONTACT_DETAIL_TAB, CRM_COMPANY_DETAIL_TAB, CRM_ORDER_DETAIL_TAB, CRM_SMART_INVOIC
+E_DETAIL_TAB, CRM_DYNAMIC_1042_DETAIL_TAB, CRM_DYNAMIC_1046_DETAIL_TAB, CRM_DYNAMIC_1054_DETAIL_TAB,
+ CRM_DYNAMIC_1058_DETAIL_TAB, CRM_DYNAMIC_1062_DETAIL_TAB, CRM_DYNAMIC_1070_DETAIL_TAB, CRM_DYNAMIC_
+1074_DETAIL_TAB, CRM_DYNAMIC_1078_DETAIL_TAB, CRM_DYNAMIC_1082_DETAIL_TAB, CRM_DYNAMIC_1086_DETAIL_T
+AB, CRM_DYNAMIC_1090_DETAIL_TAB, CRM_DYNAMIC_1094_DETAIL_TAB, CRM_DYNAMIC_1098_DETAIL_TAB, CRM_DYNAM
+IC_1102_DETAIL_TAB, CRM_DYNAMIC_1106_DETAIL_TAB, CRM_DYNAMIC_1112_DETAIL_TAB, CRM_DYNAMIC_1116_DETAI
+L_TAB, CRM_DYNAMIC_1120_DETAIL_TAB, CRM_LEAD_DETAIL_ACTIVITY, CRM_DEAL_DETAIL_ACTIVITY, CRM_QUOTE_DE
+TAIL_ACTIVITY, CRM_CONTACT_DETAIL_ACTIVITY, CRM_COMPANY_DETAIL_ACTIVITY, CRM_ORDER_DETAIL_ACTIVITY,
+CRM_SMART_INVOICE_DETAIL_ACTIVITY, CRM_DYNAMIC_1042_DETAIL_ACTIVITY, CRM_DYNAMIC_1046_DETAIL_ACTIVIT
+Y, CRM_DYNAMIC_1054_DETAIL_ACTIVITY, CRM_DYNAMIC_1058_DETAIL_ACTIVITY, CRM_DYNAMIC_1062_DETAIL_ACTIV
+ITY, CRM_DYNAMIC_1070_DETAIL_ACTIVITY, CRM_DYNAMIC_1074_DETAIL_ACTIVITY, CRM_DYNAMIC_1078_DETAIL_ACT
+IVITY, CRM_DYNAMIC_1082_DETAIL_ACTIVITY, CRM_DYNAMIC_1086_DETAIL_ACTIVITY, CRM_DYNAMIC_1090_DETAIL_A
+CTIVITY, CRM_DYNAMIC_1094_DETAIL_ACTIVITY, CRM_DYNAMIC_1098_DETAIL_ACTIVITY, CRM_DYNAMIC_1102_DETAIL
+_ACTIVITY, CRM_DYNAMIC_1106_DETAIL_ACTIVITY, CRM_DYNAMIC_1112_DETAIL_ACTIVITY, CRM_DYNAMIC_1116_DETA
+IL_ACTIVITY, CRM_DYNAMIC_1120_DETAIL_ACTIVITY, CRM_ANALYTICS_MENU, CRM_REQUISITE_EDIT_FORM, 1C_PAGE,
+ CRM_DETAIL_SEARCH, CRM_REQUISITE_AUTOCOMPLETE, CRM_BANK_DETAIL_AUTOCOMPLETE], time={start=178624586
+2, finish=1.786245862382288E9, duration=0.38228797912597656, processing=0, date_start=2026-08-09T06:
+24:22+03:00, date_finish=2026-08-09T06:24:22+03:00, operating_reset_at=1786246462, operating=0}}, er
+rorCode=null, errorMessage=null], availableMobilePlacements=DiagnosticCall[success=true, response={r
+esult=[], time={start=1786245862, finish=1.786245862571989E9, duration=0.5719890594482422, processin
+g=0, date_start=2026-08-09T06:24:22+03:00, date_finish=2026-08-09T06:24:22+03:00, operating_reset_at
+=1786246462, operating=0}}, errorCode=null, errorMessage=null], availableAllPlacements=DiagnosticCal
+l[success=true, response={result=[REST_APP_URI, IMMOBILE_CONTEXT_MENU, IM_CONTEXT_MENU, IM_NAVIGATIO
+N, IM_TEXTAREA, IM_SIDEBAR, IM_SMILES_SELECTOR, PAGE_BACKGROUND_WORKER, LEFT_MENU, HCMLINK_SALARY_VA
+CATION, CATALOG_EXTERNAL_PRODUCT, SETTING_CONNECTOR, CALL_CARD, TELEPHONY_ANALYTICS_MENU, TASK_TOP_M
+ENU, TASK_LIST_CONTEXT_MENU, TASK_VIEW_MODE, TASK_VIEW_TAB, TASK_VIEW_SIDEBAR, TASK_VIEW_TOP_PANEL,
+TASK_VIEW_MENU_ADD, TASK_ROBOT_DESIGNER_TOOLBAR, TASK_USER_LIST_TOOLBAR, TASK_GROUP_LIST_TOOLBAR, SO
+NET_GROUP_DETAIL_TAB, SONET_GROUP_TOOLBAR, SONET_GROUP_ROBOT_DESIGNER_TOOLBAR, USER_PROFILE_MENU, US
+ER_PROFILE_TOOLBAR, CONTACT_CENTER, CRM_DEAL_LIST_TOOLBAR, CRM_LEAD_LIST_TOOLBAR, CRM_CONTACT_LIST_T
+OOLBAR, CRM_COMPANY_LIST_TOOLBAR, CRM_INVOICE_LIST_TOOLBAR, CRM_QUOTE_LIST_TOOLBAR, CRM_ORDER_LIST_T
+OOLBAR, CRM_DYNAMIC_1042_LIST_TOOLBAR, CRM_DYNAMIC_1046_LIST_TOOLBAR, CRM_DYNAMIC_1054_LIST_TOOLBAR,
+ CRM_DYNAMIC_1058_LIST_TOOLBAR, CRM_DYNAMIC_1062_LIST_TOOLBAR, CRM_DYNAMIC_1070_LIST_TOOLBAR, CRM_DY
+NAMIC_1074_LIST_TOOLBAR, CRM_DYNAMIC_1078_LIST_TOOLBAR, CRM_DYNAMIC_1082_LIST_TOOLBAR, CRM_DYNAMIC_1
+086_LIST_TOOLBAR, CRM_DYNAMIC_1090_LIST_TOOLBAR, CRM_DYNAMIC_1094_LIST_TOOLBAR, CRM_DYNAMIC_1098_LIS
+T_TOOLBAR, CRM_DYNAMIC_1102_LIST_TOOLBAR, CRM_DYNAMIC_1106_LIST_TOOLBAR, CRM_DYNAMIC_1112_LIST_TOOLB
+AR, CRM_DYNAMIC_1116_LIST_TOOLBAR, CRM_DYNAMIC_1120_LIST_TOOLBAR, CRM_SMART_INVOICE_LIST_TOOLBAR, CR
+M_DEAL_DETAIL_TOOLBAR, CRM_LEAD_DETAIL_TOOLBAR, CRM_CONTACT_DETAIL_TOOLBAR, CRM_COMPANY_DETAIL_TOOLB
+AR, CRM_INVOICE_DETAIL_TOOLBAR, CRM_QUOTE_DETAIL_TOOLBAR, CRM_DYNAMIC_1042_DETAIL_TOOLBAR, CRM_DYNAM
+IC_1046_DETAIL_TOOLBAR, CRM_DYNAMIC_1054_DETAIL_TOOLBAR, CRM_DYNAMIC_1058_DETAIL_TOOLBAR, CRM_DYNAMI
+C_1062_DETAIL_TOOLBAR, CRM_DYNAMIC_1070_DETAIL_TOOLBAR, CRM_DYNAMIC_1074_DETAIL_TOOLBAR, CRM_DYNAMIC
+_1078_DETAIL_TOOLBAR, CRM_DYNAMIC_1082_DETAIL_TOOLBAR, CRM_DYNAMIC_1086_DETAIL_TOOLBAR, CRM_DYNAMIC_
+1090_DETAIL_TOOLBAR, CRM_DYNAMIC_1094_DETAIL_TOOLBAR, CRM_DYNAMIC_1098_DETAIL_TOOLBAR, CRM_DYNAMIC_1
+102_DETAIL_TOOLBAR, CRM_DYNAMIC_1106_DETAIL_TOOLBAR, CRM_DYNAMIC_1112_DETAIL_TOOLBAR, CRM_DYNAMIC_11
+16_DETAIL_TOOLBAR, CRM_DYNAMIC_1120_DETAIL_TOOLBAR, CRM_SMART_INVOICE_DETAIL_TOOLBAR, CRM_DEAL_ACTIV
+ITY_TIMELINE_MENU, CRM_LEAD_ACTIVITY_TIMELINE_MENU, CRM_QUOTE_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_10
+42_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1046_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1054_ACTIVITY_TIMELI
+NE_MENU, CRM_DYNAMIC_1058_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1062_ACTIVITY_TIMELINE_MENU, CRM_DYNAM
+IC_1070_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1074_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1078_ACTIVITY_T
+IMELINE_MENU, CRM_DYNAMIC_1082_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1086_ACTIVITY_TIMELINE_MENU, CRM_
+DYNAMIC_1090_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1094_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1098_ACTIV
+ITY_TIMELINE_MENU, CRM_DYNAMIC_1102_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1106_ACTIVITY_TIMELINE_MENU,
+ CRM_DYNAMIC_1112_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1116_ACTIVITY_TIMELINE_MENU, CRM_DYNAMIC_1120_
+ACTIVITY_TIMELINE_MENU, CRM_SMART_INVOICE_ACTIVITY_TIMELINE_MENU, CRM_DEAL_DOCUMENTGENERATOR_BUTTON,
+ CRM_LEAD_DOCUMENTGENERATOR_BUTTON, CRM_CONTACT_DOCUMENTGENERATOR_BUTTON, CRM_COMPANY_DOCUMENTGENERA
+TOR_BUTTON, CRM_INVOICE_DOCUMENTGENERATOR_BUTTON, CRM_QUOTE_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_10
+42_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1046_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1054_DOCUMENTGEN
+ERATOR_BUTTON, CRM_DYNAMIC_1058_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1062_DOCUMENTGENERATOR_BUTTON,
+ CRM_DYNAMIC_1070_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1074_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1
+078_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1082_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1086_DOCUMENTGE
+NERATOR_BUTTON, CRM_DYNAMIC_1090_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1094_DOCUMENTGENERATOR_BUTTON
+, CRM_DYNAMIC_1098_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1102_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_
+1106_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1112_DOCUMENTGENERATOR_BUTTON, CRM_DYNAMIC_1116_DOCUMENTG
+ENERATOR_BUTTON, CRM_DYNAMIC_1120_DOCUMENTGENERATOR_BUTTON, CRM_SMART_INVOICE_DOCUMENTGENERATOR_BUTT
+ON, CRM_ANALYTICS_TOOLBAR, CRM_FUNNELS_TOOLBAR, CRM_DYNAMIC_1042_FUNNELS_TOOLBAR, CRM_DYNAMIC_1046_F
+UNNELS_TOOLBAR, CRM_DYNAMIC_1054_FUNNELS_TOOLBAR, CRM_DYNAMIC_1058_FUNNELS_TOOLBAR, CRM_DYNAMIC_1062
+_FUNNELS_TOOLBAR, CRM_DYNAMIC_1070_FUNNELS_TOOLBAR, CRM_DYNAMIC_1074_FUNNELS_TOOLBAR, CRM_DYNAMIC_10
+78_FUNNELS_TOOLBAR, CRM_DYNAMIC_1082_FUNNELS_TOOLBAR, CRM_DYNAMIC_1086_FUNNELS_TOOLBAR, CRM_DYNAMIC_
+1090_FUNNELS_TOOLBAR, CRM_DYNAMIC_1094_FUNNELS_TOOLBAR, CRM_DYNAMIC_1098_FUNNELS_TOOLBAR, CRM_DYNAMI
+C_1102_FUNNELS_TOOLBAR, CRM_DYNAMIC_1106_FUNNELS_TOOLBAR, CRM_DYNAMIC_1112_FUNNELS_TOOLBAR, CRM_DYNA
+MIC_1116_FUNNELS_TOOLBAR, CRM_DYNAMIC_1120_FUNNELS_TOOLBAR, CRM_SMART_INVOICE_FUNNELS_TOOLBAR, CRM_L
+EAD_ROBOT_DESIGNER_TOOLBAR, CRM_DEAL_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1042_ROBOT_DESIGNER_TOOLBAR
+, CRM_DYNAMIC_1046_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1054_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1058
+_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1062_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1070_ROBOT_DESIGNER_TO
+OLBAR, CRM_DYNAMIC_1074_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1078_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC
+_1082_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1086_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1090_ROBOT_DESIGN
+ER_TOOLBAR, CRM_DYNAMIC_1094_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1098_ROBOT_DESIGNER_TOOLBAR, CRM_DY
+NAMIC_1102_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1106_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1112_ROBOT_D
+ESIGNER_TOOLBAR, CRM_DYNAMIC_1116_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1120_ROBOT_DESIGNER_TOOLBAR, C
+RM_SMART_INVOICE_ROBOT_DESIGNER_TOOLBAR, CRM_DYNAMIC_1042_LIST_MENU, CRM_DYNAMIC_1046_LIST_MENU, CRM
+_DYNAMIC_1054_LIST_MENU, CRM_DYNAMIC_1058_LIST_MENU, CRM_DYNAMIC_1062_LIST_MENU, CRM_DYNAMIC_1070_LI
+ST_MENU, CRM_DYNAMIC_1074_LIST_MENU, CRM_DYNAMIC_1078_LIST_MENU, CRM_DYNAMIC_1082_LIST_MENU, CRM_DYN
+AMIC_1086_LIST_MENU, CRM_DYNAMIC_1090_LIST_MENU, CRM_DYNAMIC_1094_LIST_MENU, CRM_DYNAMIC_1098_LIST_M
+ENU, CRM_DYNAMIC_1102_LIST_MENU, CRM_DYNAMIC_1106_LIST_MENU, CRM_DYNAMIC_1112_LIST_MENU, CRM_DYNAMIC
+_1116_LIST_MENU, CRM_DYNAMIC_1120_LIST_MENU, CRM_SMART_INVOICE_LIST_MENU, CRM_LEAD_LIST_MENU, CRM_DE
+AL_LIST_MENU, CRM_INVOICE_LIST_MENU, CRM_QUOTE_LIST_MENU, CRM_CONTACT_LIST_MENU, CRM_COMPANY_LIST_ME
+NU, CRM_ACTIVITY_LIST_MENU, CRM_LEAD_DETAIL_TAB, CRM_DEAL_DETAIL_TAB, CRM_QUOTE_DETAIL_TAB, CRM_CONT
+ACT_DETAIL_TAB, CRM_COMPANY_DETAIL_TAB, CRM_ORDER_DETAIL_TAB, CRM_SMART_INVOICE_DETAIL_TAB, CRM_DYNA
+MIC_1042_DETAIL_TAB, CRM_DYNAMIC_1046_DETAIL_TAB, CRM_DYNAMIC_1054_DETAIL_TAB, CRM_DYNAMIC_1058_DETA
+IL_TAB, CRM_DYNAMIC_1062_DETAIL_TAB, CRM_DYNAMIC_1070_DETAIL_TAB, CRM_DYNAMIC_1074_DETAIL_TAB, CRM_D
+YNAMIC_1078_DETAIL_TAB, CRM_DYNAMIC_1082_DETAIL_TAB, CRM_DYNAMIC_1086_DETAIL_TAB, CRM_DYNAMIC_1090_D
+ETAIL_TAB, CRM_DYNAMIC_1094_DETAIL_TAB, CRM_DYNAMIC_1098_DETAIL_TAB, CRM_DYNAMIC_1102_DETAIL_TAB, CR
+M_DYNAMIC_1106_DETAIL_TAB, CRM_DYNAMIC_1112_DETAIL_TAB, CRM_DYNAMIC_1116_DETAIL_TAB, CRM_DYNAMIC_112
+0_DETAIL_TAB, CRM_LEAD_DETAIL_ACTIVITY, CRM_DEAL_DETAIL_ACTIVITY, CRM_QUOTE_DETAIL_ACTIVITY, CRM_CON
+TACT_DETAIL_ACTIVITY, CRM_COMPANY_DETAIL_ACTIVITY, CRM_ORDER_DETAIL_ACTIVITY, CRM_SMART_INVOICE_DETA
+IL_ACTIVITY, CRM_DYNAMIC_1042_DETAIL_ACTIVITY, CRM_DYNAMIC_1046_DETAIL_ACTIVITY, CRM_DYNAMIC_1054_DE
+TAIL_ACTIVITY, CRM_DYNAMIC_1058_DETAIL_ACTIVITY, CRM_DYNAMIC_1062_DETAIL_ACTIVITY, CRM_DYNAMIC_1070_
+DETAIL_ACTIVITY, CRM_DYNAMIC_1074_DETAIL_ACTIVITY, CRM_DYNAMIC_1078_DETAIL_ACTIVITY, CRM_DYNAMIC_108
+2_DETAIL_ACTIVITY, CRM_DYNAMIC_1086_DETAIL_ACTIVITY, CRM_DYNAMIC_1090_DETAIL_ACTIVITY, CRM_DYNAMIC_1
+094_DETAIL_ACTIVITY, CRM_DYNAMIC_1098_DETAIL_ACTIVITY, CRM_DYNAMIC_1102_DETAIL_ACTIVITY, CRM_DYNAMIC
+_1106_DETAIL_ACTIVITY, CRM_DYNAMIC_1112_DETAIL_ACTIVITY, CRM_DYNAMIC_1116_DETAIL_ACTIVITY, CRM_DYNAM
+IC_1120_DETAIL_ACTIVITY, CRM_ANALYTICS_MENU, CRM_REQUISITE_EDIT_FORM, 1C_PAGE, CRM_DETAIL_SEARCH, CR
+M_REQUISITE_AUTOCOMPLETE, CRM_BANK_DETAIL_AUTOCOMPLETE, CALENDAR_GRIDVIEW], time={start=1786245863,
+finish=1.786245863069754E9, duration=0.06975388526916504, processing=0, date_start=2026-08-09T06:24:
+23+03:00, date_finish=2026-08-09T06:24:23+03:00, operating_reset_at=1786246463, operating=0}}, error
+Code=null, errorMessage=null], registeredPlacements=DiagnosticCall[success=true, response={result=[{
+id=612, placement=CRM_DEAL_DETAIL_ACTIVITY, userId=0, handler=https://offer.abs7.ru/bitrix/widget, o
+ptions={useBuiltInInterface=, newUserNotificationText=, newUserNotificationTitle=}, title=Создать ви
+деооффер, description=, langAll={en={TITLE=Create video offer, DESCRIPTION=, GROUP_NAME=}, ru={TITLE
+=Создать видеооффер, DESCRIPTION=, GROUP_NAME=}}}, {id=614, placement=CRM_LEAD_DETAIL_ACTIVITY, user
+Id=0, handler=https://offer.abs7.ru/bitrix/widget, options={useBuiltInInterface=, newUserNotificatio
+nText=, newUserNotificationTitle=}, title=Создать видеооффер, description=, langAll={en={TITLE=Creat
+e video offer, DESCRIPTION=, GROUP_NAME=}, ru={TITLE=Создать видеооффер, DESCRIPTION=, GROUP_NAME=}}
+}, {id=616, placement=CRM_CONTACT_DETAIL_ACTIVITY, userId=0, handler=https://offer.abs7.ru/bitrix/wi
+dget, options={useBuiltInInterface=, newUserNotificationText=, newUserNotificationTitle=}, title=Соз
+дать видеооффер, description=, langAll={en={TITLE=Create video offer, DESCRIPTION=, GROUP_NAME=}, ru
+={TITLE=Создать видеооффер, DESCRIPTION=, GROUP_NAME=}}}], time={start=1786245863, finish=1.78624586
+3570053E9, duration=0.5700531005859375, processing=0, date_start=2026-08-09T06:24:23+03:00, date_fin
+ish=2026-08-09T06:24:23+03:00, operating_reset_at=1786246463, operating=0}}, errorCode=null, errorMe
+ssage=null]}]
+2026-08-09T03:24:23.599Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] r.a.videooffer.bitrix.BitrixInstallationService - Локальное приложение Bitrix24 установлено: doma
+in=abs7.bitrix24.ru, memberId=419222a0c1725a38175958981810edd7, placements={CRM_DEAL_DETAIL_ACTIVITY
+=BOUND, CRM_LEAD_DETAIL_ACTIVITY=BOUND, CRM_CONTACT_DETAIL_ACTIVITY=BOUND}
+2026-08-09T03:24:23.601Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.bitrix.BitrixController - Bitrix installation callback completed: domain=abs7.
+bitrix24.ru, memberId=419222a0c1725a38175958981810edd7, applicationScopes=crm,placement,mobile,tasks
+mobile, placements={CRM_DEAL_DETAIL_ACTIVITY=BOUND, CRM_LEAD_DETAIL_ACTIVITY=BOUND, CRM_CONTACT_DETA
+IL_ACTIVITY=BOUND}
+2026-08-09T03:24:23.780Z INFO  [http-nio-8080-exec-1] [requestId=e5e47d8c-2cef-416d-90a0-5286bd5e867
+d] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/bitri
+x/install, status=200, durationMs=3193
