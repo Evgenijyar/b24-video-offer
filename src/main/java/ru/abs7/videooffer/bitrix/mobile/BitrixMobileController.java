@@ -10,6 +10,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.abs7.videooffer.bitrix.BitrixInstallationService;
@@ -18,6 +19,7 @@ import ru.abs7.videooffer.offer.CrmEntityType;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping({"/bitrix/mobile", "/bitrix/app"})
@@ -50,7 +52,13 @@ public class BitrixMobileController {
         String memberId = required(parameters, "member_id", "auth[member_id]", "MEMBER_ID");
         String token = mobileContextSigner.create(memberId);
         String html = mobileTemplate.replace("{{MOBILE_CONTEXT_TOKEN}}", escapeHtmlAttribute(token));
-        return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(html);
+        return ResponseEntity.ok()
+                .contentType(MediaType.TEXT_HTML)
+                .header("Permissions-Policy", "camera=(self), microphone=(self)")
+                .header("Cache-Control", "no-store")
+                .header("Referrer-Policy", "no-referrer")
+                .header("X-Content-Type-Options", "nosniff")
+                .body(html);
     }
 
     @GetMapping(produces = MediaType.TEXT_HTML_VALUE)
@@ -60,6 +68,19 @@ public class BitrixMobileController {
                 <body style=\"font-family:Arial,sans-serif;padding:24px\"><h1>Видео-оффер</h1><p>Откройте приложение из мобильного Bitrix24. При прямом открытии сервер не получает авторизационный контекст портала.</p></body></html>
                 """;
         return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(html);
+    }
+
+    @PostMapping(value = "/client-events", consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public Map<String, Object> clientEvent(
+            @RequestBody MobileClientEvent event,
+            HttpServletRequest servletRequest) {
+        String memberId = mobileContextSigner.verify(event.mobileContextToken());
+        String eventName = safeLogValue(event.event(), 80);
+        String details = safeLogValue(event.details(), 1200);
+        log.info("Bitrix mobile client event: memberId={}, event={}, details={}, userAgent={}",
+                memberId, eventName, details, servletRequest.getHeader("User-Agent"));
+        return Map.of("ok", true);
     }
 
     @GetMapping(value = "/search", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -91,4 +112,21 @@ public class BitrixMobileController {
                 .replace("<", "&lt;")
                 .replace(">", "&gt;");
     }
+
+    private String safeLogValue(String value, int maxLength) {
+        if (value == null) {
+            return "";
+        }
+        String normalized = value.replaceAll("[\r\n\t]+", " ").trim();
+        return normalized.length() <= maxLength
+                ? normalized
+                : normalized.substring(0, maxLength) + "…";
+    }
+
+    public record MobileClientEvent(
+            String mobileContextToken,
+            String event,
+            String details) {
+    }
+
 }

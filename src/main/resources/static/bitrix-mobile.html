@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="color-scheme" content="light dark">
     <title>Видео-оффер</title>
-    <link rel="stylesheet" href="/assets/bitrix-mobile.css">
+    <link rel="stylesheet" href="/assets/bitrix-mobile.css?v=016">
     <script src="//api.bitrix24.com/api/v1/"></script>
 </head>
 <body>
@@ -15,21 +15,22 @@
         <div>
             <div class="eyebrow">BITRIX24 · ВИДЕООФФЕР</div>
             <h1>Создать видеооффер</h1>
-            <p>Найдите нужную карточку CRM, выберите её и сформируйте оффер.</p>
+            <p>Выберите карточку клиента, запишите видео прямо с телефона и отправьте ссылку в таймлайн.</p>
         </div>
     </header>
 
     <input id="mobile-context-token" type="hidden" value="{{MOBILE_CONTEXT_TOKEN}}">
+    <input id="entity-type" type="hidden" value="LEAD">
 
     <section class="panel search-panel">
-        <label class="field">
+        <div class="field">
             <span>Что ищем</span>
-            <select id="entity-type">
-                <option value="LEAD" selected>Лид</option>
-                <option value="CONTACT">Контакт</option>
-                <option value="DEAL">Сделка</option>
-            </select>
-        </label>
+            <div id="entity-picker" class="segmented-control" role="group" aria-label="Тип CRM-сущности">
+                <button type="button" class="segment is-active" data-entity-type="LEAD" aria-pressed="true">Лид</button>
+                <button type="button" class="segment" data-entity-type="CONTACT" aria-pressed="false">Контакт</button>
+                <button type="button" class="segment" data-entity-type="DEAL" aria-pressed="false">Сделка</button>
+            </div>
+        </div>
 
         <label class="field">
             <span>Поиск</span>
@@ -55,44 +56,104 @@
         <button id="change-selection" class="text-button" type="button">Изменить</button>
     </section>
 
+    <section id="recorder-section" class="panel recorder-panel" hidden>
+        <div class="section-heading">
+            <div>
+                <strong>Запись видео</strong>
+                <span>Камера и микрофон работают только внутри этого экрана.</span>
+            </div>
+            <div id="recording-timer" class="recording-timer">00:00</div>
+        </div>
+
+        <div id="camera-stage" class="camera-stage">
+            <video id="camera-preview" autoplay muted playsinline></video>
+            <div id="camera-placeholder" class="camera-placeholder">
+                <div class="camera-placeholder-icon">●</div>
+                <strong>Камера выключена</strong>
+                <span>Нажмите «Включить камеру» и разрешите Bitrix24 доступ к камере и микрофону.</span>
+            </div>
+            <div id="recording-badge" class="recording-badge" hidden><i></i> REC</div>
+        </div>
+
+        <div id="camera-error" class="message message--error" hidden></div>
+        <div id="camera-info" class="message message--info" hidden></div>
+
+        <div class="camera-actions">
+            <button id="start-camera" class="secondary-button" type="button">Включить камеру</button>
+            <button id="switch-camera" class="secondary-button" type="button" hidden>Переключить камеру</button>
+            <button id="start-recording" class="record-button" type="button" hidden><i></i> Начать запись</button>
+            <button id="stop-recording" class="stop-button" type="button" hidden>Остановить запись</button>
+        </div>
+
+        <div class="fallback-row">
+            <button id="fallback-file-button" class="text-button fallback-button" type="button">
+                Если встроенная камера недоступна — снять/выбрать видео системно
+            </button>
+            <input id="fallback-file" type="file" accept="video/*" hidden>
+        </div>
+
+        <div id="upload-processing" class="upload-processing" hidden>
+            <div class="processing-head">
+                <strong id="upload-status">Сохраняем видео…</strong>
+                <span id="upload-bytes"></span>
+            </div>
+            <div class="progress progress--indeterminate"><div></div></div>
+            <small>После загрузки сервер автоматически приведёт ролик к MP4 / H.264 / AAC.</small>
+        </div>
+    </section>
+
+    <section id="recorded-section" class="panel recorded-panel" hidden>
+        <div class="section-heading">
+            <div>
+                <strong>Видео сохранено</strong>
+                <span>Файл уже сжат на сервере и готов для видеооффера.</span>
+            </div>
+            <span class="ready-pill">MP4</span>
+        </div>
+
+        <video id="recorded-preview" class="recorded-preview" controls playsinline preload="metadata"></video>
+        <button id="retry-recording" class="secondary-button" type="button">Перезаписать видео</button>
+    </section>
+
     <section id="offer-section" class="panel offer-panel" hidden>
         <form id="mobile-offer-form">
-            <input id="selected-context-token" type="hidden">
-
-            <label class="field">
-                <span>Ссылка на запись Контур.Толка</span>
-                <input id="recording-url" type="url" required
-                       placeholder="https://.../recordings/..." autocomplete="off">
-            </label>
-
             <label class="field">
                 <span>Сопроводительный текст</span>
                 <textarea id="accompanying-text" rows="4"
                           placeholder="Например: направляю короткую презентацию по итогам разговора."></textarea>
             </label>
 
-            <label class="field">
+            <div class="field">
                 <span>Когда уведомить о просмотре</span>
-                <select id="view-notification-goal">
-                    <option value="ONE_MINUTE" selected>После 1 минуты просмотра</option>
-                    <option value="HALF">Когда клиент досмотрит до середины</option>
-                    <option value="COMPLETED">Когда клиент досмотрит видео целиком</option>
-                    <option value="NONE">Не уведомлять</option>
-                </select>
-            </label>
+                <input id="view-notification-goal" type="hidden" value="ONE_MINUTE">
+                <div id="goal-picker" class="goal-picker" role="radiogroup" aria-label="Цель просмотра">
+                    <button type="button" class="goal-option is-active" data-goal="ONE_MINUTE" role="radio" aria-checked="true">
+                        <b>1 минута</b><small>клиент посмотрел минимум одну минуту</small>
+                    </button>
+                    <button type="button" class="goal-option" data-goal="HALF" role="radio" aria-checked="false">
+                        <b>До середины</b><small>клиент досмотрел ролик минимум до 50%</small>
+                    </button>
+                    <button type="button" class="goal-option" data-goal="COMPLETED" role="radio" aria-checked="false">
+                        <b>До конца</b><small>клиент досмотрел видео целиком</small>
+                    </button>
+                    <button type="button" class="goal-option" data-goal="NONE" role="radio" aria-checked="false">
+                        <b>Не уведомлять</b><small>не отправлять уведомление о просмотре</small>
+                    </button>
+                </div>
+            </div>
 
             <div id="form-error" class="message message--error" hidden></div>
 
             <button id="submit-button" class="primary-button" type="submit">
-                Сформировать видеооффер
+                Создать видеооффер
             </button>
         </form>
     </section>
 
     <section id="processing" class="panel processing-card" hidden>
         <div class="processing-head">
-            <strong id="processing-status">Подготавливаем видео</strong>
-            <span id="processing-percent">0%</span>
+            <strong id="processing-status">Создаём видеооффер</strong>
+            <span id="processing-percent">100%</span>
         </div>
         <div class="progress"><div id="progress-bar"></div></div>
         <div id="delivery-status" class="delivery-status"></div>
@@ -100,7 +161,7 @@
 
     <section id="ready-result" class="ready-card" hidden>
         <div class="ready-icon">✓</div>
-        <div>
+        <div class="ready-copy">
             <strong>Видеооффер готов</strong>
             <p id="ready-message">Ссылка добавлена в карточку Bitrix24.</p>
             <a id="public-link" class="secondary-button" target="_blank" rel="noopener">
@@ -109,6 +170,6 @@
         </div>
     </section>
 </main>
-<script src="/assets/bitrix-mobile.js"></script>
+<script src="/assets/bitrix-mobile.js?v=016"></script>
 </body>
 </html>

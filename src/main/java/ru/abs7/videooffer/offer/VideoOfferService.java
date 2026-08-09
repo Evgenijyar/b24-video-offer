@@ -4,8 +4,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService;
 import ru.abs7.videooffer.kontur.KonturRecordingUrlParser;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -20,20 +25,26 @@ public class VideoOfferService {
     private final VideoOfferProcessor processor;
     private final String publicBaseUrl;
     private final int retentionDays;
+    private final Path videoStorageDir;
+    private final BitrixReadyLinkDeliveryService bitrixReadyLinkDeliveryService;
 
     public VideoOfferService(
             VideoOfferRepository repository,
             KonturRecordingUrlParser parser,
             VideoOfferProcessor processor,
+            BitrixReadyLinkDeliveryService bitrixReadyLinkDeliveryService,
             @Value("${app.public-base-url}") String publicBaseUrl,
-            @Value("${app.video.retention-days:30}") int retentionDays) {
+            @Value("${app.video.retention-days:30}") int retentionDays,
+            @Value("${app.video.storage-dir:./data/videos}") String videoStorageDir) {
         this.repository = repository;
         this.parser = parser;
         this.processor = processor;
+        this.bitrixReadyLinkDeliveryService = bitrixReadyLinkDeliveryService;
         this.publicBaseUrl = publicBaseUrl.replaceAll("/+$", "");
         this.retentionDays = retentionDays;
-        log.info("VideoOfferService initialized: publicBaseUrl={}, retentionDays={}",
-                this.publicBaseUrl, retentionDays);
+        this.videoStorageDir = Path.of(videoStorageDir).toAbsolutePath().normalize();
+        log.info("VideoOfferService initialized: publicBaseUrl={}, retentionDays={}, videoStorageDir={}",
+                this.publicBaseUrl, retentionDays, this.videoStorageDir);
     }
 
     public VideoOffer create(CreateVideoOfferRequest request) {
@@ -81,6 +92,50 @@ public class VideoOfferService {
         processor.process(saved.getId());
         log.info("Video offer background processing submitted: offerId={}", saved.getId());
         return saved;
+    }
+
+
+    public VideoOffer createReadyFromMobile(
+            CrmEntityType entityType,
+            long entityId,
+            String memberId,
+            Path normalizedSource,
+            String accompanyingText,
+            ViewNotificationGoal viewNotificationGoal,
+            String quality) throws IOException {
+        if (normalizedSource == null || !Files.isRegularFile(normalizedSource)) {
+            throw new IllegalArgumentException("Нормализованный мобильный видеофайл не найден");
+        }
+
+        VideoOffer offer = VideoOffer.create(
+                entityType,
+                entityId,
+                normalize(memberId),
+                null,
+                "mobile-upload://" + normalizedSource.getFileName(),
+                "mobile-" + UUID.randomUUID(),
+                normalize(accompanyingText),
+                viewNotificationGoal,
+                retentionDays);
+
+        VideoOffer saved = repository.saveAndFlush(offer);
+        Files.createDirectories(videoStorageDir);
+        Path destination = videoStorageDir.resolve(saved.getId() + ".mp4");
+        try {
+            Files.move(normalizedSource, destination, StandardCopyOption.REPLACE_EXISTING);
+            long size = Files.size(destination);
+            saved.markReady(destination.toString(), size, quality);
+            saved = repository.saveAndFlush(saved);
+            log.info("Mobile video offer READY: offerId={}, entityType={}, entityId={}, bytes={}, file={}",
+                    saved.getId(), saved.getCrmEntityType(), saved.getCrmEntityId(), size, destination);
+        } catch (IOException | RuntimeException error) {
+            saved.markError(rootMessage(error));
+            repository.saveAndFlush(saved);
+            throw error;
+        }
+
+        bitrixReadyLinkDeliveryService.deliver(saved.getId());
+        return repository.findById(saved.getId()).orElse(saved);
     }
 
     public VideoOffer get(UUID id) {
@@ -139,6 +194,14 @@ public class VideoOfferService {
             return "null";
         }
         return token.length() <= 8 ? token : token.substring(0, 8) + "...";
+    }
+
+    private String rootMessage(Throwable error) {
+        Throwable current = error;
+        while (current.getCause() != null) {
+            current = current.getCause();
+        }
+        return current.getMessage() == null ? current.getClass().getSimpleName() : current.getMessage();
     }
 
     private long elapsedMillis(long startedAt) {
