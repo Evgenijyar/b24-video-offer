@@ -160,6 +160,11 @@ async function chooseScreen(automatic = false) {
         try {
             if (typeof CaptureController === 'function') {
                 captureController = new CaptureController();
+                // 027 explicitly asked Chromium to focus this technical popup
+                // after the system chooser closed. That is the opposite of the
+                // desired UX. Set the preference before getDisplayMedia binds
+                // the controller so the UA does not bring this agent forward.
+                try { captureController.setFocusBehavior?.('no-focus-change'); } catch (_) { }
                 options.controller = captureController;
             }
         } catch (_) {
@@ -167,7 +172,6 @@ async function chooseScreen(automatic = false) {
         }
 
         const selected = await navigator.mediaDevices.getDisplayMedia(options);
-        try { captureController?.setFocusBehavior?.('focus-capturing-application'); } catch (_) { }
 
         const videoTrack = selected.getVideoTracks?.()[0];
         if (!videoTrack) throw new Error('Браузер не передал видеодорожку выбранного экрана.');
@@ -365,7 +369,19 @@ async function startSegment(segmentIndex) {
         recorder.mimeType || mimeType || 'video/webm',
         snapshot => post('SEGMENT_PROGRESS', {segmentIndex, percent: snapshot.percent})
     );
-    await uploader.init();
+    const uploadSession = await uploader.init();
+    // Give the Bitrix iframe the durable server-side upload identity before
+    // MediaRecorder starts. If the user closes this popup with the OS X button,
+    // the opener can recover all chunks that reached disk instead of losing the
+    // whole recording session.
+    post('SEGMENT_UPLOAD_SESSION', {
+        segmentIndex,
+        upload: {
+            id: uploadSession.id,
+            uploadToken: uploadSession.uploadToken,
+            status: uploadSession.status || 'RECORDING'
+        }
+    });
 
     let resolveCompletion;
     let rejectCompletion;

@@ -62,7 +62,7 @@ const UPLOAD_DRAIN_TIMEOUT_MS = 90000;
 const FILE_CHUNK_BYTES = 4 * 1024 * 1024;
 const MAX_FILE_BYTES = 100 * 1024 * 1024;
 const SCREEN_AGENT_CHANNEL = 'video-offer-screen-agent-v1';
-const SCREEN_AGENT_URL = '/bitrix/screen-capture?v=027';
+const SCREEN_AGENT_URL = '/bitrix/screen-capture?v=028';
 const SCREEN_AGENT_PICKER_OUTER_WIDTH = 612;
 const SCREEN_AGENT_PICKER_OUTER_HEIGHT = 614;
 const SCREEN_AGENT_INITIAL_INNER_WIDTH = 610;
@@ -101,6 +101,9 @@ let screenPreviewPendingCandidates = [];
 let screenReadyWaiters = [];
 let screenStartWaiters = new Map();
 let screenStopWaiters = new Map();
+let screenSegmentUploadSessions = new Map();
+let screenAgentWatchdogTimer = null;
+let screenAgentUnexpectedCloseHandling = false;
 
 initializeBitrixFrame();
 initializeSourcePicker();
@@ -429,6 +432,19 @@ async function handleScreenAgentMessage(message) {
         case 'PREVIEW_ICE':
             await acceptScreenPreviewIce(message.candidate);
             break;
+        case 'SEGMENT_UPLOAD_SESSION': {
+            const index = Number(message.segmentIndex);
+            const upload = message.upload || {};
+            if (Number.isInteger(index) && index >= 0 && upload.id && upload.uploadToken) {
+                screenSegmentUploadSessions.set(index, {
+                    id: String(upload.id),
+                    uploadToken: String(upload.uploadToken),
+                    status: upload.status || 'RECORDING'
+                });
+                reportDesktopEvent('SCREEN_SEGMENT_UPLOAD_SESSION', JSON.stringify({segmentIndex: index, uploadId: upload.id}));
+            }
+            break;
+        }
         case 'SEGMENT_STARTED': {
             const index = Number(message.segmentIndex);
             const waiter = screenStartWaiters.get(index);
@@ -446,6 +462,7 @@ async function handleScreenAgentMessage(message) {
             break;
         case 'SEGMENT_READY': {
             const index = Number(message.segmentIndex);
+            screenSegmentUploadSessions.delete(index);
             const waiter = screenStopWaiters.get(index);
             if (waiter) {
                 clearTimeout(waiter.timer);
@@ -482,20 +499,7 @@ async function handleScreenAgentMessage(message) {
             releaseScreenPreview();
             break;
         case 'AGENT_CLOSED':
-            if (!screenAgentClosing) {
-                screenAgentReady = false;
-                screenCaptureReady = false;
-                screenCaptureRequestPending = false;
-                releaseScreenPreview();
-                rejectScreenReadyWaiters(new Error('Окно выбора экрана закрыто.'));
-                rejectAllScreenSegmentWaiters(new Error('Окно записи экрана закрыто.'));
-                if (recordingSessionActive && currentSegment?.mode === 'SCREEN') {
-                    setCameraError('Запись экрана прервана.');
-                    await stopRecordingSession();
-                } else if (captureMode === 'SCREEN') {
-                    renderScreenPlaceholder();
-                }
-            }
+            if (!screenAgentClosing) await handleUnexpectedScreenAgentClose('agent-message');
             break;
         case 'ACTIVATION_REQUIRED':
             reportDesktopEvent('SCREEN_AGENT_ACTIVATION_REQUIRED', JSON.stringify({
@@ -556,6 +560,128 @@ function focusBitrixHostWindow() {
     }, delay));
 }
 
+function startScreenAgentWatchdog(agent, id) {
+    stopScreenAgentWatchdog();
+    screenAgentUnexpectedCloseHandling = false;
+    screenAgentWatchdogTimer = setInterval(() => {
+        if (screenAgentClosing || screenAgentUnexpectedCloseHandling) return;
+        if (screenAgent !== agent || screenAgentId !== id) return;
+        let closed = false;
+        try { closed = !!agent.closed; } catch (_) { closed = true; }
+        if (closed) void handleUnexpectedScreenAgentClose('closed-watchdog');
+    }, 250);
+}
+
+function stopScreenAgentWatchdog() {
+    if (screenAgentWatchdogTimer) clearInterval(screenAgentWatchdogTimer);
+    screenAgentWatchdogTimer = null;
+}
+
+async function recoverInterruptedScreenUpload(segmentIndex, upload) {
+    if (!upload?.id || !upload?.uploadToken) {
+        throw new Error('Не удалось определить серверную сессию прерванной записи экрана.');
+    }
+    reportDesktopEvent('SCREEN_SEGMENT_RECOVERY_STARTED', JSON.stringify({segmentIndex, uploadId: upload.id}));
+    // Give already accepted HTTP requests a short grace period. Requests that
+    // were cut by closing the popup are discarded by the server; fully stored
+    // contiguous chunks remain recoverable.
+    await sleep(900);
+    const response = await fetchWithTimeout(
+        `/bitrix/mobile/uploads/${encodeURIComponent(upload.id)}/recover`,
+        {method: 'POST', headers: {'X-Upload-Token': upload.uploadToken}},
+        60000);
+    let data = await readJson(response);
+    if (!response.ok) throw new Error(data.message || 'Не удалось восстановить прерванную запись экрана.');
+
+    const started = Date.now();
+    while (data.status !== 'READY') {
+        if (data.status === 'ERROR') throw new Error(data.errorMessage || 'Не удалось обработать восстановленную запись экрана.');
+        if (Date.now() - started > 20 * 60 * 1000) throw new Error('Восстановление записи экрана заняло слишком много времени.');
+        if (!uploadProcessing.hidden) {
+            const serverProgress = Math.max(0, Math.min(99, Number(data.processingProgressPercent) || 0));
+            setRecordingProgress(Math.max(66, Math.min(99, 66 + Math.floor(serverProgress * 33 / 100))));
+        }
+        await sleep(250);
+        const statusResponse = await fetchWithTimeout(
+            `/bitrix/mobile/uploads/${encodeURIComponent(upload.id)}?uploadToken=${encodeURIComponent(upload.uploadToken)}`,
+            {cache: 'no-store'},
+            10000);
+        data = await readJson(statusResponse);
+        if (!statusResponse.ok) throw new Error(data.message || 'Не удалось проверить восстановленную запись экрана.');
+    }
+    screenSegmentUploadSessions.delete(segmentIndex);
+    reportDesktopEvent('SCREEN_SEGMENT_RECOVERED', JSON.stringify({segmentIndex, uploadId: upload.id, bytes: data.bytesReceived || 0}));
+    return data;
+}
+
+function bindRecoveredScreenPromise(segmentIndex, recoveryPromise) {
+    segmentPromises[segmentIndex] = recoveryPromise;
+    recoveryPromise.catch(() => {});
+    const stopWaiter = screenStopWaiters.get(segmentIndex);
+    if (stopWaiter) {
+        clearTimeout(stopWaiter.timer);
+        screenStopWaiters.delete(segmentIndex);
+        recoveryPromise.then(stopWaiter.resolve, stopWaiter.reject);
+    }
+}
+
+async function handleUnexpectedScreenAgentClose(reason) {
+    if (screenAgentClosing || screenAgentUnexpectedCloseHandling) return;
+    screenAgentUnexpectedCloseHandling = true;
+    stopScreenAgentWatchdog();
+
+    reportDesktopEvent('SCREEN_AGENT_UNEXPECTED_CLOSE', JSON.stringify({
+        reason: reason || 'unknown',
+        recording: !!recordingSessionActive,
+        currentMode: currentSegment?.mode || null,
+        trackedScreenSegments: screenSegmentUploadSessions.size
+    }));
+
+    screenAgentReady = false;
+    screenCaptureReady = false;
+    screenCaptureRequestPending = false;
+    screenAgent = null;
+    screenAgentId = null;
+    releaseScreenPreview();
+    rejectScreenReadyWaiters(new Error('Окно выбора экрана закрыто.'));
+
+    // A segment that never reached SEGMENT_STARTED has no usable recording.
+    for (const [index, waiter] of [...screenStartWaiters.entries()]) {
+        clearTimeout(waiter.timer);
+        waiter.reject(new Error('Окно записи экрана закрыто до начала записи.'));
+        screenStartWaiters.delete(index);
+    }
+
+    const recoveries = new Map();
+    for (const [index, upload] of [...screenSegmentUploadSessions.entries()]) {
+        const promise = recoverInterruptedScreenUpload(index, upload);
+        recoveries.set(index, promise);
+        bindRecoveredScreenPromise(index, promise);
+    }
+
+    const interruptedCurrentScreen = recordingSessionActive && currentSegment?.mode === 'SCREEN';
+    if (interruptedCurrentScreen) {
+        const index = currentSegment.index;
+        if (!recoveries.has(index) && !segmentPromises[index]) {
+            const failed = Promise.reject(new Error('Окно записи экрана было закрыто до сохранения первой части видео.'));
+            failed.catch(() => {});
+            segmentPromises[index] = failed;
+        }
+        currentSegment = null;
+        // The screen source no longer exists. Finalize everything already
+        // recorded instead of leaving the widget in a dead recording state.
+        await stopRecordingSession();
+    } else {
+        // If camera is the current source, keep recording it. Any older screen
+        // segment is recovered in the background and will be included later.
+        if (captureMode === 'SCREEN' && !recordingSessionActive) renderScreenPlaceholder();
+        setRecordingUi(recordingSessionActive);
+        renderCaptureModeUi();
+        fitWindow();
+    }
+    screenAgentUnexpectedCloseHandling = false;
+}
+
 async function openScreenCaptureAgent(focus = true) {
     if (screenAgent && !screenAgent.closed) {
         if (screenAgentReady) {
@@ -602,6 +728,7 @@ async function openScreenCaptureAgent(focus = true) {
         screenAgentId = null;
         throw new Error('Браузер заблокировал окно выбора экрана. Разрешите всплывающие окна и повторите.');
     }
+    startScreenAgentWatchdog(screenAgent, screenAgentId);
     if (focus) { try { screenAgent.focus(); } catch (_) { } }
     return screenAgent;
 }
@@ -716,6 +843,7 @@ function closeScreenCaptureAgent() {
     const agent = screenAgent;
     const id = screenAgentId;
     screenAgentClosing = true;
+    stopScreenAgentWatchdog();
     screenAgentReady = false;
     screenCaptureReady = false;
     screenCaptureRequestPending = false;
@@ -728,7 +856,11 @@ function closeScreenCaptureAgent() {
     }
     screenAgent = null;
     screenAgentId = null;
-    setTimeout(() => { screenAgentClosing = false; }, 0);
+    screenSegmentUploadSessions.clear();
+    setTimeout(() => {
+        screenAgentClosing = false;
+        screenAgentUnexpectedCloseHandling = false;
+    }, 0);
 }
 
 async function ensureCameraCapture(switching) {
@@ -922,7 +1054,16 @@ async function switchRecordingSource(nextMode) {
 }
 
 async function stopRecordingSession() {
-    if (!recordingSessionActive || !currentSegment) return;
+    if (!recordingSessionActive) return;
+    if (!currentSegment && !segmentPromises.some(Boolean)) {
+        recordingSessionActive = false;
+        captureSwitching = false;
+        stopSessionTimer(false);
+        setRecordingUi(false);
+        renderCaptureModeUi();
+        fitWindow();
+        return;
+    }
     recordToggleButton.disabled = true;
     captureSwitching = true;
     uploadProcessing.hidden = false;
@@ -934,9 +1075,11 @@ async function stopRecordingSession() {
 
     try {
         const current = currentSegment;
-        if (current.mode === 'CAMERA') segmentPromises[current.index] = stopCameraSegment();
-        else segmentPromises[current.index] = stopScreenSegment(current.index);
-        currentSegment = null;
+        if (current) {
+            if (current.mode === 'CAMERA') segmentPromises[current.index] = stopCameraSegment();
+            else if (!segmentPromises[current.index]) segmentPromises[current.index] = stopScreenSegment(current.index);
+            currentSegment = null;
+        }
 
         const results = await Promise.all(segmentPromises.filter(Boolean));
         if (!results.length) throw new Error('Запись не содержит видеоданных.');

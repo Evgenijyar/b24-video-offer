@@ -270,6 +270,33 @@ public class MobileVideoUploadService {
         return MobileVideoUploadResponse.from(updated);
     }
 
+    /**
+     * Finalizes an interrupted recording using only the contiguous chunks that
+     * are already durably stored on disk. This is intentionally conservative:
+     * chunks after the first gap are ignored because MediaRecorder chunks must
+     * be concatenated in their original sequence.
+     */
+    public MobileVideoUploadResponse recoverInterrupted(UUID uploadId, String uploadToken) throws IOException {
+        MobileVideoUpload snapshot = requireAuthorized(uploadId, uploadToken);
+        if (snapshot.getStatus() == MobileVideoUploadStatus.UPLOADED
+                || snapshot.getStatus() == MobileVideoUploadStatus.PROCESSING
+                || snapshot.getStatus() == MobileVideoUploadStatus.READY
+                || snapshot.getStatus() == MobileVideoUploadStatus.CONSUMED) {
+            return MobileVideoUploadResponse.from(snapshot);
+        }
+        if (snapshot.getStatus() != MobileVideoUploadStatus.RECORDING) {
+            throw new IllegalArgumentException("Эту запись нельзя восстановить в статусе " + snapshot.getStatus());
+        }
+
+        int contiguousChunks = countContiguousPartFiles(uploadId);
+        if (contiguousChunks <= 0) {
+            throw new IllegalArgumentException("Не удалось восстановить запись: ни одна часть видео не была полностью загружена");
+        }
+        log.warn("Recovering interrupted mobile video upload from durable chunks: uploadId={}, contiguousChunks={}, bytesReceived={}",
+                uploadId, contiguousChunks, snapshot.getBytesReceived());
+        return complete(uploadId, uploadToken, contiguousChunks);
+    }
+
     public MobileVideoUploadResponse status(UUID uploadId, String uploadToken) {
         return MobileVideoUploadResponse.from(requireAuthorized(uploadId, uploadToken));
     }
@@ -512,6 +539,14 @@ public class MobileVideoUploadService {
 
     private String formatSequence(int sequence) {
         return String.format(Locale.ROOT, "%06d", sequence);
+    }
+
+    private int countContiguousPartFiles(UUID uploadId) {
+        int sequence = 0;
+        while (sequence <= 100_000 && Files.isRegularFile(partPath(uploadId, sequence))) {
+            sequence++;
+        }
+        return sequence;
     }
 
     private long calculateStoredPartBytes(UUID uploadId) throws IOException {

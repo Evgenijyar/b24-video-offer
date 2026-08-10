@@ -56,6 +56,13 @@ public class MobileVideoUploadController {
         return service.complete(uploadId, uploadToken, chunkCount);
     }
 
+    @PostMapping(value = "/{uploadId}/recover", produces = MediaType.APPLICATION_JSON_VALUE)
+    public MobileVideoUploadResponse recoverInterrupted(
+            @PathVariable UUID uploadId,
+            @RequestHeader("X-Upload-Token") String uploadToken) throws IOException {
+        return service.recoverInterrupted(uploadId, uploadToken);
+    }
+
     @GetMapping(value = "/{uploadId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public MobileVideoUploadResponse status(
             @PathVariable UUID uploadId,
