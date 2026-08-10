@@ -61,6 +61,8 @@ const CHUNK_UPLOAD_TIMEOUT_MS = 60000;
 const UPLOAD_DRAIN_TIMEOUT_MS = 90000;
 const FILE_CHUNK_BYTES = 4 * 1024 * 1024;
 const MAX_FILE_BYTES = 100 * 1024 * 1024;
+const SCREEN_AGENT_CHANNEL = 'video-offer-screen-agent-v1';
+const SCREEN_AGENT_URL = '/bitrix/screen-capture?v=025';
 
 let activeOfferId = null;
 let pollTimer = null;
@@ -83,23 +85,29 @@ let nextSegmentIndex = 0;
 let segmentPromises = [];
 let recordedPreviewUrl = null;
 
-let screenDisplayStream = null;
-let screenMicrophoneStream = null;
-let screenRecordingStream = null;
-let screenAudioContext = null;
+let screenAgent = null;
+let screenAgentId = null;
+let screenAgentReady = false;
+let screenAgentClosing = false;
 let screenCaptureReady = false;
 let screenCaptureRequestPending = false;
-let screenCaptureStopping = false;
-let currentScreenSegment = null;
+let screenPreviewStream = null;
+let screenPreviewPeer = null;
+let screenPreviewPendingCandidates = [];
+let screenReadyWaiters = [];
+let screenStartWaiters = new Map();
+let screenStopWaiters = new Map();
 
 initializeBitrixFrame();
 initializeSourcePicker();
 initializeRecorder();
+initializeScreenAgentMessages();
 initializeFileUpload();
 initializeFullscreenControls();
 reportDesktopEvent('CAPABILITIES', JSON.stringify({
     mediaDevices: !!navigator.mediaDevices,
-    getDisplayMedia: !!navigator.mediaDevices?.getDisplayMedia,
+    getDisplayMediaInIframe: !!navigator.mediaDevices?.getDisplayMedia,
+    screenCaptureAgent: true,
     mediaRecorder: typeof window.MediaRecorder !== 'undefined',
     fullscreenEnabled: !!document.fullscreenEnabled,
     displayCapturePolicy: featureAllowed('display-capture')
@@ -224,7 +232,7 @@ function initializeRecorder() {
             const next = button.dataset.captureMode;
             if (!next || captureSwitching) return;
             if (next === captureMode) {
-                if (!recordingSessionActive && next === 'SCREEN' && !screenCaptureReady && !screenCaptureRequestPending) {
+                if (!recordingSessionActive && next === 'SCREEN' && !screenCaptureReady) {
                     await ensureScreenCapture(true);
                 }
                 return;
@@ -243,13 +251,13 @@ async function selectCaptureMode(mode) {
     clearCameraError();
     clearRecordedPreview();
     if (captureMode === 'CAMERA') {
-        stopScreenCapture();
+        closeScreenCaptureAgent();
         renderCaptureModeUi();
         await ensureCameraCapture(false);
     } else {
         stopCameraCapture();
         renderCaptureModeUi();
-        renderScreenPlaceholder('Выберите экран, окно или вкладку в системном окне браузера.');
+        renderScreenPlaceholder();
         await ensureScreenCapture(true);
     }
     fitWindow();
@@ -261,8 +269,8 @@ async function handleCaptureOptionChange() {
     if (captureMode === 'CAMERA') {
         await ensureCameraCapture(false);
     } else {
-        stopScreenCapture();
-        renderScreenPlaceholder('Настройки звука изменены. Выберите экран заново.');
+        closeScreenCaptureAgent();
+        renderScreenPlaceholder();
         await ensureScreenCapture(true);
     }
 }
@@ -284,7 +292,7 @@ function renderCaptureModeUi() {
     captureSystemAudio.disabled = recordingSessionActive;
 
     if (!recordedPreviewUrl && screen) {
-        if (screenCaptureReady && screenDisplayStream) showScreenPreview();
+        if (screenCaptureReady && screenPreviewStream) showScreenPreview();
         else renderScreenPlaceholder();
     }
 }
@@ -300,23 +308,22 @@ function renderScreenPlaceholder(message) {
     cameraPlaceholderTitle.textContent = screenCaptureRequestPending
         ? 'Выбираем экран…'
         : (screenCaptureReady ? 'Экран выбран' : 'Экран не выбран');
-    cameraPlaceholderText.textContent = message || (screenCaptureRequestPending
-        ? 'Завершите выбор в системном окне браузера.'
-        : (screenCaptureReady
-            ? 'Экран готов. Нажмите запись.'
-            : 'Нажмите «Экран» ещё раз, чтобы открыть системный выбор.'));
+    cameraPlaceholderText.textContent = message || (screenCaptureReady
+        ? 'Экран готов к записи.'
+        : 'Выберите экран, окно или вкладку.');
     startCameraButton.hidden = true;
     recordToggleButton.hidden = !screenCaptureReady && !recordingSessionActive;
 }
 
 function showScreenPreview() {
-    if (!screenDisplayStream || recordedPreviewUrl) return;
+    if (!screenPreviewStream || recordedPreviewUrl || captureMode !== 'SCREEN') return;
     cameraPlaceholder.hidden = true;
     cameraPreview.hidden = false;
     cameraPreview.autoplay = true;
+    cameraPreview.controls = false;
     cameraPreview.muted = true;
     cameraPreview.removeAttribute('src');
-    cameraPreview.srcObject = screenDisplayStream;
+    cameraPreview.srcObject = screenPreviewStream;
     cameraPreview.play().catch(() => {});
     recordFullscreenButton.hidden = true;
     recordToggleButton.hidden = false;
@@ -324,153 +331,331 @@ function showScreenPreview() {
 
 async function ensureScreenCapture(fromUserGesture) {
     if (sourceModeInput.value !== 'RECORD') return false;
-    if (!navigator.mediaDevices?.getDisplayMedia || typeof window.MediaRecorder === 'undefined') {
+    if (typeof window.MediaRecorder === 'undefined') {
         setCameraError('Этот браузер не поддерживает запись экрана.');
         return false;
     }
-    if (screenCaptureRequestPending) return false;
-    if (screenCaptureReady && screenRecordingStream?.getVideoTracks?.().length) {
-        showScreenPreview();
+    if (screenCaptureReady && screenAgent && !screenAgent.closed) {
+        if (screenPreviewStream) showScreenPreview();
         return true;
     }
-
-    const displayCaptureAllowed = featureAllowed('display-capture');
-    if (displayCaptureAllowed === false) {
-            // Do not abort before calling getDisplayMedia. Embedded Chromium/Bitrix builds are not
-            // perfectly consistent in feature-policy reporting; the browser call below is authoritative.
-        console.warn('[video-offer] parent iframe reports display-capture blocked; trying getDisplayMedia anyway');
+    if (screenCaptureRequestPending && screenAgent && !screenAgent.closed) {
+        if (fromUserGesture) { try { screenAgent.focus(); } catch (_) { } }
+        return false;
     }
 
     clearCameraError();
     screenCaptureRequestPending = true;
-    reportDesktopEvent('SCREEN_CAPTURE_REQUEST', JSON.stringify({policy: displayCaptureAllowed, systemAudio: !!captureSystemAudio.checked, microphone: !!captureMicrophone.checked}));
-    renderScreenPlaceholder('Открываем системный выбор экрана…');
+    renderScreenPlaceholder();
     fitWindow();
     try {
-        stopScreenCapture();
-        // Keep the initial request deliberately minimal. Some embedded Chromium builds reject
-        // optional Screen Capture hints. Size/FPS constraints are applied after user selection.
-        const display = await navigator.mediaDevices.getDisplayMedia({
-            video: true,
-            audio: !!captureSystemAudio.checked
-        });
-        const videoTrack = display.getVideoTracks?.()[0];
-        if (!videoTrack) throw new Error('Браузер не передал видеодорожку выбранного экрана.');
-        try {
-            await videoTrack.applyConstraints({
-                width: {max: 1280},
-                height: {max: 720},
-                frameRate: {ideal: 30, max: 30}
-            });
-        } catch (_) { }
-        try { videoTrack.contentHint = 'detail'; } catch (_) { }
-
-        let microphone = null;
-        if (captureMicrophone.checked) {
-            microphone = await navigator.mediaDevices.getUserMedia({
-                video: false,
-                audio: {echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1}
-            });
-        }
-
-        screenDisplayStream = display;
-        screenMicrophoneStream = microphone;
-        screenRecordingStream = await composeScreenRecordingStream(display, microphone);
-        screenCaptureReady = true;
-        screenCaptureStopping = false;
-        reportDesktopEvent('SCREEN_CAPTURE_READY', JSON.stringify({settings: videoTrack.getSettings?.() || {}, audioTracks: display.getAudioTracks?.().length || 0}));
-        videoTrack.addEventListener('ended', handleScreenCaptureEnded, {once: true});
-        showScreenPreview();
-        clearCameraError();
-        return true;
+        await openScreenCaptureAgent(fromUserGesture);
+        reportDesktopEvent('SCREEN_AGENT_OPENED', JSON.stringify({
+            systemAudio: !!captureSystemAudio.checked,
+            microphone: !!captureMicrophone.checked
+        }));
+        return screenCaptureReady;
     } catch (error) {
-        stopScreenCapture();
-        const name = error?.name || 'Error';
-        const detail = error?.message || '';
-        console.error('[video-offer] getDisplayMedia failed', name, detail);
-        reportDesktopEvent('SCREEN_CAPTURE_ERROR', JSON.stringify({name, detail, policy: featureAllowed('display-capture')}));
-        if (name === 'InvalidStateError') {
-            setCameraError('Браузер не разрешил открыть выбор экрана без прямого нажатия пользователя. Нажмите «Экран» ещё раз.');
-        } else if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
-            const policyNow = document.permissionsPolicy || document.featurePolicy;
-            let blockedByPolicy = false;
-            try { blockedByPolicy = !!policyNow && typeof policyNow.allowsFeature === 'function' && !policyNow.allowsFeature('display-capture'); } catch (_) { }
-            setCameraError(blockedByPolicy
-                ? 'Bitrix24 не делегировал этому встроенному приложению разрешение display-capture. Это блокировка родительского iframe, а не отмена выбора.'
-                : 'Браузер не получил разрешение на демонстрацию экрана. Нажмите «Экран» и выберите экран, окно или вкладку в системном окне.');
-        } else if (name === 'NotReadableError') {
-            setCameraError('Выбранный экран сейчас нельзя захватить. Закройте программу, которая блокирует захват, и повторите выбор.');
-        } else {
-            setCameraError(`${name}: ${detail || 'Не удалось получить доступ к экрану.'}`);
-        }
+        screenCaptureRequestPending = false;
+        setCameraError(error?.message || 'Не удалось открыть выбор экрана.');
         renderScreenPlaceholder();
         return false;
-    } finally {
-        screenCaptureRequestPending = false;
-        if (captureMode === 'SCREEN' && !screenCaptureReady) renderScreenPlaceholder();
-        fitWindow();
     }
 }
 
-async function composeScreenRecordingStream(display, microphone) {
-    const output = new MediaStream();
-    const videoTrack = display.getVideoTracks?.()[0];
-    if (!videoTrack) throw new Error('В выбранном источнике нет видео.');
-    output.addTrack(videoTrack);
+function initializeScreenAgentMessages() {
+    window.__videoOfferAcceptScreenStream = (agentId, stream) => {
+        if (!agentId || agentId !== screenAgentId || !stream?.getVideoTracks?.().length) return false;
+        screenPreviewStream = stream;
+        if (captureMode === 'SCREEN' && !recordedPreviewUrl) showScreenPreview();
+        return true;
+    };
 
-    const audioTracks = [
-        ...(captureSystemAudio.checked ? display.getAudioTracks?.() || [] : []),
-        ...(captureMicrophone.checked ? microphone?.getAudioTracks?.() || [] : [])
-    ];
-    if (!audioTracks.length) return output;
-    if (audioTracks.length === 1 || typeof window.AudioContext === 'undefined') {
-        output.addTrack(audioTracks[0]);
-        return output;
-    }
+    window.addEventListener('message', event => {
+        if (event.origin !== location.origin) return;
+        const message = event.data || {};
+        if (message.channel !== SCREEN_AGENT_CHANNEL) return;
+        if (message.agentId !== screenAgentId) return;
+        if (screenAgent && event.source !== screenAgent) return;
+        void handleScreenAgentMessage(message);
+    });
 
-    const context = new AudioContext({latencyHint: 'interactive'});
-    if (context.state === 'suspended') {
-        try { await context.resume(); } catch (_) { }
-    }
-    const destination = context.createMediaStreamDestination();
-    for (const track of audioTracks) {
-        const source = context.createMediaStreamSource(new MediaStream([track]));
-        source.connect(destination);
-    }
-    const mixed = destination.stream.getAudioTracks?.()[0];
-    if (mixed) output.addTrack(mixed);
-    screenAudioContext = context;
-    return output;
+    window.addEventListener('beforeunload', () => closeScreenCaptureAgent());
 }
 
-function handleScreenCaptureEnded() {
-    if (screenCaptureStopping) return;
+async function handleScreenAgentMessage(message) {
+    switch (message.type) {
+        case 'AGENT_READY':
+            screenAgentReady = true;
+            screenCaptureRequestPending = true;
+            sendScreenAgentMessage('INIT', {
+                contextToken,
+                systemAudio: !!captureSystemAudio.checked,
+                microphone: !!captureMicrophone.checked
+            });
+            break;
+        case 'INITIALIZED':
+            screenAgentReady = true;
+            break;
+        case 'CAPTURE_READY':
+            screenCaptureReady = true;
+            screenCaptureRequestPending = false;
+            clearCameraError();
+            resolveScreenReadyWaiters();
+            recordToggleButton.hidden = false;
+            if (captureMode === 'SCREEN') {
+                if (screenPreviewStream) showScreenPreview();
+                else renderScreenPlaceholder('Экран готов к записи.');
+            }
+            reportDesktopEvent('SCREEN_CAPTURE_READY', JSON.stringify(message.details || {}));
+            break;
+        case 'CAPTURE_ERROR': {
+            screenCaptureReady = false;
+            screenCaptureRequestPending = false;
+            const error = new Error(message.message || 'Не удалось получить экран.');
+            rejectScreenReadyWaiters(error);
+            setCameraError(error.message);
+            renderScreenPlaceholder();
+            reportDesktopEvent('SCREEN_CAPTURE_ERROR', JSON.stringify({name: message.name || '', detail: message.message || ''}));
+            break;
+        }
+        case 'PREVIEW_OFFER':
+            await acceptScreenPreviewOffer(message.description);
+            break;
+        case 'PREVIEW_ICE':
+            await acceptScreenPreviewIce(message.candidate);
+            break;
+        case 'SEGMENT_STARTED': {
+            const index = Number(message.segmentIndex);
+            const waiter = screenStartWaiters.get(index);
+            if (waiter) {
+                clearTimeout(waiter.timer);
+                screenStartWaiters.delete(index);
+                waiter.resolve();
+            }
+            break;
+        }
+        case 'SEGMENT_PROGRESS':
+            if (!uploadProcessing.hidden && Number.isFinite(Number(message.percent))) {
+                setRecordingProgress(Math.max(0, Math.min(99, Number(message.percent))));
+            }
+            break;
+        case 'SEGMENT_READY': {
+            const index = Number(message.segmentIndex);
+            const waiter = screenStopWaiters.get(index);
+            if (waiter) {
+                clearTimeout(waiter.timer);
+                screenStopWaiters.delete(index);
+                waiter.resolve(message.upload);
+            }
+            break;
+        }
+        case 'SEGMENT_ERROR': {
+            const index = Number(message.segmentIndex);
+            const waiter = screenStopWaiters.get(index);
+            if (waiter) {
+                clearTimeout(waiter.timer);
+                screenStopWaiters.delete(index);
+                waiter.reject(new Error(message.message || 'Ошибка записи экрана.'));
+            }
+            break;
+        }
+        case 'REQUEST_STOP_RECORDING':
+            if (recordingSessionActive && currentSegment?.mode === 'SCREEN') {
+                setCameraError('Демонстрация экрана завершена.');
+                await stopRecordingSession();
+            }
+            break;
+        case 'CAPTURE_ENDED':
+            screenCaptureReady = false;
+            screenCaptureRequestPending = false;
+            releaseScreenPreview();
+            if (captureMode === 'SCREEN' && !recordingSessionActive) renderScreenPlaceholder();
+            break;
+        case 'CAPTURE_RELEASED':
+            screenCaptureReady = false;
+            screenCaptureRequestPending = false;
+            releaseScreenPreview();
+            break;
+        case 'AGENT_CLOSED':
+            if (!screenAgentClosing) {
+                screenAgentReady = false;
+                screenCaptureReady = false;
+                screenCaptureRequestPending = false;
+                releaseScreenPreview();
+                rejectScreenReadyWaiters(new Error('Окно выбора экрана закрыто.'));
+                rejectAllScreenSegmentWaiters(new Error('Окно записи экрана закрыто.'));
+                if (recordingSessionActive && currentSegment?.mode === 'SCREEN') {
+                    setCameraError('Запись экрана прервана.');
+                    await stopRecordingSession();
+                } else if (captureMode === 'SCREEN') {
+                    renderScreenPlaceholder();
+                }
+            }
+            break;
+        case 'AGENT_ERROR':
+            setCameraError(message.message || 'Ошибка записи экрана.');
+            break;
+        default:
+            break;
+    }
+    fitWindow();
+}
+
+async function openScreenCaptureAgent(focus = true) {
+    if (screenAgent && !screenAgent.closed) {
+        if (screenAgentReady) {
+            sendScreenAgentMessage('INIT', {
+                contextToken,
+                systemAudio: !!captureSystemAudio.checked,
+                microphone: !!captureMicrophone.checked
+            });
+        }
+        if (focus) { try { screenAgent.focus(); } catch (_) { } }
+        return screenAgent;
+    }
+
+    screenAgentClosing = false;
+    screenAgentReady = false;
     screenCaptureReady = false;
-    if (recordingSessionActive && currentSegment?.mode === 'SCREEN') {
-        setCameraError('Демонстрация экрана завершена.');
-        stopRecordingSession();
+    releaseScreenPreview();
+    screenAgentId = createScreenAgentId();
+    const url = `${SCREEN_AGENT_URL}&agentId=${encodeURIComponent(screenAgentId)}`;
+    screenAgent = window.open(
+        url,
+        `videoOfferScreenCapture_${screenAgentId.replace(/[^a-zA-Z0-9]/g, '')}`,
+        'popup=yes,width=430,height=220,resizable=no,scrollbars=no,menubar=no,toolbar=no,location=no,status=no');
+    if (!screenAgent) {
+        screenAgentId = null;
+        throw new Error('Браузер заблокировал окно выбора экрана. Разрешите всплывающие окна и повторите.');
+    }
+    if (focus) { try { screenAgent.focus(); } catch (_) { } }
+    return screenAgent;
+}
+
+function createScreenAgentId() {
+    try { return crypto.randomUUID(); } catch (_) { return `${Date.now()}-${Math.random().toString(36).slice(2)}`; }
+}
+
+function sendScreenAgentMessage(type, payload = {}) {
+    if (!screenAgent || screenAgent.closed || !screenAgentId) return false;
+    try {
+        screenAgent.postMessage({channel: SCREEN_AGENT_CHANNEL, agentId: screenAgentId, type, ...payload}, location.origin);
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
+function waitForScreenCaptureReady(timeoutMs = 5 * 60 * 1000) {
+    if (screenCaptureReady) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+        const waiter = {resolve, reject, timer: null};
+        waiter.timer = setTimeout(() => {
+            screenReadyWaiters = screenReadyWaiters.filter(item => item !== waiter);
+            reject(new Error('Экран не был выбран.'));
+        }, timeoutMs);
+        screenReadyWaiters.push(waiter);
+    });
+}
+
+function resolveScreenReadyWaiters() {
+    const items = screenReadyWaiters.splice(0);
+    items.forEach(item => { clearTimeout(item.timer); item.resolve(); });
+}
+
+function rejectScreenReadyWaiters(error) {
+    const items = screenReadyWaiters.splice(0);
+    items.forEach(item => { clearTimeout(item.timer); item.reject(error); });
+}
+
+function rejectAllScreenSegmentWaiters(error) {
+    for (const [index, waiter] of screenStartWaiters.entries()) {
+        clearTimeout(waiter.timer);
+        waiter.reject(error);
+        screenStartWaiters.delete(index);
+    }
+    for (const [index, waiter] of screenStopWaiters.entries()) {
+        clearTimeout(waiter.timer);
+        waiter.reject(error);
+        screenStopWaiters.delete(index);
+    }
+}
+
+async function acceptScreenPreviewOffer(description) {
+    if (!description || typeof RTCPeerConnection === 'undefined') return;
+    const queuedCandidates = screenPreviewPendingCandidates.splice(0);
+    releaseScreenPreviewPeerOnly();
+    const peer = new RTCPeerConnection({iceServers: []});
+    screenPreviewPeer = peer;
+    peer.ontrack = event => {
+        const stream = event.streams?.[0] || new MediaStream([event.track]);
+        screenPreviewStream = stream;
+        if (captureMode === 'SCREEN' && !recordedPreviewUrl) showScreenPreview();
+    };
+    peer.onicecandidate = event => {
+        if (event.candidate) sendScreenAgentMessage('PREVIEW_ICE', {candidate: event.candidate.toJSON ? event.candidate.toJSON() : event.candidate});
+    };
+    peer.onconnectionstatechange = () => {
+        if (peer !== screenPreviewPeer) return;
+        if (['failed', 'closed'].includes(peer.connectionState) && !screenPreviewStream) {
+            reportDesktopEvent('SCREEN_PREVIEW_WEBRTC_FAILED', peer.connectionState);
+        }
+    };
+    try {
+        await peer.setRemoteDescription(description);
+        for (const candidate of [...queuedCandidates, ...screenPreviewPendingCandidates.splice(0)]) {
+            try { await peer.addIceCandidate(candidate); } catch (_) { }
+        }
+        const answer = await peer.createAnswer();
+        await peer.setLocalDescription(answer);
+        sendScreenAgentMessage('PREVIEW_ANSWER', {description: {type: peer.localDescription.type, sdp: peer.localDescription.sdp}});
+    } catch (error) {
+        reportDesktopEvent('SCREEN_PREVIEW_WEBRTC_ERROR', error?.message || String(error));
+        releaseScreenPreviewPeerOnly();
+    }
+}
+
+async function acceptScreenPreviewIce(candidate) {
+    if (!candidate) return;
+    if (!screenPreviewPeer || !screenPreviewPeer.remoteDescription) {
+        screenPreviewPendingCandidates.push(candidate);
         return;
     }
-    stopScreenCapture();
-    if (captureMode === 'SCREEN') renderScreenPlaceholder('Демонстрация экрана завершена. Нажмите «Экран», чтобы выбрать источник снова.');
+    try { await screenPreviewPeer.addIceCandidate(candidate); } catch (_) { }
 }
 
-function stopScreenCapture() {
-    screenCaptureStopping = true;
-    const streams = [screenRecordingStream, screenDisplayStream, screenMicrophoneStream].filter(Boolean);
-    const tracks = new Set();
-    streams.forEach(stream => stream.getTracks?.().forEach(track => tracks.add(track)));
-    tracks.forEach(track => { try { track.stop(); } catch (_) { } });
-    screenRecordingStream = null;
-    screenDisplayStream = null;
-    screenMicrophoneStream = null;
-    screenCaptureReady = false;
-    if (screenAudioContext) {
-        try { screenAudioContext.close(); } catch (_) { }
+function releaseScreenPreviewPeerOnly() {
+    if (screenPreviewPeer) {
+        try { screenPreviewPeer.ontrack = null; screenPreviewPeer.onicecandidate = null; screenPreviewPeer.close(); } catch (_) { }
     }
-    screenAudioContext = null;
-    screenCaptureStopping = false;
-    if (!recordedPreviewUrl && cameraPreview.srcObject) cameraPreview.srcObject = null;
+    screenPreviewPeer = null;
+    screenPreviewPendingCandidates = [];
+}
+
+function releaseScreenPreview() {
+    if (cameraPreview.srcObject === screenPreviewStream) cameraPreview.srcObject = null;
+    screenPreviewStream = null;
+    releaseScreenPreviewPeerOnly();
+}
+
+function closeScreenCaptureAgent() {
+    const agent = screenAgent;
+    const id = screenAgentId;
+    screenAgentClosing = true;
+    screenAgentReady = false;
+    screenCaptureReady = false;
+    screenCaptureRequestPending = false;
+    releaseScreenPreview();
+    rejectScreenReadyWaiters(new Error('Выбор экрана отменён.'));
+    rejectAllScreenSegmentWaiters(new Error('Запись экрана завершена.'));
+    if (agent && !agent.closed) {
+        try { agent.postMessage({channel: SCREEN_AGENT_CHANNEL, agentId: id, type: 'SHUTDOWN'}, location.origin); } catch (_) { }
+        try { agent.close(); } catch (_) { }
+    }
+    screenAgent = null;
+    screenAgentId = null;
+    setTimeout(() => { screenAgentClosing = false; }, 0);
 }
 
 async function ensureCameraCapture(switching) {
@@ -594,7 +779,10 @@ async function startRecordingSession() {
         if (captureMode === 'CAMERA') {
             if (!cameraStream && !(await ensureCameraCapture(false))) return;
         } else {
-            if (!screenCaptureReady && !(await ensureScreenCapture(true))) return;
+            if (!screenCaptureReady) {
+                await ensureScreenCapture(true);
+                if (!screenCaptureReady) return;
+            }
         }
 
         recordingSessionActive = true;
@@ -625,8 +813,9 @@ async function switchRecordingSource(nextMode) {
     setCameraError(null);
     try {
         if (nextMode === 'SCREEN') {
-            if (!screenCaptureReady && !(await ensureScreenCapture(true))) {
-                throw new Error('Экран не выбран.');
+            if (!screenCaptureReady) {
+                await ensureScreenCapture(true);
+                if (!screenCaptureReady) await waitForScreenCaptureReady();
             }
             const newIndex = nextSegmentIndex++;
             // Start the new source first, then finish the previous one. This keeps the visible recording continuous.
@@ -678,6 +867,9 @@ async function stopRecordingSession() {
 
         const results = await Promise.all(segmentPromises.filter(Boolean));
         if (!results.length) throw new Error('Запись не содержит видеоданных.');
+        // The capture agent is no longer needed once every screen segment is safely READY.
+        // Close it before merge/preview work so the technical window disappears as early as possible.
+        closeScreenCaptureAgent();
         setRecordingProgress(results.length > 1 ? 98 : 100);
         finalUploadSession = results.length === 1 ? results[0] : await mergeRecordingSegments(results);
         setRecordingProgress(100);
@@ -692,7 +884,7 @@ async function stopRecordingSession() {
         captureSwitching = false;
         recordToggleButton.disabled = false;
         stopCameraCapture();
-        stopScreenCapture();
+        closeScreenCaptureAgent();
         setRecordingUi(false);
         renderCaptureModeUi();
         fitWindow();
@@ -852,46 +1044,40 @@ function updatePlayButtonState() {
     playRecordingButton.title = playing ? 'Пауза' : 'Воспроизвести запись';
 }
 
-async function startScreenSegment(index) {
-    if (!screenCaptureReady || !screenRecordingStream?.getVideoTracks?.().length) {
-        throw new Error('Экран не выбран.');
+function startScreenSegment(index) {
+    if (!screenCaptureReady || !screenAgent || screenAgent.closed) {
+        return Promise.reject(new Error('Экран не выбран.'));
     }
-    if (currentScreenSegment) throw new Error('Экран уже записывает сегмент.');
-    const mimeType = chooseRecorderMimeType();
-    const recorder = mimeType
-        ? new MediaRecorder(screenRecordingStream, {mimeType, videoBitsPerSecond: 3500000, audioBitsPerSecond: 128000})
-        : new MediaRecorder(screenRecordingStream, {videoBitsPerSecond: 3500000, audioBitsPerSecond: 128000});
-    const uploader = new ChunkUploader(contextToken, recorder.mimeType || mimeType || 'video/webm', 'RECORDING', null, renderRecordingUploadProgress);
-    await uploader.init();
-    recorder.addEventListener('dataavailable', event => {
-        if (event.data?.size > 0) uploader.enqueue(event.data);
+    return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => {
+            screenStartWaiters.delete(index);
+            reject(new Error('Запись экрана не запустилась.'));
+        }, 20000);
+        screenStartWaiters.set(index, {resolve, reject, timer});
+        if (!sendScreenAgentMessage('START_SEGMENT', {segmentIndex: index})) {
+            clearTimeout(timer);
+            screenStartWaiters.delete(index);
+            reject(new Error('Окно записи экрана закрыто.'));
+        }
     });
-    const started = new Promise((resolve, reject) => {
-        recorder.addEventListener('start', resolve, {once: true});
-        recorder.addEventListener('error', event => reject(event?.error || new Error('MediaRecorder не начал запись экрана')), {once: true});
-    });
-    recorder.start(MEDIA_CHUNK_INTERVAL_MS);
-    await started;
-    reportDesktopEvent('SCREEN_RECORDING_STARTED', JSON.stringify({mimeType: recorder.mimeType || mimeType || 'default', videoBitsPerSecond: recorder.videoBitsPerSecond || null, audioBitsPerSecond: recorder.audioBitsPerSecond || null}));
-    currentScreenSegment = {index, recorder, uploader, stopPromise: null};
 }
 
 function stopScreenSegment(index) {
-    const segment = currentScreenSegment;
-    if (!segment || segment.index !== index) return Promise.reject(new Error('Сегмент экрана не найден.'));
-    if (segment.stopPromise) return segment.stopPromise;
-    currentScreenSegment = null;
-    segment.stopPromise = new Promise((resolve, reject) => {
-        segment.recorder.addEventListener('stop', async () => {
-            try {
-                const ready = await segment.uploader.finish();
-                resolve(ready);
-            } catch (error) { reject(error); }
-        }, {once: true});
-        segment.recorder.addEventListener('error', event => reject(event?.error || new Error('Ошибка записи экрана')), {once: true});
-        try { segment.recorder.stop(); } catch (error) { reject(error); }
+    if (!screenAgent || screenAgent.closed) {
+        return Promise.reject(new Error('Окно записи экрана закрыто.'));
+    }
+    return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => {
+            screenStopWaiters.delete(index);
+            reject(new Error('Запись экрана не завершила сохранение.'));
+        }, 20 * 60 * 1000);
+        screenStopWaiters.set(index, {resolve, reject, timer});
+        if (!sendScreenAgentMessage('STOP_SEGMENT', {segmentIndex: index})) {
+            clearTimeout(timer);
+            screenStopWaiters.delete(index);
+            reject(new Error('Окно записи экрана закрыто.'));
+        }
     });
-    return segment.stopPromise;
 }
 
 function initializeFileUpload() {
@@ -1315,7 +1501,7 @@ async function resetTransientMedia() {
         uploader.discard().catch(() => {});
     }
     stopCameraCapture();
-    stopScreenCapture();
+    closeScreenCaptureAgent();
     clearRecordedPreview();
     clearFilePreview();
     selectedFileCard.hidden = true;

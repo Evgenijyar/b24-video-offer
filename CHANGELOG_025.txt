@@ -1,0 +1,62 @@
+Update 025 — top-level screen capture agent for Bitrix24 desktop
+Date: 2026-08-10
+Base: Update 024
+
+WHY
+- Bitrix24 embeds the application in a parent iframe that does not delegate Permissions Policy display-capture.
+- getDisplayMedia therefore cannot work reliably from the Bitrix widget itself.
+- Screen Capture also requires transient user activation in the top-level document that invokes getDisplayMedia.
+
+DESKTOP SCREEN CAPTURE
+- Added a dedicated same-origin top-level capture agent at GET /bitrix/screen-capture.
+- Clicking “Экран” in the Bitrix widget opens one small fixed-size popup requested as non-resizable.
+- The agent UI intentionally contains only one large “Выбрать экран” button. No duplicate recorder controls, hints or status UI.
+- The user click inside that top-level window invokes navigator.mediaDevices.getDisplayMedia(), bypassing the parent Bitrix iframe Permissions Policy restriction while preserving normal browser consent.
+- After capture succeeds the agent removes its UI, shrinks to a small parked window in the lower-right corner, blurs itself and returns focus to the Bitrix widget.
+- The agent remains alive only to keep the display MediaStream permission/track alive and to record screen segments on command.
+- When the overall recording is stopped, the agent is closed automatically as soon as all screen segments are safely READY, before segment merge/preview work.
+
+MAIN BITRIX UI REMAINS THE CONTROLLER
+- Live captured-screen preview is shown in the existing Bitrix recorder preview.
+- Primary preview transport is direct same-origin MediaStream handoff between the popup and the iframe.
+- A local RTCPeerConnection preview bridge is included as a fallback if direct cross-window MediaStream access is unavailable in a particular Chromium process layout.
+- Start/Stop and Camera/Screen switching remain exclusively in the main Bitrix widget.
+- The popup never exposes duplicate Start/Stop/switch controls.
+- Screen selection is retained while recording switches to camera, so switching back to Screen reuses the already-approved display stream without another chooser.
+
+SEGMENT ORCHESTRATION
+- Screen recording happens inside the top-level agent because that context owns the display MediaStream.
+- Screen chunks upload directly from the agent through the existing /bitrix/mobile/uploads pipeline; large Blob data is not copied through postMessage.
+- Camera segments continue to record/upload in the main widget.
+- The main widget preserves the existing ordered segment list and server merge pipeline across Camera -> Screen -> Camera -> Screen transitions.
+- Screen segment finalization may continue in the agent while camera is already recording; a later screen segment can start after the previous MediaRecorder has stopped without waiting for server normalization to finish.
+- Segment start/stop commands have explicit acknowledgements, errors and timeouts.
+- Existing upload/server processing percentages from the capture agent feed the same desktop “Загрузка видео” progress UI.
+
+ROBUSTNESS
+- Capture-agent messages are isolated by a per-widget random agentId plus exact same-origin/source checks.
+- Manual popup close releases preview state and fails pending screen operations deterministically.
+- Native “Stop sharing” is detected; if Screen is the active recording source the main widget stops/finalizes the recording instead of silently losing the segment.
+- Screen preview WebRTC signaling uses plain SDP/candidate objects suitable for postMessage structured cloning.
+- Changing screen audio options outside an active recording closes the old capture agent and starts a fresh selection flow.
+
+QUALITY
+- Display capture is allowed up to 1920x1080 at 30 fps after the user selects a surface.
+- Screen MediaRecorder target is 4 Mbps video / 128 kbps audio.
+- Existing fast MP4/remux/transcode pipeline from Update 024 is unchanged.
+
+NEW FILES
+- src/main/java/ru/abs7/videooffer/bitrix/BitrixScreenCaptureController.java
+- src/main/resources/static/bitrix-screen-capture.html
+- src/main/resources/static/assets/bitrix-screen-capture.js
+- src/main/resources/static/assets/bitrix-screen-capture.css
+
+CHANGED FILES
+- src/main/resources/static/assets/bitrix-widget.js
+- src/main/resources/static/bitrix-widget.html
+
+VALIDATION PERFORMED
+- node --check passes for every active JavaScript file in the project.
+- getElementById references are consistent with both widget HTML files.
+- New BitrixScreenCaptureController compiles with Java 21 against strict Spring API stubs.
+- Full Maven/Docker integration remains the deployment gate on the target environment.
