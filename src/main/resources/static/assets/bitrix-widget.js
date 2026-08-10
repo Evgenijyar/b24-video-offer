@@ -19,6 +19,15 @@ const publicLink = document.getElementById('public-link');
 
 const cameraPreview = document.getElementById('camera-preview');
 const cameraPlaceholder = document.getElementById('camera-placeholder');
+const cameraStage = document.getElementById('camera-stage');
+const cameraPlaceholderIcon = document.getElementById('camera-placeholder-icon');
+const cameraPlaceholderTitle = document.getElementById('camera-placeholder-title');
+const cameraPlaceholderText = document.getElementById('camera-placeholder-text');
+const captureModePicker = document.getElementById('capture-mode-picker');
+const systemAudioOption = document.getElementById('system-audio-option');
+const captureSystemAudio = document.getElementById('capture-system-audio');
+const captureMicrophone = document.getElementById('capture-microphone');
+const audioCaptureStatus = document.getElementById('audio-capture-status');
 const cameraError = document.getElementById('camera-error');
 const startCameraButton = document.getElementById('start-camera');
 const switchCameraButton = document.getElementById('switch-camera');
@@ -41,6 +50,9 @@ let activeOfferId = null;
 let pollTimer = null;
 
 let cameraStream = null;
+let ownedCaptureStreams = [];
+let captureAudioContext = null;
+let captureMode = 'CAMERA';
 let cameraDevices = [];
 let activeCameraIndex = 0;
 let mediaRecorder = null;
@@ -164,7 +176,13 @@ async function switchSourceMode(mode) {
         recordSourceSection.hidden = false;
         offerFields.hidden = true;
         submitButton.hidden = true;
-        await startCamera(false);
+        renderCaptureModeUi();
+        if (captureMode === 'CAMERA') {
+            await startCamera(false);
+        } else {
+            showCapturePlaceholder();
+            startCameraButton.hidden = false;
+        }
     } else {
         await resetRecorder(false);
         offerFields.hidden = false;
@@ -174,13 +192,96 @@ async function switchSourceMode(mode) {
 }
 
 function initializeRecorder() {
-    startCameraButton.addEventListener('click', () => startCamera(false));
+    startCameraButton.addEventListener('click', () => startSelectedCapture(false));
     switchCameraButton.addEventListener('click', switchCamera);
     recordToggleButton.addEventListener('click', toggleRecording);
     playRecordingButton.addEventListener('click', toggleRecordedPlayback);
     cameraPreview.addEventListener('play', updatePlayButtonState);
     cameraPreview.addEventListener('pause', updatePlayButtonState);
     cameraPreview.addEventListener('ended', updatePlayButtonState);
+
+    captureModePicker.querySelectorAll('[data-capture-mode]').forEach((button) => {
+        button.addEventListener('click', async () => {
+            const nextMode = button.dataset.captureMode;
+            if (!nextMode || nextMode === captureMode || isRecordingActive() || recordingFinalizing) return;
+            await selectCaptureMode(nextMode);
+        });
+    });
+
+    captureMicrophone.addEventListener('change', handleCaptureOptionChange);
+    captureSystemAudio.addEventListener('change', handleCaptureOptionChange);
+    renderCaptureModeUi();
+}
+
+async function selectCaptureMode(mode) {
+    captureMode = mode === 'SCREEN' ? 'SCREEN' : 'CAMERA';
+    const previousUpload = uploadSession;
+    await resetRecorder(false);
+    if (previousUpload && previousUpload.status === 'CONSUMED') {
+        // consumed uploads belong to already-created offers and do not need deletion
+    }
+    renderCaptureModeUi();
+
+    if (captureMode === 'CAMERA' && sourceModeInput.value === 'RECORD') {
+        await startCamera(false);
+    } else {
+        showCapturePlaceholder();
+        startCameraButton.hidden = false;
+        recordToggleButton.hidden = true;
+        playRecordingButton.hidden = true;
+    }
+    fitWindow();
+}
+
+async function handleCaptureOptionChange() {
+    if (isRecordingActive() || recordingFinalizing) return;
+    clearAudioStatus();
+    if (!cameraStream) return;
+
+    if (captureMode === 'CAMERA') {
+        await startCamera(false);
+        return;
+    }
+
+    stopCameraStream();
+    clearRecordedPreview();
+    showCapturePlaceholder();
+    startCameraButton.hidden = false;
+    recordToggleButton.hidden = true;
+    playRecordingButton.hidden = true;
+    setAudioStatus('Настройки звука изменены. Выберите экран заново.', true);
+    fitWindow();
+}
+
+function renderCaptureModeUi() {
+    captureModePicker.querySelectorAll('[data-capture-mode]').forEach((button) => {
+        const active = button.dataset.captureMode === captureMode;
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    const screen = captureMode === 'SCREEN';
+    systemAudioOption.hidden = !screen;
+    cameraStage.classList.toggle('is-screen', screen);
+    switchCameraButton.hidden = screen || cameraDevices.length < 2;
+    startCameraButton.textContent = screen ? 'Выбрать экран' : 'Включить камеру';
+    showCapturePlaceholder();
+}
+
+function showCapturePlaceholder() {
+    const screen = captureMode === 'SCREEN';
+    cameraPlaceholderIcon.textContent = screen ? '▣' : '●';
+    cameraPlaceholderTitle.textContent = screen ? 'Экран не выбран' : 'Камера выключена';
+    cameraPlaceholderText.textContent = screen
+        ? 'Выберите экран, окно или вкладку для записи.'
+        : (captureMicrophone.checked
+            ? 'Разрешите доступ к камере и стандартному микрофону.'
+            : 'Разрешите доступ к камере.');
+    cameraPlaceholder.hidden = false;
+    cameraPreview.hidden = true;
+}
+
+async function startSelectedCapture(switching) {
+    return captureMode === 'SCREEN' ? startScreenCapture() : startCamera(switching);
 }
 
 async function startCamera(switching) {
@@ -192,6 +293,7 @@ async function startCamera(switching) {
     }
 
     clearCameraError();
+    clearAudioStatus();
     startCameraButton.disabled = true;
     startCameraButton.textContent = switching ? 'Переключаем…' : 'Включаем…';
 
@@ -211,25 +313,19 @@ async function startCamera(switching) {
             };
         }
 
-        cameraStream = await navigator.mediaDevices.getUserMedia({
+        const videoStream = registerOwnedStream(await navigator.mediaDevices.getUserMedia({
             video: videoConstraint,
-            audio: {
-                echoCancellation: true,
-                noiseSuppression: true,
-                channelCount: 1
-            }
-        });
+            audio: false
+        }));
+        const microphoneStream = captureMicrophone.checked
+            ? registerOwnedStream(await acquireMicrophoneStream())
+            : null;
 
-        cameraPreview.removeAttribute('src');
-        cameraPreview.srcObject = cameraStream;
-        cameraPreview.autoplay = true;
-        cameraPreview.muted = true;
-        cameraPreview.hidden = false;
-        cameraPlaceholder.hidden = true;
-        try { await cameraPreview.play(); } catch (_) {}
+        cameraStream = await composeRecordingStream(videoStream, null, microphoneStream);
+        await showLivePreview(cameraStream);
 
         await refreshCameraDevices();
-        const currentDeviceId = cameraStream.getVideoTracks()[0]?.getSettings()?.deviceId;
+        const currentDeviceId = videoStream.getVideoTracks()[0]?.getSettings()?.deviceId;
         const currentIndex = cameraDevices.findIndex((device) => device.deviceId === currentDeviceId);
         if (currentIndex >= 0) activeCameraIndex = currentIndex;
 
@@ -240,21 +336,210 @@ async function startCamera(switching) {
         startCameraButton.hidden = true;
         playRecordingButton.hidden = true;
         updateRecordButtonState(false);
+        renderAudioStatus(null, microphoneStream);
         fitWindow();
         return true;
     } catch (error) {
         stopCameraStream();
-        cameraPlaceholder.hidden = false;
+        showCapturePlaceholder();
         switchCameraButton.hidden = true;
         recordToggleButton.hidden = true;
         startCameraButton.hidden = false;
-        setCameraError(cameraErrorMessage(error));
+        setCameraError(captureErrorMessage(error, 'CAMERA'));
         fitWindow();
         return false;
     } finally {
         startCameraButton.disabled = false;
-        startCameraButton.textContent = 'Включить камеру';
+        startCameraButton.textContent = captureMode === 'SCREEN' ? 'Выбрать экран' : 'Включить камеру';
     }
+}
+
+async function startScreenCapture() {
+    if (sourceModeInput.value !== 'RECORD') return false;
+    if (!supportsScreenRecording()) {
+        setCameraError('Этот браузер или Bitrix Desktop не предоставляет API записи экрана.');
+        return false;
+    }
+
+    clearCameraError();
+    clearAudioStatus();
+    startCameraButton.disabled = true;
+    startCameraButton.textContent = 'Выбираем…';
+
+    try {
+        stopCameraStream();
+        clearRecordedPreview();
+
+        const wantSystemAudio = captureSystemAudio.checked;
+        const displayOptions = {
+            video: true,
+            audio: wantSystemAudio,
+            selfBrowserSurface: 'exclude',
+            surfaceSwitching: 'include',
+            monitorTypeSurfaces: 'include'
+        };
+        if (wantSystemAudio) {
+            displayOptions.systemAudio = 'include';
+            displayOptions.windowAudio = 'system';
+            displayOptions.audioSelection = 'preferred';
+        } else {
+            displayOptions.systemAudio = 'exclude';
+            displayOptions.windowAudio = 'exclude';
+        }
+
+        const displayStream = registerOwnedStream(
+            await navigator.mediaDevices.getDisplayMedia(displayOptions));
+        const displayVideoTrack = displayStream.getVideoTracks()[0];
+        if (!displayVideoTrack) throw new Error('Браузер не передал видеопоток выбранного экрана.');
+        try {
+            await displayVideoTrack.applyConstraints({frameRate: {ideal: 30, max: 30}});
+        } catch (_) {}
+
+        const microphoneStream = captureMicrophone.checked
+            ? registerOwnedStream(await acquireMicrophoneStream())
+            : null;
+
+        cameraStream = await composeRecordingStream(displayStream, displayStream, microphoneStream);
+        displayVideoTrack.addEventListener('ended', handleDisplayTrackEnded, {once: true});
+        await showLivePreview(cameraStream);
+
+        switchCameraButton.hidden = true;
+        recordToggleButton.hidden = false;
+        recordToggleButton.disabled = false;
+        startCameraButton.hidden = true;
+        playRecordingButton.hidden = true;
+        updateRecordButtonState(false);
+        renderAudioStatus(displayStream, microphoneStream);
+        fitWindow();
+        return true;
+    } catch (error) {
+        stopCameraStream();
+        showCapturePlaceholder();
+        switchCameraButton.hidden = true;
+        recordToggleButton.hidden = true;
+        startCameraButton.hidden = false;
+        if (error?.name !== 'NotAllowedError' || !String(error?.message || '').toLowerCase().includes('permission')) {
+            setCameraError(captureErrorMessage(error, 'SCREEN'));
+        } else {
+            setCameraError('Доступ к записи экрана не предоставлен. Нажмите «Выбрать экран» и разрешите демонстрацию.');
+        }
+        fitWindow();
+        return false;
+    } finally {
+        startCameraButton.disabled = false;
+        startCameraButton.textContent = captureMode === 'SCREEN' ? 'Выбрать экран' : 'Включить камеру';
+    }
+}
+
+async function acquireMicrophoneStream() {
+    const stream = await navigator.mediaDevices.getUserMedia({
+        video: false,
+        audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            channelCount: 1
+        }
+    });
+    if (!stream.getAudioTracks().length) {
+        stream.getTracks().forEach((track) => track.stop());
+        throw new Error('Стандартный системный микрофон не передал аудиодорожку.');
+    }
+    return stream;
+}
+
+async function composeRecordingStream(videoStream, systemAudioStream, microphoneStream) {
+    const videoTrack = videoStream?.getVideoTracks?.()[0];
+    if (!videoTrack) throw new Error('Нет видеодорожки для записи.');
+
+    const output = new MediaStream([videoTrack]);
+    const systemTrack = systemAudioStream?.getAudioTracks?.()[0] || null;
+    const microphoneTrack = microphoneStream?.getAudioTracks?.()[0] || null;
+
+    if (systemTrack && microphoneTrack) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) throw new Error('Браузер не умеет объединять звук компьютера и микрофона.');
+        captureAudioContext = new AudioContextClass();
+        try { await captureAudioContext.resume(); } catch (_) {}
+        const destination = captureAudioContext.createMediaStreamDestination();
+        captureAudioContext.createMediaStreamSource(new MediaStream([systemTrack])).connect(destination);
+        captureAudioContext.createMediaStreamSource(new MediaStream([microphoneTrack])).connect(destination);
+        const mixedTrack = destination.stream.getAudioTracks()[0];
+        if (mixedTrack) output.addTrack(mixedTrack);
+    } else if (systemTrack) {
+        output.addTrack(systemTrack);
+    } else if (microphoneTrack) {
+        output.addTrack(microphoneTrack);
+    }
+    return output;
+}
+
+function registerOwnedStream(stream) {
+    if (stream) ownedCaptureStreams.push(stream);
+    return stream;
+}
+
+async function showLivePreview(stream) {
+    cameraPreview.removeAttribute('src');
+    cameraPreview.srcObject = stream;
+    cameraPreview.autoplay = true;
+    cameraPreview.muted = true;
+    cameraPreview.hidden = false;
+    cameraPlaceholder.hidden = true;
+    try { await cameraPreview.play(); } catch (_) {}
+}
+
+function renderAudioStatus(displayStream, microphoneStream) {
+    const systemTrack = displayStream?.getAudioTracks?.()[0] || null;
+    const microphoneTrack = microphoneStream?.getAudioTracks?.()[0] || null;
+    const parts = [];
+
+    if (captureMode === 'SCREEN' && captureSystemAudio.checked) {
+        if (systemTrack) parts.push('звук компьютера');
+        else {
+            const micText = microphoneTrack ? ' Микрофон при этом записывается.' : '';
+            setAudioStatus('Браузер не передал системный звук. В окне выбора экрана включите «Поделиться звуком» или выберите вкладку со звуком.' + micText, true);
+            return;
+        }
+    }
+    if (captureMicrophone.checked && microphoneTrack) {
+        const label = microphoneTrack.label?.trim();
+        parts.push(label ? `микрофон «${label}»` : 'системный микрофон');
+    }
+
+    if (parts.length) setAudioStatus('В запись войдут: ' + parts.join(' + ') + '.', false);
+    else setAudioStatus('Запись будет без звука.', true);
+}
+
+function setAudioStatus(message, warning) {
+    audioCaptureStatus.hidden = !message;
+    audioCaptureStatus.textContent = message || '';
+    audioCaptureStatus.classList.toggle('is-warning', !!warning);
+}
+
+function clearAudioStatus() {
+    setAudioStatus('', false);
+}
+
+function handleDisplayTrackEnded() {
+    if (captureMode !== 'SCREEN') return;
+    if (isRecordingActive()) {
+        stopRecording();
+        return;
+    }
+    stopCameraStream();
+    showCapturePlaceholder();
+    startCameraButton.hidden = false;
+    recordToggleButton.hidden = true;
+    playRecordingButton.hidden = true;
+    setCameraError('Демонстрация экрана завершена. Выберите экран снова.');
+    fitWindow();
+}
+
+function setCaptureOptionControlsDisabled(disabled) {
+    captureModePicker.querySelectorAll('button').forEach((button) => { button.disabled = !!disabled; });
+    captureSystemAudio.disabled = !!disabled;
+    captureMicrophone.disabled = !!disabled;
 }
 
 async function refreshCameraDevices() {
@@ -303,7 +588,7 @@ async function toggleRecording() {
     }
 
     if (!cameraStream) {
-        const started = await startCamera(false);
+        const started = await startSelectedCapture(false);
         if (!started) return;
     }
     await startRecording();
@@ -319,6 +604,7 @@ async function startRecording() {
     processing.hidden = true;
     readyResult.hidden = true;
     recordingFinalizing = false;
+    setCaptureOptionControlsDisabled(true);
 
     try {
         const mimeType = chooseRecorderMimeType();
@@ -359,6 +645,7 @@ async function startRecording() {
         updateRecordButtonState(false);
         setCameraError(error.message || 'Не удалось начать запись');
         if (uploadSession) await discardCurrentUpload();
+        setCaptureOptionControlsDisabled(false);
     }
 }
 
@@ -468,6 +755,7 @@ async function finalizeRecordedVideo() {
         mediaRecorder = null;
         recordingFinalizing = false;
         recordToggleButton.disabled = false;
+        setCaptureOptionControlsDisabled(false);
         fitWindow();
     }
 }
@@ -578,6 +866,7 @@ function showNormalizedVideo(data) {
     submitButton.hidden = false;
     submitButton.disabled = false;
     submitButton.textContent = 'Сформировать видеооффер';
+    setCaptureOptionControlsDisabled(false);
     clearCameraError();
     fitWindow();
 }
@@ -595,6 +884,7 @@ async function resetRecorder(showCameraButton) {
     }
     mediaRecorder = null;
     recordingFinalizing = false;
+    setCaptureOptionControlsDisabled(false);
     stopCameraStream();
     uploadSession = null;
     resetChunkUploader();
@@ -605,7 +895,8 @@ async function resetRecorder(showCameraButton) {
     recordToggleButton.hidden = true;
     playRecordingButton.hidden = true;
     startCameraButton.hidden = !showCameraButton;
-    cameraPlaceholder.hidden = false;
+    showCapturePlaceholder();
+    clearAudioStatus();
     clearCameraError();
 
     if (previousUpload && previousUpload.status !== 'CONSUMED') {
@@ -735,6 +1026,11 @@ function supportsEmbeddedRecording() {
         && typeof window.MediaRecorder !== 'undefined');
 }
 
+function supportsScreenRecording() {
+    return !!(supportsEmbeddedRecording()
+        && typeof navigator.mediaDevices.getDisplayMedia === 'function');
+}
+
 function chooseRecorderMimeType() {
     if (typeof window.MediaRecorder === 'undefined'
         || typeof MediaRecorder.isTypeSupported !== 'function') return '';
@@ -752,25 +1048,54 @@ function isRecordingActive() {
 }
 
 function stopCameraStream() {
-    if (cameraStream) {
-        cameraStream.getTracks().forEach((track) => track.stop());
-        cameraStream = null;
-    }
+    const tracks = new Set();
+    if (cameraStream) cameraStream.getTracks().forEach((track) => tracks.add(track));
+    ownedCaptureStreams.forEach((stream) => {
+        try { stream.getTracks().forEach((track) => tracks.add(track)); } catch (_) {}
+    });
+    tracks.forEach((track) => {
+        try { track.stop(); } catch (_) {}
+    });
+    ownedCaptureStreams = [];
+    cameraStream = null;
     cameraPreview.srcObject = null;
+    if (captureAudioContext) {
+        try { captureAudioContext.close(); } catch (_) {}
+        captureAudioContext = null;
+    }
+}
+
+function captureErrorMessage(error, mode = captureMode) {
+    const name = error?.name || '';
+    const message = String(error?.message || '');
+    if (name === 'NotAllowedError' || name === 'PermissionDeniedError' || name === 'SecurityError') {
+        if (mode === 'SCREEN') {
+            return 'Bitrix Desktop или браузер запретил запись экрана. Разрешите демонстрацию экрана и попробуйте снова.';
+        }
+        return 'Доступ к камере или микрофону запрещён. Разрешите их для Bitrix24/браузера и попробуйте снова.';
+    }
+    if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+        return mode === 'SCREEN'
+            ? 'Не удалось получить выбранный экран.'
+            : 'Камера или микрофон не найдены на компьютере.';
+    }
+    if (name === 'NotReadableError' || name === 'TrackStartError') {
+        return mode === 'SCREEN'
+            ? 'Выбранный экран сейчас недоступен для записи.'
+            : 'Камера или микрофон сейчас заняты другим приложением либо недоступны.';
+    }
+    if (name === 'AbortError') {
+        return mode === 'SCREEN' ? 'Выбор экрана отменён.' : 'Подключение камеры отменено.';
+    }
+    if (mode === 'SCREEN' && /permissions policy|display-capture/i.test(message)) {
+        return 'Bitrix Desktop не разрешил встроенной странице захват экрана (display-capture).';
+    }
+    return (mode === 'SCREEN' ? 'Не удалось начать запись экрана: ' : 'Не удалось открыть камеру: ')
+        + (message || name || 'неизвестная ошибка');
 }
 
 function cameraErrorMessage(error) {
-    const name = error?.name || '';
-    if (name === 'NotAllowedError' || name === 'PermissionDeniedError' || name === 'SecurityError') {
-        return 'Доступ к камере или микрофону запрещён. Разрешите их для Bitrix24/браузера и нажмите «Включить камеру» ещё раз.';
-    }
-    if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
-        return 'Камера или микрофон не найдены на компьютере.';
-    }
-    if (name === 'NotReadableError' || name === 'TrackStartError') {
-        return 'Камера или микрофон сейчас заняты другим приложением либо недоступны.';
-    }
-    return 'Не удалось открыть камеру: ' + (error?.message || name || 'неизвестная ошибка');
+    return captureErrorMessage(error, 'CAMERA');
 }
 
 function setCameraError(message) {

@@ -108,7 +108,7 @@ public class BitrixController {
                 placement, entityType, entityId, html.getBytes(StandardCharsets.UTF_8).length);
         return ResponseEntity.ok()
                 .contentType(MediaType.TEXT_HTML)
-                .header("Permissions-Policy", "camera=(self), microphone=(self)")
+                .header("Permissions-Policy", "camera=(self), microphone=(self), display-capture=(self)")
                 .header("Cache-Control", "no-store")
                 .header("Referrer-Policy", "no-referrer")
                 .header("X-Content-Type-Options", "nosniff")

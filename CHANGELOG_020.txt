@@ -1,0 +1,16 @@
+Update 020 — desktop screen recording + explicit audio capture
+
+- Added desktop recorder mode switch: Camera / Screen.
+- Camera mode now acquires the default system microphone as a separate audio stream and explicitly attaches it to the MediaRecorder stream.
+- Added microphone checkbox (enabled by default).
+- Added screen capture through MediaDevices.getDisplayMedia().
+- Added system/computer audio checkbox for screen capture (enabled by default).
+- When both system audio and microphone are enabled, they are mixed into one audio track through Web Audio API before MediaRecorder receives the stream.
+- Added screen/window/tab preview and automatic handling when the user stops screen sharing from the browser UI.
+- Added clear audio-status feedback when the browser does not return a system-audio track.
+- Added Permissions-Policy display-capture=(self) to the desktop widget response.
+- Existing upload/finalization pipeline from update 018 is reused unchanged.
+- Cache-busting for desktop widget CSS/JS bumped to v=020.
+
+Important browser limitation:
+System audio is controlled by the browser/OS capture picker. The application can request it, but the browser may return video without an audio track. In Chrome/Chromium the user may need to enable the "Share audio" option when selecting a screen/window/tab.

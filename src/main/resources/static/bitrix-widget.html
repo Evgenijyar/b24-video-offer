@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Сформировать видеооффер</title>
-    <link rel="stylesheet" href="/assets/bitrix-widget.css?v=019">
+    <link rel="stylesheet" href="/assets/bitrix-widget.css?v=020">
     <script src="//api.bitrix24.com/api/v1/"></script>
 </head>
 <body>
@@ -28,7 +28,7 @@
         </button>
         <button type="button" class="source-option" data-source="RECORD" aria-pressed="false">
             <span class="source-icon source-icon--record">●</span>
-            <span><b>Записать видео</b><small>камера компьютера</small></span>
+            <span><b>Записать видео</b><small>камера или экран</small></span>
         </button>
     </div>
 
@@ -46,12 +46,35 @@
         </section>
 
         <section id="record-source-section" class="desktop-recorder" hidden>
+            <div id="capture-mode-picker" class="capture-mode-picker" role="group" aria-label="Что записываем">
+                <button type="button" class="capture-mode-option is-active" data-capture-mode="CAMERA" aria-pressed="true">
+                    <span class="capture-mode-icon" aria-hidden="true">●</span>
+                    <span><b>Камера</b><small>веб-камера компьютера</small></span>
+                </button>
+                <button type="button" class="capture-mode-option" data-capture-mode="SCREEN" aria-pressed="false">
+                    <span class="capture-mode-icon capture-mode-icon--screen" aria-hidden="true">▣</span>
+                    <span><b>Экран</b><small>экран, окно или вкладка</small></span>
+                </button>
+            </div>
+
+            <div class="capture-options" aria-label="Параметры звука">
+                <label id="system-audio-option" class="capture-check" hidden>
+                    <input id="capture-system-audio" type="checkbox" checked>
+                    <span><b>Звук компьютера</b><small>системный звук или звук выбранной вкладки</small></span>
+                </label>
+                <label class="capture-check">
+                    <input id="capture-microphone" type="checkbox" checked>
+                    <span><b>Микрофон</b><small>стандартный системный микрофон</small></span>
+                </label>
+            </div>
+            <div id="audio-capture-status" class="audio-capture-status" hidden></div>
+
             <div id="camera-stage" class="camera-stage">
                 <video id="camera-preview" autoplay muted playsinline preload="metadata"></video>
                 <div id="camera-placeholder" class="camera-placeholder">
-                    <div class="camera-placeholder-icon">●</div>
-                    <strong>Камера выключена</strong>
-                    <span>Разрешите доступ к камере и микрофону, чтобы записать видео.</span>
+                    <div id="camera-placeholder-icon" class="camera-placeholder-icon">●</div>
+                    <strong id="camera-placeholder-title">Камера выключена</strong>
+                    <span id="camera-placeholder-text">Разрешите доступ к камере и микрофону, чтобы записать видео.</span>
                 </div>
                 <div id="recording-badge" class="recording-badge" hidden><i></i> REC</div>
             </div>
@@ -132,6 +155,6 @@
         </div>
     </section>
 </main>
-<script src="/assets/bitrix-widget.js?v=019"></script>
+<script src="/assets/bitrix-widget.js?v=020"></script>
 </body>
 </html>
