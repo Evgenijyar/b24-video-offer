@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 import ru.abs7.videooffer.kontur.KonturRecordingUrlParser;
 import ru.abs7.videooffer.kontur.KonturVideoDownloader;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.function.IntConsumer;
 
@@ -31,7 +30,7 @@ public class UniversalVideoDownloader {
             String sourceUrl,
             String recordingKey,
             String targetBaseName,
-            IntConsumer progressConsumer) throws IOException, InterruptedException {
+            IntConsumer progressConsumer) throws Exception {
         if (konturParser.isKonturRecordingUrl(sourceUrl)) {
             log.info("Universal video source resolved: type=KONTUR, targetBase={}", targetBaseName);
             KonturVideoDownloader.DownloadResult result = konturDownloader.download(
