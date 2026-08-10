@@ -54,6 +54,9 @@ const isBitrixMobile = /BitrixMobile/i.test(navigator.userAgent || '');
 const MAX_FALLBACK_FILE_BYTES = 512 * 1024 * 1024;
 const FALLBACK_CHUNK_BYTES = 4 * 1024 * 1024;
 const MEDIA_CHUNK_INTERVAL_MS = 2000;
+const MAX_PARALLEL_UPLOADS = 4;
+const CHUNK_UPLOAD_TIMEOUT_MS = 30_000;
+const UPLOAD_DRAIN_TIMEOUT_MS = 90_000;
 
 let debounceTimer = null;
 let activeSearchController = null;
@@ -70,8 +73,16 @@ let permissionReturnPending = false;
 let permissionRetryInFlight = false;
 let wakeLock = null;
 let uploadSession = null;
-let uploadChain = Promise.resolve();
 let uploadFailure = null;
+let uploadQueue = [];
+let activeChunkUploads = 0;
+let nextChunkSequence = 0;
+let uploadedChunkCount = 0;
+let uploadedChunkBytes = 0;
+let uploadDrainWaiters = [];
+let activeUploadControllers = new Set();
+let finalChunkCount = 0;
+let uploadGeneration = 0;
 let recordingFinalizing = false;
 let normalizationPollTimer = null;
 let activeOfferId = null;
@@ -373,8 +384,8 @@ async function startCamera(switching) {
         const constraints = {
             video: {
                 facingMode: {ideal: facingMode},
-                width: {ideal: 1280, max: 1920},
-                height: {ideal: 720, max: 1080},
+                width: {ideal: 1280, max: 1280},
+                height: {ideal: 720, max: 1280},
                 frameRate: {ideal: 30, max: 30}
             },
             audio: {
@@ -400,7 +411,18 @@ async function startCamera(switching) {
         updateRecordButtonState(false);
         permissionReturnPending = false;
         try { sessionStorage.removeItem('b24-awaiting-media-permission'); } catch (_) {}
-        reportClientEvent('CAMERA_READY', facingMode);
+        const videoTrack = cameraStream.getVideoTracks()[0];
+        let cameraDetails = facingMode;
+        try {
+            const settings = videoTrack && typeof videoTrack.getSettings === 'function' ? videoTrack.getSettings() : {};
+            cameraDetails += ';settings=' + JSON.stringify({
+                width: settings.width || null,
+                height: settings.height || null,
+                frameRate: settings.frameRate || null,
+                facingMode: settings.facingMode || null
+            });
+        } catch (_) { }
+        reportClientEvent('CAMERA_READY', cameraDetails);
         return true;
     } catch (error) {
         stopCameraStream();
@@ -458,14 +480,13 @@ async function startRecording() {
     hidePermissionDialog();
     resetOfferOutput();
     uploadProcessing.hidden = true;
-    uploadFailure = null;
-    uploadChain = Promise.resolve();
+    resetChunkUploader();
     recordingFinalizing = false;
 
     try {
         const mimeType = chooseRecorderMimeType();
         const recorderOptions = {
-            videoBitsPerSecond: 2_500_000,
+            videoBitsPerSecond: 1_800_000,
             audioBitsPerSecond: 96_000
         };
         if (mimeType) recorderOptions.mimeType = mimeType;
@@ -495,7 +516,11 @@ async function startRecording() {
 
         startTimer();
         await acquireWakeLock();
-        reportClientEvent('RECORDING_STARTED', mediaRecorder.mimeType || mimeType || 'default');
+        reportClientEvent('RECORDING_STARTED', JSON.stringify({
+            mimeType: mediaRecorder.mimeType || mimeType || 'default',
+            videoBitsPerSecond: mediaRecorder.videoBitsPerSecond || null,
+            audioBitsPerSecond: mediaRecorder.audioBitsPerSecond || null
+        }));
         switchCameraButton.disabled = true;
         playRecordingButton.hidden = true;
         recordingBadge.hidden = false;
@@ -521,19 +546,60 @@ function handleRecorderError(event) {
 
 function handleRecordedChunk(event) {
     if (!event.data || event.data.size <= 0 || !uploadSession) return;
-    const blob = event.data;
-    uploadChain = uploadChain.then(async () => {
-        if (uploadFailure) return;
-        try {
-            uploadSession = await uploadChunkWithRetry(blob);
-        } catch (error) {
-            uploadFailure = error;
-            setCameraError('Не удалось сохранить запись: ' + (error.message || 'ошибка сети'));
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                try { mediaRecorder.stop(); } catch (_) {}
-            }
-        }
+    enqueueChunkUpload(event.data);
+}
+
+function enqueueChunkUpload(blob) {
+    const sequence = nextChunkSequence++;
+    uploadQueue.push({
+        sequence,
+        blob,
+        generation: uploadGeneration,
+        session: uploadSession
     });
+    pumpChunkUploads();
+}
+
+function pumpChunkUploads() {
+    while (!uploadFailure && activeChunkUploads < MAX_PARALLEL_UPLOADS && uploadQueue.length > 0) {
+        const task = uploadQueue.shift();
+        activeChunkUploads++;
+        uploadChunkWithRetry(task.blob, task.sequence, task.session)
+            .then((data) => {
+                if (task.generation !== uploadGeneration) return;
+                uploadedChunkCount++;
+                uploadedChunkBytes += task.blob.size;
+                if (uploadSession && task.session && uploadSession.id === task.session.id && data) {
+                    uploadSession = {
+                        ...uploadSession,
+                        status: data.status || uploadSession.status,
+                        bytesReceived: Math.max(
+                            Number(uploadSession.bytesReceived || 0),
+                            Number(data.bytesReceived || 0),
+                            uploadedChunkBytes)
+                    };
+                }
+                renderUploadSaveProgress();
+            })
+            .catch((error) => {
+                if (task.generation !== uploadGeneration) return;
+                if (!uploadFailure) {
+                    uploadFailure = error;
+                    setCameraError('Не удалось сохранить запись: ' + (error.message || 'ошибка сети'));
+                    reportClientEvent('UPLOAD_CHUNK_ERROR', 'sequence=' + task.sequence + ';' + (error.message || 'network error'));
+                    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                        try { mediaRecorder.stop(); } catch (_) { }
+                    }
+                }
+            })
+            .finally(() => {
+                if (task.generation !== uploadGeneration) return;
+                activeChunkUploads = Math.max(0, activeChunkUploads - 1);
+                pumpChunkUploads();
+                notifyUploadDrainWaiters();
+            });
+    }
+    notifyUploadDrainWaiters();
 }
 
 function stopRecording() {
@@ -544,6 +610,7 @@ function stopRecording() {
     updateRecordButtonState(false);
     uploadProcessing.hidden = false;
     uploadStatus.textContent = 'Сохраняем видео…';
+    setUploadProgress(0);
     try {
         mediaRecorder.stop();
     } catch (error) {
@@ -561,12 +628,26 @@ async function finalizeRecordedVideo() {
     switchCameraButton.disabled = false;
     recordToggleButton.disabled = true;
     stopCameraStream();
+    finalChunkCount = nextChunkSequence;
+    reportClientEvent('RECORDING_STOPPED', JSON.stringify({
+        chunks: finalChunkCount,
+        alreadyUploaded: uploadedChunkCount,
+        queued: uploadQueue.length,
+        active: activeChunkUploads
+    }));
+    renderUploadSaveProgress();
 
     try {
-        await uploadChain;
+        await waitForChunkUploads(UPLOAD_DRAIN_TIMEOUT_MS);
         if (uploadFailure) throw uploadFailure;
-        uploadStatus.textContent = 'Обрабатываем видео…';
-        uploadSession = await completeUploadSession();
+        if (finalChunkCount <= 0) throw new Error('Запись не содержит видеоданных');
+        setUploadProgress(100);
+        uploadStatus.textContent = 'Подготавливаем видео…';
+        reportClientEvent('RECORDING_UPLOAD_DRAINED', JSON.stringify({
+            chunks: finalChunkCount,
+            bytes: uploadedChunkBytes
+        }));
+        uploadSession = await completeUploadSession(finalChunkCount);
         await waitForNormalization();
     } catch (error) {
         setCameraError(error.message || 'Не удалось сохранить видео');
@@ -604,14 +685,20 @@ async function uploadFallbackFile(file) {
 
     try {
         uploadSession = await createUploadSession(file.type || 'application/octet-stream');
+        resetChunkUploader();
         let offset = 0;
         while (offset < file.size) {
             const blob = file.slice(offset, Math.min(file.size, offset + FALLBACK_CHUNK_BYTES));
-            uploadSession = await uploadChunkWithRetry(blob);
+            enqueueChunkUpload(blob);
             offset += blob.size;
         }
-        uploadStatus.textContent = 'Обрабатываем видео…';
-        uploadSession = await completeUploadSession();
+        finalChunkCount = nextChunkSequence;
+        renderUploadSaveProgress();
+        await waitForChunkUploads(UPLOAD_DRAIN_TIMEOUT_MS);
+        if (uploadFailure) throw uploadFailure;
+        setUploadProgress(100);
+        uploadStatus.textContent = 'Подготавливаем видео…';
+        uploadSession = await completeUploadSession(finalChunkCount);
         await waitForNormalization();
     } catch (error) {
         setCameraError(error.message || 'Не удалось загрузить видео');
@@ -640,19 +727,23 @@ async function createUploadSession(mimeType) {
     return data;
 }
 
-async function uploadChunkWithRetry(blob) {
+async function uploadChunkWithRetry(blob, sequence, session) {
     let lastError = null;
     for (let attempt = 1; attempt <= 4; attempt++) {
+        const controller = new AbortController();
+        activeUploadControllers.add(controller);
+        const timeoutHandle = setTimeout(() => controller.abort(), CHUNK_UPLOAD_TIMEOUT_MS);
         try {
             const response = await fetch(
-                `/bitrix/mobile/uploads/${encodeURIComponent(uploadSession.id)}/chunks/${uploadSession.nextSequence}`,
+                `/bitrix/mobile/uploads/${encodeURIComponent(session.id)}/chunks/${sequence}`,
                 {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/octet-stream',
-                        'X-Upload-Token': uploadSession.uploadToken
+                        'X-Upload-Token': session.uploadToken
                     },
-                    body: blob
+                    body: blob,
+                    signal: controller.signal
                 });
             const data = await readJson(response);
             if (!response.ok) {
@@ -660,20 +751,28 @@ async function uploadChunkWithRetry(blob) {
             }
             return data;
         } catch (error) {
-            lastError = error;
+            lastError = error && error.name === 'AbortError'
+                ? new Error('Сервер слишком долго принимал видео')
+                : error;
             if (attempt < 4) {
-                await sleep(attempt * 700);
+                await sleep(Math.min(1600, attempt * 400));
             }
+        } finally {
+            clearTimeout(timeoutHandle);
+            activeUploadControllers.delete(controller);
         }
     }
     throw lastError || new Error('Не удалось загрузить часть видео');
 }
 
-async function completeUploadSession() {
-    const response = await fetch(`/bitrix/mobile/uploads/${encodeURIComponent(uploadSession.id)}/complete`, {
-        method: 'POST',
-        headers: {'X-Upload-Token': uploadSession.uploadToken}
-    });
+async function completeUploadSession(chunkCount) {
+    const response = await fetchWithTimeout(
+        `/bitrix/mobile/uploads/${encodeURIComponent(uploadSession.id)}/complete?chunkCount=${encodeURIComponent(chunkCount)}`,
+        {
+            method: 'POST',
+            headers: {'X-Upload-Token': uploadSession.uploadToken}
+        },
+        20_000);
     const data = await readJson(response);
     if (!response.ok) {
         throw new Error(data.message || 'Не удалось завершить загрузку видео');
@@ -686,9 +785,10 @@ async function waitForNormalization() {
     const startedAt = Date.now();
 
     while (Date.now() - startedAt < 20 * 60 * 1000) {
-        const response = await fetch(
+        const response = await fetchWithTimeout(
             `/bitrix/mobile/uploads/${encodeURIComponent(uploadSession.id)}?uploadToken=${encodeURIComponent(uploadSession.uploadToken)}`,
-            {cache: 'no-store'});
+            {cache: 'no-store'},
+            10_000);
         const data = await readJson(response);
         if (!response.ok) {
             throw new Error(data.message || 'Не удалось проверить обработку видео');
@@ -703,10 +803,9 @@ async function waitForNormalization() {
         if (data.status === 'ERROR') {
             throw new Error(data.errorMessage || 'Не удалось обработать видео');
         }
-        uploadStatus.textContent = data.status === 'PROCESSING'
-            ? 'Сжимаем и переводим видео в MP4…'
-            : 'Подготавливаем видео…';
-        await sleep(1000);
+        uploadStatus.textContent = 'Подготавливаем видео…';
+        const elapsed = Date.now() - startedAt;
+        await sleep(elapsed < 8000 ? 250 : 750);
     }
     throw new Error('Обработка видео заняла слишком много времени');
 }
@@ -756,8 +855,7 @@ async function resetRecordingState(showCameraButton) {
     stopCameraStream();
     await releaseWakeLock();
     uploadSession = null;
-    uploadFailure = null;
-    uploadChain = Promise.resolve();
+    resetChunkUploader();
     clearRecordedPreview();
     offerSection.hidden = true;
     processing.hidden = true;
@@ -783,8 +881,7 @@ async function resetRecordingState(showCameraButton) {
 async function discardCurrentUpload() {
     const previous = uploadSession;
     uploadSession = null;
-    uploadFailure = null;
-    uploadChain = Promise.resolve();
+    resetChunkUploader();
     uploadProcessing.hidden = true;
     offerSection.hidden = true;
     resetOfferOutput();
@@ -803,6 +900,85 @@ async function deleteUploadSession(session) {
     if (!response.ok && response.status !== 404 && response.status !== 409) {
         const data = await readJson(response);
         throw new Error(data.message || 'Не удалось удалить предыдущую запись');
+    }
+}
+
+function resetChunkUploader() {
+    uploadGeneration++;
+    uploadFailure = null;
+    uploadQueue = [];
+    activeChunkUploads = 0;
+    nextChunkSequence = 0;
+    uploadedChunkCount = 0;
+    uploadedChunkBytes = 0;
+    finalChunkCount = 0;
+    uploadDrainWaiters.splice(0).forEach((waiter) => waiter.resolve());
+    activeUploadControllers.forEach((controller) => {
+        try { controller.abort(); } catch (_) { }
+    });
+    activeUploadControllers.clear();
+    setUploadProgress(0);
+}
+
+function waitForChunkUploads(timeoutMs) {
+    if (uploadFailure) return Promise.reject(uploadFailure);
+    if (uploadQueue.length === 0 && activeChunkUploads === 0) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+        const waiter = {resolve, reject, timeout: null};
+        waiter.timeout = setTimeout(() => {
+            const index = uploadDrainWaiters.indexOf(waiter);
+            if (index >= 0) uploadDrainWaiters.splice(index, 1);
+            reject(new Error('Не удалось вовремя передать видео на сервер. Проверьте соединение и повторите запись.'));
+        }, timeoutMs);
+        uploadDrainWaiters.push(waiter);
+    });
+}
+
+function notifyUploadDrainWaiters() {
+    if (uploadFailure) {
+        const error = uploadFailure;
+        const waiters = uploadDrainWaiters.splice(0);
+        waiters.forEach((waiter) => {
+            clearTimeout(waiter.timeout);
+            waiter.reject(error);
+        });
+        return;
+    }
+    if (uploadQueue.length !== 0 || activeChunkUploads !== 0) return;
+    const waiters = uploadDrainWaiters.splice(0);
+    waiters.forEach((waiter) => {
+        clearTimeout(waiter.timeout);
+        waiter.resolve();
+    });
+}
+
+function renderUploadSaveProgress() {
+    if (uploadProcessing.hidden) return;
+    const total = Math.max(finalChunkCount || nextChunkSequence, 1);
+    const completed = Math.min(uploadedChunkCount, total);
+    const percent = Math.max(0, Math.min(99, Math.round(completed * 100 / total)));
+    setUploadProgress(percent);
+    uploadStatus.textContent = 'Сохраняем видео ' + percent + '%';
+}
+
+function setUploadProgress(percent) {
+    const normalized = Math.max(0, Math.min(100, Number(percent) || 0));
+    const bar = document.getElementById('upload-save-progress-bar');
+    if (bar) bar.style.width = normalized + '%';
+}
+
+async function fetchWithTimeout(url, options, timeoutMs) {
+    const controller = new AbortController();
+    const timeoutHandle = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        return await fetch(url, {...(options || {}), signal: controller.signal});
+    } catch (error) {
+        if (error && error.name === 'AbortError') {
+            throw new Error('Сервер слишком долго не отвечал');
+        }
+        throw error;
+    } finally {
+        clearTimeout(timeoutHandle);
     }
 }
 

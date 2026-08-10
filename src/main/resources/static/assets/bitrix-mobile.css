@@ -781,13 +781,19 @@ input:focus, textarea:focus, select:focus {
     font-weight: 800;
 }
 
+/* v018: deterministic save progress; no indefinite spinner */
 .save-state {
+    display: block;
+    margin-top: 12px;
+}
+
+.save-state[hidden] { display: none !important; }
+
+.save-state-row {
     display: flex;
     align-items: center;
-    gap: 9px;
-    margin-top: 10px;
-    color: var(--muted);
-    font-size: 12px;
+    justify-content: space-between;
+    gap: 10px;
 }
 
 .save-state strong {
@@ -796,18 +802,22 @@ input:focus, textarea:focus, select:focus {
     font-weight: 700;
 }
 
-.save-state[hidden] { display: none !important; }
-
-.save-spinner {
-    width: 16px;
-    height: 16px;
-    border: 2px solid var(--line);
-    border-top-color: var(--accent-strong);
-    border-radius: 50%;
-    animation: save-spin .8s linear infinite;
+.save-progress-track {
+    overflow: hidden;
+    height: 4px;
+    margin-top: 7px;
+    background: var(--line);
+    border-radius: 999px;
 }
 
-@keyframes save-spin { to { transform: rotate(360deg); } }
+.save-progress-bar {
+    display: block;
+    width: 0;
+    height: 100%;
+    background: var(--accent-strong);
+    border-radius: inherit;
+    transition: width .18s ease-out;
+}
 
 .permission-dialog {
     position: fixed;

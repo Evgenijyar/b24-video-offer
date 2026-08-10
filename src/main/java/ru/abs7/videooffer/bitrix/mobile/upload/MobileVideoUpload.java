@@ -91,24 +91,23 @@ public class MobileVideoUpload {
         return upload;
     }
 
-    public boolean alreadyAccepted(int sequence) {
-        return sequence < nextSequence;
-    }
-
-    public void acceptChunk(int sequence, long bytes) {
+    /**
+     * Records upload progress without requiring network chunks to arrive in sequence.
+     * Chunks are assembled in order only when the client calls complete().
+     */
+    public void acceptChunk(int sequence, long totalBytes) {
         if (status != MobileVideoUploadStatus.RECORDING) {
             throw new IllegalArgumentException("Запись уже завершена и больше не принимает данные");
         }
-        if (sequence != nextSequence) {
-            throw new IllegalArgumentException(
-                    "Нарушен порядок частей видео: ожидалась часть " + nextSequence + ", получена " + sequence);
+        if (sequence < 0) {
+            throw new IllegalArgumentException("Некорректный номер части видео");
         }
-        bytesReceived += bytes;
-        nextSequence++;
+        bytesReceived = Math.max(0L, totalBytes);
+        nextSequence = Math.max(nextSequence, sequence + 1);
         updatedAt = OffsetDateTime.now();
     }
 
-    public void markUploaded() {
+    public void markUploaded(long totalBytes, int chunkCount) {
         if (status == MobileVideoUploadStatus.UPLOADED
                 || status == MobileVideoUploadStatus.PROCESSING
                 || status == MobileVideoUploadStatus.READY
@@ -118,9 +117,11 @@ public class MobileVideoUpload {
         if (status != MobileVideoUploadStatus.RECORDING) {
             throw new IllegalArgumentException("Эту запись нельзя завершить в статусе " + status);
         }
-        if (bytesReceived == null || bytesReceived <= 0) {
+        if (totalBytes <= 0 || chunkCount <= 0) {
             throw new IllegalArgumentException("Видео не содержит данных");
         }
+        bytesReceived = totalBytes;
+        nextSequence = chunkCount;
         status = MobileVideoUploadStatus.UPLOADED;
         updatedAt = OffsetDateTime.now();
     }

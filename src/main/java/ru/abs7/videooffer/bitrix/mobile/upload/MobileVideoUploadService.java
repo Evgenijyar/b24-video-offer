@@ -16,12 +16,18 @@ import ru.abs7.videooffer.offer.ViewNotificationGoal;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.time.OffsetDateTime;
+import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 public class MobileVideoUploadService {
@@ -37,6 +43,7 @@ public class MobileVideoUploadService {
     private final long maxUploadBytes;
     private final long maxChunkBytes;
     private final int retentionHours;
+    private final ConcurrentHashMap<UUID, ReentrantLock> uploadFileLocks = new ConcurrentHashMap<>();
 
     public MobileVideoUploadService(
             MobileVideoUploadRepository repository,
@@ -87,22 +94,21 @@ public class MobileVideoUploadService {
             String uploadToken,
             int sequence,
             InputStream inputStream) throws IOException {
-        if (sequence < 0) {
+        if (sequence < 0 || sequence > 100_000) {
             throw new IllegalArgumentException("Некорректный номер части видео");
         }
 
         MobileVideoUpload snapshot = requireAuthorized(uploadId, uploadToken);
-        if (snapshot.alreadyAccepted(sequence)) {
-            log.info("Duplicate mobile upload chunk ignored: uploadId={}, sequence={}, nextSequence={}",
-                    uploadId, sequence, snapshot.getNextSequence());
-            return MobileVideoUploadResponse.from(snapshot);
-        }
-        if (sequence != snapshot.getNextSequence()) {
-            throw new IllegalArgumentException(
-                    "Нарушен порядок загрузки: ожидается часть " + snapshot.getNextSequence());
+        if (snapshot.getStatus() != MobileVideoUploadStatus.RECORDING) {
+            Path existingPart = partPath(uploadId, sequence);
+            if (Files.isRegularFile(existingPart)) {
+                return MobileVideoUploadResponse.from(snapshot);
+            }
+            throw new IllegalArgumentException("Запись уже завершена и больше не принимает данные");
         }
 
-        Path temporaryChunk = uploadDirectory.resolve(uploadId + "." + sequence + "." + UUID.randomUUID() + ".chunk");
+        Path temporaryChunk = uploadDirectory.resolve(
+                uploadId + ".part." + formatSequence(sequence) + ".tmp." + UUID.randomUUID());
         long chunkBytes;
         try {
             chunkBytes = copyLimited(inputStream, temporaryChunk, maxChunkBytes);
@@ -114,59 +120,127 @@ public class MobileVideoUploadService {
             throw error;
         }
 
+        ReentrantLock fileLock = lockFor(uploadId);
+        fileLock.lock();
         try {
+            MobileVideoUpload currentSnapshot = requireAuthorized(uploadId, uploadToken);
+            if (currentSnapshot.getStatus() != MobileVideoUploadStatus.RECORDING) {
+                return MobileVideoUploadResponse.from(currentSnapshot);
+            }
+            Path part = partPath(uploadId, sequence);
+            boolean newlyStored = false;
+            if (Files.isRegularFile(part)) {
+                long existingBytes = Files.size(part);
+                if (existingBytes != chunkBytes) {
+                    throw new IllegalArgumentException(
+                            "Повторная часть видео имеет другой размер: sequence=" + sequence);
+                }
+                log.debug("Duplicate mobile upload chunk accepted idempotently: uploadId={}, sequence={}, bytes={}",
+                        uploadId, sequence, existingBytes);
+            } else {
+                moveWithoutReplacing(temporaryChunk, part);
+                newlyStored = true;
+            }
+
+            long totalBytes = calculateStoredPartBytes(uploadId);
+            if (totalBytes > maxUploadBytes) {
+                if (newlyStored) {
+                    Files.deleteIfExists(part);
+                }
+                throw new IllegalArgumentException("Видео слишком большое. Максимальный размер — "
+                        + Math.round(maxUploadBytes / 1024.0 / 1024.0) + " МБ");
+            }
+
             MobileVideoUpload updated = transactionTemplate.execute(status -> {
                 MobileVideoUpload upload = repository.findByIdForUpdate(uploadId)
                         .orElseThrow(() -> new NoSuchElementException("Сессия записи видео не найдена"));
                 verifyToken(upload, uploadToken);
-                if (upload.alreadyAccepted(sequence)) {
+                if (upload.getStatus() != MobileVideoUploadStatus.RECORDING) {
                     return upload;
                 }
-                if (sequence != upload.getNextSequence()) {
-                    throw new IllegalArgumentException(
-                            "Нарушен порядок загрузки: ожидается часть " + upload.getNextSequence());
-                }
-                if (upload.getBytesReceived() + chunkBytes > maxUploadBytes) {
-                    throw new IllegalArgumentException("Видео слишком большое. Максимальный размер — "
-                            + Math.round(maxUploadBytes / 1024.0 / 1024.0) + " МБ");
-                }
-
-                Path source = Path.of(upload.getSourceFilePath());
-                try {
-                    Files.createDirectories(source.toAbsolutePath().normalize().getParent());
-                    try (OutputStream output = Files.newOutputStream(
-                            source,
-                            StandardOpenOption.CREATE,
-                            StandardOpenOption.APPEND)) {
-                        Files.copy(temporaryChunk, output);
-                    }
-                } catch (IOException ioError) {
-                    throw new IllegalStateException("Не удалось сохранить часть видео", ioError);
-                }
-                upload.acceptChunk(sequence, chunkBytes);
+                upload.acceptChunk(sequence, totalBytes);
                 return repository.saveAndFlush(upload);
             });
-            log.info("Mobile video chunk accepted: uploadId={}, sequence={}, chunkBytes={}, totalBytes={}",
-                    uploadId, sequence, chunkBytes, updated.getBytesReceived());
+
+            log.info("Mobile video chunk accepted: uploadId={}, sequence={}, chunkBytes={}, totalBytes={}, parallelSafe=true",
+                    uploadId, sequence, chunkBytes, totalBytes);
             return MobileVideoUploadResponse.from(updated);
         } finally {
             Files.deleteIfExists(temporaryChunk);
+            fileLock.unlock();
         }
     }
 
-    public MobileVideoUploadResponse complete(UUID uploadId, String uploadToken) {
-        MobileVideoUpload updated = transactionTemplate.execute(status -> {
-            MobileVideoUpload upload = repository.findByIdForUpdate(uploadId)
-                    .orElseThrow(() -> new NoSuchElementException("Сессия записи видео не найдена"));
-            verifyToken(upload, uploadToken);
-            upload.markUploaded();
-            return repository.saveAndFlush(upload);
-        });
-        if (updated.getStatus() == MobileVideoUploadStatus.UPLOADED) {
+    public MobileVideoUploadResponse complete(UUID uploadId, String uploadToken, int chunkCount) throws IOException {
+        if (chunkCount <= 0 || chunkCount > 100_000) {
+            throw new IllegalArgumentException("Некорректное количество частей видео");
+        }
+
+        ReentrantLock fileLock = lockFor(uploadId);
+        fileLock.lock();
+        MobileVideoUpload updated;
+        boolean startProcessing = false;
+        long assemblyStartedAt = System.nanoTime();
+        try {
+            MobileVideoUpload snapshot = requireAuthorized(uploadId, uploadToken);
+            if (snapshot.getStatus() == MobileVideoUploadStatus.UPLOADED
+                    || snapshot.getStatus() == MobileVideoUploadStatus.PROCESSING
+                    || snapshot.getStatus() == MobileVideoUploadStatus.READY
+                    || snapshot.getStatus() == MobileVideoUploadStatus.CONSUMED) {
+                return MobileVideoUploadResponse.from(snapshot);
+            }
+            if (snapshot.getStatus() != MobileVideoUploadStatus.RECORDING) {
+                throw new IllegalArgumentException("Эту запись нельзя завершить в статусе " + snapshot.getStatus());
+            }
+
+            Path source = Path.of(snapshot.getSourceFilePath());
+            Path assembly = source.resolveSibling(uploadId + ".assembling");
+            Files.createDirectories(source.toAbsolutePath().normalize().getParent());
+            Files.deleteIfExists(assembly);
+
+            long totalBytes = 0;
+            try (OutputStream output = Files.newOutputStream(
+                    assembly, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {
+                for (int sequence = 0; sequence < chunkCount; sequence++) {
+                    Path part = partPath(uploadId, sequence);
+                    if (!Files.isRegularFile(part)) {
+                        throw new IllegalArgumentException(
+                                "Не все части видео успели загрузиться. Отсутствует часть " + sequence
+                                        + " из " + chunkCount);
+                    }
+                    long partBytes = Files.size(part);
+                    totalBytes += partBytes;
+                    if (totalBytes > maxUploadBytes) {
+                        throw new IllegalArgumentException("Видео слишком большое. Максимальный размер — "
+                                + Math.round(maxUploadBytes / 1024.0 / 1024.0) + " МБ");
+                    }
+                    Files.copy(part, output);
+                }
+            } catch (IOException | RuntimeException error) {
+                Files.deleteIfExists(assembly);
+                throw error;
+            }
+
+            moveReplacing(assembly, source);
+            long assembledBytes = totalBytes;
+            updated = transactionTemplate.execute(status -> {
+                MobileVideoUpload upload = repository.findByIdForUpdate(uploadId)
+                        .orElseThrow(() -> new NoSuchElementException("Сессия записи видео не найдена"));
+                verifyToken(upload, uploadToken);
+                upload.markUploaded(assembledBytes, chunkCount);
+                return repository.saveAndFlush(upload);
+            });
+            deletePartFiles(uploadId);
+            startProcessing = updated.getStatus() == MobileVideoUploadStatus.UPLOADED;
+            log.info("Mobile video upload assembled and completed: uploadId={}, chunks={}, bytes={}, assemblyDurationMs={}, status={}",
+                    uploadId, chunkCount, totalBytes, elapsedMillis(assemblyStartedAt), updated.getStatus());
+        } finally {
+            fileLock.unlock();
+        }
+
+        if (startProcessing) {
             processor.normalize(updated.getId());
         }
-        log.info("Mobile video upload completed by client: uploadId={}, bytes={}, status={}",
-                uploadId, updated.getBytesReceived(), updated.getStatus());
         return MobileVideoUploadResponse.from(updated);
     }
 
@@ -175,22 +249,30 @@ public class MobileVideoUploadService {
     }
 
     public void discard(UUID uploadId, String uploadToken) throws IOException {
-        MobileVideoUpload discarded = transactionTemplate.execute(status -> {
-            MobileVideoUpload upload = repository.findByIdForUpdate(uploadId)
-                    .orElseThrow(() -> new NoSuchElementException("Сессия записи видео не найдена"));
-            verifyToken(upload, uploadToken);
-            if (upload.getStatus() == MobileVideoUploadStatus.CONSUMED) {
-                throw new IllegalArgumentException("Готовый видеооффер уже создан и не может быть удалён этой операцией");
-            }
-            repository.delete(upload);
-            repository.flush();
-            return upload;
-        });
+        ReentrantLock fileLock = lockFor(uploadId);
+        fileLock.lock();
+        try {
+            MobileVideoUpload discarded = transactionTemplate.execute(status -> {
+                MobileVideoUpload upload = repository.findByIdForUpdate(uploadId)
+                        .orElseThrow(() -> new NoSuchElementException("Сессия записи видео не найдена"));
+                verifyToken(upload, uploadToken);
+                if (upload.getStatus() == MobileVideoUploadStatus.CONSUMED) {
+                    throw new IllegalArgumentException("Готовый видеооффер уже создан и не может быть удалён этой операцией");
+                }
+                repository.delete(upload);
+                repository.flush();
+                return upload;
+            });
 
-        deleteIfPresent(discarded.getSourceFilePath());
-        deleteIfPresent(discarded.getNormalizedFilePath());
-        log.info("Mobile video upload discarded by client: uploadId={}, status={}, bytes={}",
-                discarded.getId(), discarded.getStatus(), discarded.getBytesReceived());
+            deleteIfPresent(discarded.getSourceFilePath());
+            deleteIfPresent(discarded.getNormalizedFilePath());
+            deletePartFiles(discarded.getId());
+            log.info("Mobile video upload discarded by client: uploadId={}, status={}, bytes={}",
+                    discarded.getId(), discarded.getStatus(), discarded.getBytesReceived());
+        } finally {
+            fileLock.unlock();
+            uploadFileLocks.remove(uploadId, fileLock);
+        }
     }
 
     public VideoOfferResponse createOffer(
@@ -255,6 +337,8 @@ public class MobileVideoUploadService {
         for (MobileVideoUpload upload : repository.findAllByExpiresAtBefore(OffsetDateTime.now())) {
             try {
                 deleteIfPresent(upload.getSourceFilePath());
+                deletePartFiles(upload.getId());
+                uploadFileLocks.remove(upload.getId());
                 if (upload.getStatus() != MobileVideoUploadStatus.CONSUMED) {
                     deleteIfPresent(upload.getNormalizedFilePath());
                 }
@@ -294,6 +378,63 @@ public class MobileVideoUploadService {
             throw new IllegalArgumentException("Слишком длинное описание формата видео");
         }
         return normalized;
+    }
+
+    private ReentrantLock lockFor(UUID uploadId) {
+        return uploadFileLocks.computeIfAbsent(uploadId, ignored -> new ReentrantLock(true));
+    }
+
+    private Path partPath(UUID uploadId, int sequence) {
+        return uploadDirectory.resolve(uploadId + ".part." + formatSequence(sequence));
+    }
+
+    private String formatSequence(int sequence) {
+        return String.format(Locale.ROOT, "%06d", sequence);
+    }
+
+    private long calculateStoredPartBytes(UUID uploadId) throws IOException {
+        long total = 0;
+        String prefix = uploadId + ".part.";
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(uploadDirectory, prefix + "*")) {
+            for (Path path : stream) {
+                String name = path.getFileName().toString();
+                if (name.contains(".tmp.") || !Files.isRegularFile(path)) {
+                    continue;
+                }
+                total += Files.size(path);
+            }
+        }
+        return total;
+    }
+
+    private void deletePartFiles(UUID uploadId) throws IOException {
+        String prefix = uploadId + ".part.";
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(uploadDirectory, prefix + "*")) {
+            for (Path path : stream) {
+                Files.deleteIfExists(path);
+            }
+        }
+        Files.deleteIfExists(uploadDirectory.resolve(uploadId + ".assembling"));
+    }
+
+    private void moveWithoutReplacing(Path source, Path target) throws IOException {
+        try {
+            Files.move(source, target, StandardCopyOption.ATOMIC_MOVE);
+        } catch (AtomicMoveNotSupportedException error) {
+            Files.move(source, target);
+        }
+    }
+
+    private void moveReplacing(Path source, Path target) throws IOException {
+        try {
+            Files.move(source, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } catch (AtomicMoveNotSupportedException error) {
+            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    private long elapsedMillis(long startedAt) {
+        return (System.nanoTime() - startedAt) / 1_000_000L;
     }
 
     private long copyLimited(InputStream source, Path target, long limit) throws IOException {

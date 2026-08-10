@@ -51,8 +51,9 @@ public class MobileVideoUploadController {
     @PostMapping(value = "/{uploadId}/complete", produces = MediaType.APPLICATION_JSON_VALUE)
     public MobileVideoUploadResponse complete(
             @PathVariable UUID uploadId,
-            @RequestHeader("X-Upload-Token") String uploadToken) {
-        return service.complete(uploadId, uploadToken);
+            @RequestHeader("X-Upload-Token") String uploadToken,
+            @RequestParam("chunkCount") int chunkCount) throws IOException {
+        return service.complete(uploadId, uploadToken, chunkCount);
     }
 
     @GetMapping(value = "/{uploadId}", produces = MediaType.APPLICATION_JSON_VALUE)

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="color-scheme" content="light dark">
     <title>Видео-оффер</title>
-    <link rel="stylesheet" href="/assets/bitrix-mobile.css?v=017">
+    <link rel="stylesheet" href="/assets/bitrix-mobile.css?v=018">
     <script src="//api.bitrix24.com/api/v1/"></script>
 </head>
 <body>
@@ -101,9 +101,13 @@
         </div>
 
         <div id="upload-processing" class="save-state" hidden>
-            <span class="save-spinner" aria-hidden="true"></span>
-            <strong id="upload-status">Сохраняем видео…</strong>
-            <span id="upload-bytes" hidden></span>
+            <div class="save-state-row">
+                <strong id="upload-status">Сохраняем видео…</strong>
+                <span id="upload-bytes" hidden></span>
+            </div>
+            <div class="save-progress-track" aria-hidden="true">
+                <span id="upload-save-progress-bar" class="save-progress-bar"></span>
+            </div>
         </div>
     </section>
 
@@ -176,6 +180,6 @@
         <small id="permission-fallback" hidden>Если настройки не открылись автоматически: Android → Настройки → Приложения → Bitrix24 → Разрешения → разрешите Камеру и Микрофон.</small>
     </div>
 </div>
-<script src="/assets/bitrix-mobile.js?v=017"></script>
+<script src="/assets/bitrix-mobile.js?v=018"></script>
 </body>
 </html>

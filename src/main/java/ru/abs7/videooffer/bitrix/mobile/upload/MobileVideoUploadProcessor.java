@@ -46,7 +46,7 @@ public class MobileVideoUploadProcessor {
         Path input = Path.of(upload.getSourceFilePath());
         Path output = input.resolveSibling(uploadId + ".normalized.mp4");
         try {
-            MobileVideoTranscoder.TranscodeResult result = transcoder.transcode(input, output);
+            MobileVideoTranscoder.TranscodeResult result = transcoder.transcode(input, output, upload.getMimeType());
             MobileVideoUpload current = repository.findById(uploadId).orElseThrow();
             current.markReady(result.path().toString());
             repository.saveAndFlush(current);

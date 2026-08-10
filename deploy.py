@@ -17,7 +17,8 @@ def main() -> int:
                 with urllib.request.urlopen("http://127.0.0.1:8080/api/health", timeout=3) as r:
                     if r.status == 200:
                         run("docker", "compose", "exec", "-T", "app", "sh", "-lc",
-                            "test -x /usr/bin/ffmpeg && /usr/bin/ffmpeg -version | head -n 1")
+                            "test -x /usr/bin/ffmpeg && test -x /usr/bin/ffprobe && "
+                            "/usr/bin/ffmpeg -version | head -n 1 && /usr/bin/ffprobe -version | head -n 1")
                         print("Deployment completed successfully.")
                         run("docker", "compose", "ps")
                         return 0
