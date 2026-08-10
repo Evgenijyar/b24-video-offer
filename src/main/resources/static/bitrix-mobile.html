@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="color-scheme" content="light dark">
     <title>Видео-оффер</title>
-    <link rel="stylesheet" href="/assets/bitrix-mobile.css?v=018">
+    <link rel="stylesheet" href="/assets/bitrix-mobile.css?v=021">
     <script src="//api.bitrix24.com/api/v1/"></script>
 </head>
 <body>
@@ -15,7 +15,7 @@
         <div>
             <div class="eyebrow">BITRIX24 · ВИДЕООФФЕР</div>
             <h1>Создать видеооффер</h1>
-            <p>Выберите карточку клиента, запишите видео прямо с телефона и отправьте ссылку в таймлайн.</p>
+            <p>Выберите карточку клиента и добавьте видео удобным способом. Ссылка автоматически появится в таймлайне.</p>
         </div>
     </header>
 
@@ -59,45 +59,81 @@
     <section id="recorder-section" class="panel recorder-panel" hidden>
         <div class="section-heading recorder-heading">
             <div>
-                <strong>Запись видео</strong>
-                <span>Запишите короткое видео прямо из Bitrix24.</span>
+                <strong>Источник видео</strong>
+                <span>Ссылка, запись с камеры или готовый файл.</span>
             </div>
         </div>
 
-        <div id="camera-stage" class="camera-stage">
-            <video id="camera-preview" autoplay muted playsinline preload="metadata"></video>
-            <div id="camera-placeholder" class="camera-placeholder">
-                <div class="camera-placeholder-icon">●</div>
-                <strong>Камера выключена</strong>
-                <span>Для записи нужен доступ Bitrix24 к камере и микрофону.</span>
+        <input id="mobile-source-mode" type="hidden" value="CAMERA">
+        <div id="mobile-source-picker" class="mobile-source-picker" role="group" aria-label="Источник видео">
+            <button type="button" class="mobile-source-option" data-mobile-source="LINK" aria-pressed="false">
+                <span class="mobile-source-icon">↗</span>
+                <span><b>Ссылка</b><small>видеохостинг</small></span>
+            </button>
+            <button type="button" class="mobile-source-option is-active" data-mobile-source="CAMERA" aria-pressed="true">
+                <span class="mobile-source-icon mobile-source-icon--record">●</span>
+                <span><b>Камера</b><small>записать сейчас</small></span>
+            </button>
+            <button type="button" class="mobile-source-option" data-mobile-source="FILE" aria-pressed="false">
+                <span class="mobile-source-icon">＋</span>
+                <span><b>Файл</b><small>до 100 МБ</small></span>
+            </button>
+        </div>
+
+        <div id="mobile-link-source" class="mobile-source-panel" hidden>
+            <label class="field mobile-source-field">
+                <span>Ссылка на видео</span>
+                <input id="mobile-video-url" type="url" inputmode="url" autocomplete="off"
+                       placeholder="YouTube, Rutube, VK, TikTok, Instagram, Контур.Толк…">
+                <small>Источник определяется автоматически.</small>
+            </label>
+        </div>
+
+        <div id="mobile-camera-source" class="mobile-source-panel">
+            <div id="camera-stage" class="camera-stage">
+                <video id="camera-preview" autoplay muted playsinline preload="metadata"></video>
+                <div id="camera-placeholder" class="camera-placeholder">
+                    <div class="camera-placeholder-icon">●</div>
+                    <strong>Камера выключена</strong>
+                    <span>Для записи нужен доступ Bitrix24 к камере и микрофону.</span>
+                </div>
+                <div id="recording-badge" class="recording-badge" hidden><i></i> REC</div>
             </div>
-            <div id="recording-badge" class="recording-badge" hidden><i></i> REC</div>
+
+            <div id="camera-error" class="message message--error" hidden></div>
+
+            <div class="recording-controls" aria-label="Управление записью">
+                <button id="switch-camera" class="round-control" type="button" hidden
+                        aria-label="Переключить камеру" title="Переключить камеру">
+                    <span aria-hidden="true">↺</span>
+                </button>
+                <button id="record-toggle" class="round-control record-toggle" type="button" hidden
+                        aria-label="Начать запись" title="Начать запись">
+                    <span id="record-glyph" class="record-glyph" aria-hidden="true"></span>
+                </button>
+                <button id="play-recording" class="round-control play-control" type="button" hidden
+                        aria-label="Воспроизвести запись" title="Воспроизвести запись">
+                    <span id="play-glyph" aria-hidden="true">▶</span>
+                </button>
+                <div id="recording-timer" class="recording-timer">00:00</div>
+                <button id="start-camera" class="camera-retry-button" type="button" hidden>Включить камеру</button>
+            </div>
         </div>
 
-        <div id="camera-error" class="message message--error" hidden></div>
-
-        <div class="recording-controls" aria-label="Управление записью">
-            <button id="switch-camera" class="round-control" type="button" hidden
-                    aria-label="Переключить камеру" title="Переключить камеру">
-                <span aria-hidden="true">↺</span>
+        <div id="mobile-file-source" class="mobile-source-panel" hidden>
+            <input id="mobile-video-file" type="file" hidden
+                   accept=".mp4,.mov,.webm,.mkv,.m4v,video/mp4,video/quicktime,video/webm,video/x-matroska,video/x-m4v">
+            <button id="mobile-choose-file" class="mobile-file-drop" type="button">
+                <span class="mobile-file-drop-icon">＋</span>
+                <span><b>Выбрать видео</b><small>MP4, MOV, WebM, MKV или M4V · максимум 100 МБ</small></span>
             </button>
-            <button id="record-toggle" class="round-control record-toggle" type="button" hidden
-                    aria-label="Начать запись" title="Начать запись">
-                <span id="record-glyph" class="record-glyph" aria-hidden="true"></span>
-            </button>
-            <button id="play-recording" class="round-control play-control" type="button" hidden
-                    aria-label="Воспроизвести запись" title="Воспроизвести запись">
-                <span id="play-glyph" aria-hidden="true">▶</span>
-            </button>
-            <div id="recording-timer" class="recording-timer">00:00</div>
-            <button id="start-camera" class="camera-retry-button" type="button" hidden>Включить камеру</button>
-        </div>
-
-        <div class="fallback-row">
-            <button id="fallback-file-button" class="text-button fallback-button" type="button">
-                Снять или выбрать видео системной камерой
-            </button>
-            <input id="fallback-file" type="file" accept="video/*" capture="environment" hidden>
+            <div id="mobile-selected-file" class="mobile-selected-file" hidden>
+                <div class="mobile-selected-file-icon">▶</div>
+                <div class="mobile-selected-file-copy"><b id="mobile-selected-file-name"></b><small id="mobile-selected-file-meta"></small></div>
+                <button id="mobile-replace-file" type="button">Заменить</button>
+            </div>
+            <video id="mobile-file-preview" class="mobile-file-preview" controls playsinline hidden></video>
+            <div id="file-error" class="message message--error" hidden></div>
         </div>
 
         <div id="upload-processing" class="save-state" hidden>
@@ -180,6 +216,6 @@
         <small id="permission-fallback" hidden>Если настройки не открылись автоматически: Android → Настройки → Приложения → Bitrix24 → Разрешения → разрешите Камеру и Микрофон.</small>
     </div>
 </div>
-<script src="/assets/bitrix-mobile.js?v=018"></script>
+<script src="/assets/bitrix-mobile.js?v=021"></script>
 </body>
 </html>

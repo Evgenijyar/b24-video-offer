@@ -23,8 +23,12 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
@@ -37,11 +41,13 @@ public class MobileVideoUploadService {
     private final MobileVideoUploadRepository repository;
     private final BitrixContextSigner contextSigner;
     private final MobileVideoUploadProcessor processor;
+    private final MobileVideoMerger merger;
     private final VideoOfferService videoOfferService;
     private final TransactionTemplate transactionTemplate;
     private final Path uploadDirectory;
     private final long maxUploadBytes;
     private final long maxChunkBytes;
+    private final long maxManualFileBytes;
     private final int retentionHours;
     private final ConcurrentHashMap<UUID, ReentrantLock> uploadFileLocks = new ConcurrentHashMap<>();
 
@@ -49,15 +55,18 @@ public class MobileVideoUploadService {
             MobileVideoUploadRepository repository,
             BitrixContextSigner contextSigner,
             MobileVideoUploadProcessor processor,
+            MobileVideoMerger merger,
             VideoOfferService videoOfferService,
             PlatformTransactionManager transactionManager,
             @Value("${app.video.storage-dir:./data/videos}") String videoStorageDir,
             @Value("${app.mobile-video.max-upload-bytes:536870912}") long maxUploadBytes,
             @Value("${app.mobile-video.max-chunk-bytes:16777216}") long maxChunkBytes,
+            @Value("${app.video.manual-upload-max-bytes:104857600}") long maxManualFileBytes,
             @Value("${app.mobile-video.retention-hours:24}") int retentionHours) throws IOException {
         this.repository = repository;
         this.contextSigner = contextSigner;
         this.processor = processor;
+        this.merger = merger;
         this.videoOfferService = videoOfferService;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         Path videos = Path.of(videoStorageDir).toAbsolutePath().normalize();
@@ -66,26 +75,41 @@ public class MobileVideoUploadService {
         Files.createDirectories(this.uploadDirectory);
         this.maxUploadBytes = Math.max(32L * 1024 * 1024, maxUploadBytes);
         this.maxChunkBytes = Math.max(1L * 1024 * 1024, maxChunkBytes);
+        this.maxManualFileBytes = Math.max(1L * 1024 * 1024, maxManualFileBytes);
         this.retentionHours = Math.max(1, retentionHours);
-        log.info("MobileVideoUploadService initialized: uploadDirectory={}, maxUploadBytes={}, maxChunkBytes={}, retentionHours={}",
-                uploadDirectory, this.maxUploadBytes, this.maxChunkBytes, this.retentionHours);
+        log.info("MobileVideoUploadService initialized: uploadDirectory={}, maxUploadBytes={}, maxChunkBytes={}, maxManualFileBytes={}, retentionHours={}",
+                uploadDirectory, this.maxUploadBytes, this.maxChunkBytes, this.maxManualFileBytes, this.retentionHours);
     }
 
     public MobileVideoUploadResponse create(CreateMobileVideoUploadRequest request) {
         BitrixPlacementContext context = contextSigner.verify(request.contextToken());
-        String mimeType = normalizeMimeType(request.mimeType());
+        MobileVideoSourceKind sourceKind = MobileVideoSourceKind.orDefault(request.sourceKind());
+        String mimeType = normalizeMimeType(request.mimeType(), sourceKind);
+        Long declaredSizeBytes = request.declaredSizeBytes();
+        if (sourceKind == MobileVideoSourceKind.FILE) {
+            if (declaredSizeBytes == null || declaredSizeBytes <= 0) {
+                throw new IllegalArgumentException("Не удалось определить размер выбранного видеофайла");
+            }
+            if (declaredSizeBytes > maxManualFileBytes) {
+                throw new IllegalArgumentException("Видео слишком большое. Для загрузки файла максимальный размер — "
+                        + Math.round(maxManualFileBytes / 1024.0 / 1024.0) + " МБ");
+            }
+        }
 
         MobileVideoUpload upload = MobileVideoUpload.create(
                 context.memberId(),
                 context.entityType(),
                 context.entityId(),
                 mimeType,
+                sourceKind,
+                declaredSizeBytes,
                 uploadDirectory.toString(),
                 retentionHours);
 
         MobileVideoUpload saved = repository.saveAndFlush(upload);
-        log.info("Mobile video upload session created: uploadId={}, entityType={}, entityId={}, mimeType={}, expiresAt={}",
-                saved.getId(), saved.getCrmEntityType(), saved.getCrmEntityId(), saved.getMimeType(), saved.getExpiresAt());
+        log.info("Mobile video upload session created: uploadId={}, entityType={}, entityId={}, sourceKind={}, mimeType={}, declaredSizeBytes={}, expiresAt={}",
+                saved.getId(), saved.getCrmEntityType(), saved.getCrmEntityId(), saved.getSourceKind(), saved.getMimeType(),
+                saved.getDeclaredSizeBytes(), saved.getExpiresAt());
         return MobileVideoUploadResponse.from(saved);
     }
 
@@ -143,12 +167,13 @@ public class MobileVideoUploadService {
             }
 
             long totalBytes = calculateStoredPartBytes(uploadId);
-            if (totalBytes > maxUploadBytes) {
+            long uploadLimit = maxAllowedBytes(currentSnapshot);
+            if (totalBytes > uploadLimit) {
                 if (newlyStored) {
                     Files.deleteIfExists(part);
                 }
                 throw new IllegalArgumentException("Видео слишком большое. Максимальный размер — "
-                        + Math.round(maxUploadBytes / 1024.0 / 1024.0) + " МБ");
+                        + Math.round(uploadLimit / 1024.0 / 1024.0) + " МБ");
             }
 
             MobileVideoUpload updated = transactionTemplate.execute(status -> {
@@ -210,9 +235,10 @@ public class MobileVideoUploadService {
                     }
                     long partBytes = Files.size(part);
                     totalBytes += partBytes;
-                    if (totalBytes > maxUploadBytes) {
+                    long uploadLimit = maxAllowedBytes(snapshot);
+                    if (totalBytes > uploadLimit) {
                         throw new IllegalArgumentException("Видео слишком большое. Максимальный размер — "
-                                + Math.round(maxUploadBytes / 1024.0 / 1024.0) + " МБ");
+                                + Math.round(uploadLimit / 1024.0 / 1024.0) + " МБ");
                     }
                     Files.copy(part, output);
                 }
@@ -246,6 +272,80 @@ public class MobileVideoUploadService {
 
     public MobileVideoUploadResponse status(UUID uploadId, String uploadToken) {
         return MobileVideoUploadResponse.from(requireAuthorized(uploadId, uploadToken));
+    }
+
+    public MobileVideoUploadResponse mergeSegments(MergeMobileVideoUploadsRequest request)
+            throws IOException, InterruptedException {
+        BitrixPlacementContext context = contextSigner.verify(request.contextToken());
+        if (request.segments() == null || request.segments().isEmpty()) {
+            throw new IllegalArgumentException("Нет частей записи для объединения");
+        }
+        if (request.segments().size() > 24) {
+            throw new IllegalArgumentException("Слишком много переключений источника в одной записи");
+        }
+
+        List<MobileVideoUpload> segments = new ArrayList<>();
+        Set<UUID> uniqueIds = new HashSet<>();
+        for (MergeMobileVideoUploadsRequest.Segment ref : request.segments()) {
+            if (!uniqueIds.add(ref.uploadId())) {
+                throw new IllegalArgumentException("Одна и та же часть записи передана дважды");
+            }
+            MobileVideoUpload upload = requireAuthorized(ref.uploadId(), ref.uploadToken());
+            if (upload.getStatus() != MobileVideoUploadStatus.READY || upload.getNormalizedFilePath() == null) {
+                throw new IllegalArgumentException("Часть записи ещё не готова: " + ref.uploadId());
+            }
+            if (!context.memberId().equals(upload.getBitrixMemberId())
+                    || context.entityType() != upload.getCrmEntityType()
+                    || context.entityId() != upload.getCrmEntityId()) {
+                throw new IllegalArgumentException("Части записи относятся к другой карточке Bitrix24");
+            }
+            Path path = Path.of(upload.getNormalizedFilePath());
+            if (!Files.isRegularFile(path)) {
+                throw new IllegalArgumentException("Файл части записи не найден: " + ref.uploadId());
+            }
+            segments.add(upload);
+        }
+
+        if (segments.size() == 1) {
+            return MobileVideoUploadResponse.from(segments.getFirst());
+        }
+
+        MobileVideoUpload merged = MobileVideoUpload.create(
+                context.memberId(),
+                context.entityType(),
+                context.entityId(),
+                "video/mp4",
+                MobileVideoSourceKind.MERGED,
+                null,
+                uploadDirectory.toString(),
+                retentionHours);
+        merged = repository.saveAndFlush(merged);
+        Path output = uploadDirectory.resolve(merged.getId() + ".normalized.mp4");
+        List<Path> paths = segments.stream().map(item -> Path.of(item.getNormalizedFilePath())).toList();
+
+        long startedAt = System.nanoTime();
+        try {
+            MobileVideoMerger.MergeResult result = merger.merge(paths, output);
+            UUID mergedId = merged.getId();
+            long mergedBytes = result.size();
+            MobileVideoUpload ready = transactionTemplate.execute(status -> {
+                MobileVideoUpload current = repository.findByIdForUpdate(mergedId)
+                        .orElseThrow(() -> new NoSuchElementException("Сессия объединённой записи не найдена"));
+                current.markReady(result.path().toString(), mergedBytes);
+                return repository.saveAndFlush(current);
+            });
+            log.info("Mobile video recording segments merged: uploadId={}, segments={}, bytes={}, quality={}, durationMs={}",
+                    ready.getId(), segments.size(), result.size(), result.quality(), elapsedMillis(startedAt));
+            return MobileVideoUploadResponse.from(ready);
+        } catch (IOException | InterruptedException | RuntimeException error) {
+            UUID mergedId = merged.getId();
+            transactionTemplate.executeWithoutResult(status -> repository.findByIdForUpdate(mergedId).ifPresent(current -> {
+                current.markError(error.getMessage());
+                repository.saveAndFlush(current);
+            }));
+            Files.deleteIfExists(output);
+            throw error;
+        }
     }
 
     public void discard(UUID uploadId, String uploadToken) throws IOException {
@@ -296,7 +396,11 @@ public class MobileVideoUploadService {
                 Path.of(upload.getNormalizedFilePath()),
                 request.accompanyingText(),
                 ViewNotificationGoal.orDefault(request.viewNotificationGoal()),
-                "mobile-720p-h264");
+                switch (upload.getSourceKind()) {
+                    case FILE -> "uploaded-file-h264";
+                    case MERGED -> "mixed-recording-h264";
+                    case RECORDING -> "recorded-h264";
+                });
 
         MobileVideoUpload consumed = transactionTemplate.execute(status -> {
             MobileVideoUpload current = repository.findByIdForUpdate(uploadId)
@@ -366,18 +470,36 @@ public class MobileVideoUploadService {
         }
     }
 
-    private String normalizeMimeType(String value) {
-        String normalized = value == null ? "" : value.trim().toLowerCase();
+    private String normalizeMimeType(String value, MobileVideoSourceKind sourceKind) {
+        String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
         if (normalized.isBlank()) {
             normalized = "application/octet-stream";
-        }
-        if (!normalized.startsWith("video/") && !"application/octet-stream".equals(normalized)) {
-            throw new IllegalArgumentException("Неподдерживаемый тип файла: " + value);
         }
         if (normalized.length() > 160) {
             throw new IllegalArgumentException("Слишком длинное описание формата видео");
         }
+        if (sourceKind == MobileVideoSourceKind.FILE) {
+            boolean supported = normalized.startsWith("video/mp4")
+                    || normalized.startsWith("video/webm")
+                    || normalized.startsWith("video/quicktime")
+                    || normalized.startsWith("video/x-matroska")
+                    || normalized.startsWith("video/x-m4v")
+                    || "application/octet-stream".equals(normalized);
+            if (!supported) {
+                throw new IllegalArgumentException("Неподдерживаемый формат видеофайла. Используйте MP4, MOV, WebM, MKV или M4V");
+            }
+            return normalized;
+        }
+        if (!normalized.startsWith("video/") && !"application/octet-stream".equals(normalized)) {
+            throw new IllegalArgumentException("Неподдерживаемый тип файла: " + value);
+        }
         return normalized;
+    }
+
+    private long maxAllowedBytes(MobileVideoUpload upload) {
+        return upload.getSourceKind() == MobileVideoSourceKind.FILE
+                ? Math.min(maxManualFileBytes, maxUploadBytes)
+                : maxUploadBytes;
     }
 
     private ReentrantLock lockFor(UUID uploadId) {

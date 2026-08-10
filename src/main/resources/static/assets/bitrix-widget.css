@@ -258,23 +258,6 @@ textarea { resize: vertical; }
 .capture-check b { color: #40515a; font-size: 12px; }
 .capture-check small { margin-top: 2px; color: #87969e; font-size: 10px; }
 
-.audio-capture-status {
-    margin: -3px 0 11px;
-    padding: 8px 10px;
-    color: #5e7079;
-    background: #f1f7fa;
-    border: 1px solid #d7e8ef;
-    border-radius: 7px;
-    font-size: 11px;
-    line-height: 1.4;
-}
-
-.audio-capture-status.is-warning {
-    color: #8a5a15;
-    background: #fff8e7;
-    border-color: #eed9a9;
-}
-
 .camera-stage {
     position: relative;
     width: 100%;
@@ -556,4 +539,42 @@ textarea { resize: vertical; }
     .capture-mode-picker { grid-template-columns: 1fr 1fr; }
     .capture-options { display: grid; grid-template-columns: 1fr; }
     .primary-button, .secondary-button { width: 100%; }
+}
+
+/* Update 021: universal source picker, local files and external screen helper */
+.source-picker--three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.source-picker--three .source-option { min-width: 0; }
+.source-picker--three .source-option span:last-child { min-width: 0; }
+.source-picker--three .source-option small { white-space: normal; line-height: 1.25; }
+
+.file-source { margin-top: 4px; }
+.file-drop {
+    width: 100%; min-height: 92px; display: flex; align-items: center; justify-content: center; gap: 13px;
+    padding: 18px; color: #40515a; background: #f8fbfd; border: 1px dashed #b9cad4; border-radius: 9px;
+    cursor: pointer; font: inherit; text-align: left; transition: border-color .18s ease, background .18s ease;
+}
+.file-drop:hover { border-color: #6fbbe7; background: #f1f9fe; }
+.file-drop-icon { display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 38px; border-radius: 50%; color: #1888c9; background: #e4f5fe; font-size: 24px; font-weight: 400; }
+.file-drop b,.file-drop small { display: block; }
+.file-drop b { font-size: 14px; }
+.file-drop small { margin-top: 3px; color: #7e8f98; font-size: 11px; }
+.selected-file-card { display: flex; align-items: center; gap: 11px; padding: 12px 13px; background: #f8fbfd; border: 1px solid #dbe5ea; border-radius: 9px; }
+.selected-file-icon { display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 34px; border-radius: 50%; color: #fff; background: #2fc6f6; font-size: 12px; }
+.selected-file-copy { min-width: 0; flex: 1; }
+.selected-file-copy b,.selected-file-copy small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.selected-file-copy b { color: #3d4d56; font-size: 13px; }
+.selected-file-copy small { margin-top: 2px; color: #82919a; font-size: 11px; }
+.selected-file-card button { border: 0; background: transparent; color: #2477b5; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.file-preview { width: 100%; max-height: 390px; margin-top: 12px; border-radius: 9px; background: #111; }
+
+.screen-helper-state { display: flex; align-items: center; gap: 7px; margin-top: 10px; color: #697a84; font-size: 11px; }
+.screen-helper-dot { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: #31bd77; box-shadow: 0 0 0 3px #31bd7718; }
+.capture-mode-option:disabled { cursor: wait; opacity: .72; }
+.capture-check input:disabled + span { opacity: .62; }
+.source-option:disabled { cursor: default; opacity: .58; }
+
+@media (max-width: 720px) {
+    .source-picker--three { grid-template-columns: 1fr 1fr 1fr; }
+    .source-picker--three .source-option { padding: 10px 8px; gap: 7px; }
+    .source-picker--three .source-icon { width: 28px; height: 28px; flex-basis: 28px; }
 }

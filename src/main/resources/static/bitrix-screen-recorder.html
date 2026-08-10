@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Запись экрана — Видео-оффер</title>
+    <link rel="stylesheet" href="/assets/bitrix-screen-recorder.css?v=021">
+</head>
+<body>
+<main class="screen-shell">
+    <header>
+        <div class="brand-mark">▣</div>
+        <div>
+            <strong>Запись экрана</strong>
+            <small>Видео-оффер</small>
+        </div>
+    </header>
+
+    <div class="preview-wrap">
+        <video id="screen-preview" autoplay muted playsinline></video>
+        <div id="screen-empty" class="screen-empty">
+            <span>▣</span>
+            <b>Экран не выбран</b>
+        </div>
+        <div id="rec-badge" class="rec-badge" hidden><i></i> REC <span id="timer">00:00</span></div>
+    </div>
+
+    <button id="choose-screen" class="primary" type="button">Выбрать экран</button>
+    <div id="capture-hint" class="hint">В системном окне выберите «Весь экран». Браузер требует подтверждение при каждом новом захвате.</div>
+    <div id="error" class="error" hidden></div>
+
+    <div id="record-controls" class="record-controls" hidden>
+        <span class="compact-rec"><i></i> REC <b id="compact-timer">00:00</b></span>
+        <button id="stop-recording" class="stop" type="button" title="Остановить запись" aria-label="Остановить запись">■</button>
+        <span class="stop-label">Остановить запись</span>
+    </div>
+</main>
+<script src="/assets/bitrix-screen-recorder.js?v=021"></script>
+</body>
+</html>

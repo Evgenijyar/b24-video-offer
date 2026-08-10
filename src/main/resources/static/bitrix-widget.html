@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Сформировать видеооффер</title>
-    <link rel="stylesheet" href="/assets/bitrix-widget.css?v=020">
+    <link rel="stylesheet" href="/assets/bitrix-widget.css?v=021">
     <script src="//api.bitrix24.com/api/v1/"></script>
 </head>
 <body>
@@ -17,18 +17,20 @@
         <div class="entity-badge">{{ENTITY_LABEL}} №{{ENTITY_ID}}</div>
     </header>
 
-    <p class="lead">
-        После подготовки ссылка автоматически появится в таймлайне этой карточки Bitrix24.
-    </p>
+    <p class="lead">После подготовки ссылка автоматически появится в таймлайне этой карточки Bitrix24.</p>
 
-    <div id="source-picker" class="source-picker" role="group" aria-label="Источник видео">
+    <div id="source-picker" class="source-picker source-picker--three" role="group" aria-label="Источник видео">
         <button type="button" class="source-option is-active" data-source="LINK" aria-pressed="true">
             <span class="source-icon">↗</span>
-            <span><b>По ссылке</b><small>Контур.Толк</small></span>
+            <span><b>По ссылке</b><small>автоопределение источника</small></span>
         </button>
         <button type="button" class="source-option" data-source="RECORD" aria-pressed="false">
             <span class="source-icon source-icon--record">●</span>
-            <span><b>Записать видео</b><small>камера или экран</small></span>
+            <span><b>Записать</b><small>камера или экран</small></span>
+        </button>
+        <button type="button" class="source-option" data-source="FILE" aria-pressed="false">
+            <span class="source-icon">＋</span>
+            <span><b>Файл</b><small>до 100 МБ</small></span>
         </button>
     </div>
 
@@ -39,42 +41,59 @@
 
         <section id="link-source-section">
             <label class="field">
-                <span>Ссылка на запись Контур.Толка</span>
+                <span>Ссылка на видео</span>
                 <input id="recording-url" type="url" required
-                       placeholder="https://.../recordings/..." autocomplete="off">
+                       placeholder="YouTube, Rutube, VK Видео, TikTok, Instagram, Контур.Толк…" autocomplete="off">
+                <small>Источник определяется автоматически. Контур.Толк загружается через существующий API, остальные поддерживаемые сайты — универсальным загрузчиком.</small>
             </label>
+        </section>
+
+        <section id="file-source-section" class="file-source" hidden>
+            <input id="video-file-input" type="file" hidden
+                   accept=".mp4,.mov,.webm,.mkv,.m4v,video/mp4,video/quicktime,video/webm,video/x-matroska,video/x-m4v">
+            <button id="choose-file-button" class="file-drop" type="button">
+                <span class="file-drop-icon">＋</span>
+                <span><b>Выбрать видеофайл</b><small>MP4, MOV, WebM, MKV или M4V · максимум 100 МБ</small></span>
+            </button>
+            <div id="selected-file-card" class="selected-file-card" hidden>
+                <div class="selected-file-icon">▶</div>
+                <div class="selected-file-copy"><b id="selected-file-name"></b><small id="selected-file-meta"></small></div>
+                <button id="replace-file-button" type="button">Заменить</button>
+            </div>
+            <div id="file-upload-processing" class="save-state" hidden>
+                <div class="save-state-row"><strong id="file-upload-status">Загружаем видео…</strong><span id="file-upload-progress-text">0%</span></div>
+                <div class="save-progress-track"><span id="file-upload-progress-bar" class="save-progress-bar"></span></div>
+            </div>
+            <video id="file-preview" class="file-preview" controls playsinline hidden></video>
         </section>
 
         <section id="record-source-section" class="desktop-recorder" hidden>
             <div id="capture-mode-picker" class="capture-mode-picker" role="group" aria-label="Что записываем">
                 <button type="button" class="capture-mode-option is-active" data-capture-mode="CAMERA" aria-pressed="true">
-                    <span class="capture-mode-icon" aria-hidden="true">●</span>
-                    <span><b>Камера</b><small>веб-камера компьютера</small></span>
+                    <span class="capture-mode-icon">●</span><span><b>Камера</b><small>веб-камера компьютера</small></span>
                 </button>
                 <button type="button" class="capture-mode-option" data-capture-mode="SCREEN" aria-pressed="false">
-                    <span class="capture-mode-icon capture-mode-icon--screen" aria-hidden="true">▣</span>
-                    <span><b>Экран</b><small>экран, окно или вкладка</small></span>
+                    <span class="capture-mode-icon capture-mode-icon--screen">▣</span><span><b>Экран</b><small>весь экран / окно / вкладка</small></span>
                 </button>
             </div>
 
             <div class="capture-options" aria-label="Параметры звука">
                 <label id="system-audio-option" class="capture-check" hidden>
                     <input id="capture-system-audio" type="checkbox" checked>
-                    <span><b>Звук компьютера</b><small>системный звук или звук выбранной вкладки</small></span>
+                    <span><b>Звук компьютера</b><small>если браузер отдаёт его для выбранного экрана</small></span>
                 </label>
                 <label class="capture-check">
                     <input id="capture-microphone" type="checkbox" checked>
                     <span><b>Микрофон</b><small>стандартный системный микрофон</small></span>
                 </label>
             </div>
-            <div id="audio-capture-status" class="audio-capture-status" hidden></div>
 
             <div id="camera-stage" class="camera-stage">
                 <video id="camera-preview" autoplay muted playsinline preload="metadata"></video>
                 <div id="camera-placeholder" class="camera-placeholder">
                     <div id="camera-placeholder-icon" class="camera-placeholder-icon">●</div>
                     <strong id="camera-placeholder-title">Камера выключена</strong>
-                    <span id="camera-placeholder-text">Разрешите доступ к камере и микрофону, чтобы записать видео.</span>
+                    <span id="camera-placeholder-text">Разрешите доступ к камере.</span>
                 </div>
                 <div id="recording-badge" class="recording-badge" hidden><i></i> REC</div>
             </div>
@@ -82,38 +101,27 @@
             <div id="camera-error" class="message message--error camera-message" hidden></div>
 
             <div class="recording-controls" aria-label="Управление записью">
-                <button id="switch-camera" class="round-control" type="button" hidden
-                        aria-label="Переключить камеру" title="Переключить камеру">
-                    <span aria-hidden="true">↺</span>
-                </button>
-                <button id="record-toggle" class="round-control record-toggle" type="button" hidden
-                        aria-label="Начать запись" title="Начать запись">
-                    <span class="record-glyph" aria-hidden="true"></span>
-                </button>
-                <button id="play-recording" class="round-control play-control" type="button" hidden
-                        aria-label="Воспроизвести запись" title="Воспроизвести запись">
-                    <span id="play-glyph" aria-hidden="true">▶</span>
-                </button>
+                <button id="switch-camera" class="round-control" type="button" hidden aria-label="Переключить камеру" title="Переключить камеру"><span>↺</span></button>
+                <button id="record-toggle" class="round-control record-toggle" type="button" hidden aria-label="Начать запись" title="Начать запись"><span class="record-glyph"></span></button>
+                <button id="play-recording" class="round-control play-control" type="button" hidden aria-label="Воспроизвести запись" title="Воспроизвести запись"><span id="play-glyph">▶</span></button>
                 <div id="recording-timer" class="recording-timer">00:00</div>
                 <button id="start-camera" class="camera-retry-button" type="button" hidden>Включить камеру</button>
             </div>
 
+            <div id="screen-helper-state" class="screen-helper-state" hidden>
+                <span class="screen-helper-dot"></span><span id="screen-helper-text">Окно захвата экрана открыто.</span>
+            </div>
+
             <div id="upload-processing" class="save-state" hidden>
-                <div class="save-state-row">
-                    <strong id="upload-status">Сохраняем видео…</strong>
-                    <span id="upload-progress-text">0%</span>
-                </div>
-                <div class="save-progress-track" aria-hidden="true">
-                    <span id="upload-save-progress-bar" class="save-progress-bar"></span>
-                </div>
+                <div class="save-state-row"><strong id="upload-status">Сохраняем видео…</strong><span id="upload-progress-text"></span></div>
+                <div class="save-progress-track"><span id="upload-save-progress-bar" class="save-progress-bar"></span></div>
             </div>
         </section>
 
         <section id="offer-fields">
             <label class="field">
                 <span>Сопроводительный текст для клиентской страницы</span>
-                <textarea id="accompanying-text" rows="5"
-                          placeholder="Например: направляю короткую презентацию по итогам разговора."></textarea>
+                <textarea id="accompanying-text" rows="5" placeholder="Например: направляю короткую презентацию по итогам разговора."></textarea>
             </label>
 
             <label class="field">
@@ -124,37 +132,25 @@
                     <option value="COMPLETED">Когда клиент досмотрит видео целиком</option>
                     <option value="NONE">Не уведомлять о просмотре</option>
                 </select>
-                <small>Уведомление появится один раз в таймлайне этой карточки. Если цель не достигнута при первом открытии, отслеживание продолжится при следующих просмотрах.</small>
+                <small>Уведомление появится один раз в таймлайне этой карточки.</small>
             </label>
         </section>
 
         <div id="form-error" class="message message--error" hidden></div>
-
-        <button id="submit-button" class="primary-button" type="submit">
-            Сформировать видеооффер
-        </button>
+        <button id="submit-button" class="primary-button" type="submit">Сформировать видеооффер</button>
     </form>
 
     <section id="processing" class="processing-card" hidden>
-        <div class="processing-head">
-            <strong id="processing-status">Подготавливаем видео</strong>
-            <span id="processing-percent">0%</span>
-        </div>
+        <div class="processing-head"><strong id="processing-status">Подготавливаем видео</strong><span id="processing-percent">0%</span></div>
         <div class="progress"><div id="progress-bar"></div></div>
         <div id="delivery-status" class="delivery-status"></div>
     </section>
 
     <section id="ready-result" class="ready-card" hidden>
         <div class="ready-icon">✓</div>
-        <div>
-            <strong>Видеооффер готов</strong>
-            <p id="ready-message">Ссылка добавлена в карточку Bitrix24.</p>
-            <a id="public-link" class="secondary-button" target="_blank" rel="noopener">
-                Открыть предпросмотр
-            </a>
-        </div>
+        <div><strong>Видеооффер готов</strong><p id="ready-message">Ссылка добавлена в карточку Bitrix24.</p><a id="public-link" class="secondary-button" target="_blank" rel="noopener">Открыть предпросмотр</a></div>
     </section>
 </main>
-<script src="/assets/bitrix-widget.js?v=020"></script>
+<script src="/assets/bitrix-widget.js?v=021"></script>
 </body>
 </html>

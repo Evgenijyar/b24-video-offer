@@ -63,6 +63,12 @@ public class MobileVideoUploadController {
         return service.status(uploadId, uploadToken);
     }
 
+    @PostMapping(value = "/merge", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public MobileVideoUploadResponse merge(@Valid @RequestBody MergeMobileVideoUploadsRequest request)
+            throws IOException, InterruptedException {
+        return service.mergeSegments(request);
+    }
+
     @DeleteMapping("/{uploadId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void discard(

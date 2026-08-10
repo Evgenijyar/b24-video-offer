@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService;
-import ru.abs7.videooffer.kontur.KonturVideoDownloader;
+import ru.abs7.videooffer.source.UniversalVideoDownloader;
 
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -15,12 +15,12 @@ public class VideoOfferProcessor {
     private static final Logger log = LoggerFactory.getLogger(VideoOfferProcessor.class);
 
     private final VideoOfferRepository repository;
-    private final KonturVideoDownloader downloader;
+    private final UniversalVideoDownloader downloader;
     private final BitrixReadyLinkDeliveryService bitrixReadyLinkDeliveryService;
 
     public VideoOfferProcessor(
             VideoOfferRepository repository,
-            KonturVideoDownloader downloader,
+            UniversalVideoDownloader downloader,
             BitrixReadyLinkDeliveryService bitrixReadyLinkDeliveryService) {
         this.repository = repository;
         this.downloader = downloader;
@@ -54,10 +54,11 @@ public class VideoOfferProcessor {
 
         try {
             updateProgress(id, 1, "processing-started");
-            log.info("Calling Kontur downloader: offerId={}, recordingKey={}",
-                    id, offer.getRecordingKey());
+            log.info("Calling universal video downloader: offerId={}, sourceUrlPresent={}, recordingKey={}",
+                    id, offer.getSourceRecordingUrl() != null, offer.getRecordingKey());
 
-            KonturVideoDownloader.DownloadResult result = downloader.download(
+            UniversalVideoDownloader.DownloadResult result = downloader.download(
+                    offer.getSourceRecordingUrl(),
                     offer.getRecordingKey(),
                     id.toString(),
                     progress -> {
@@ -65,13 +66,14 @@ public class VideoOfferProcessor {
                             int previous = lastSavedProgress.get();
                             if (progress >= 99 || progress >= previous + 2) {
                                 lastSavedProgress.set(progress);
-                                updateProgress(id, progress, "kontur-download");
+                                updateProgress(id, progress, "source-download");
                             }
                         }
                     });
 
-            log.info("Kontur downloader returned successfully: offerId={}, path={}, bytes={}, quality={}, durationMs={}",
+            log.info("Universal downloader returned successfully: offerId={}, sourceType={}, path={}, bytes={}, quality={}, durationMs={}",
                     id,
+                    result.sourceType(),
                     result.path(),
                     result.size(),
                     result.quality(),

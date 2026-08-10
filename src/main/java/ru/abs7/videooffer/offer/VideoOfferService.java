@@ -59,13 +59,16 @@ public class VideoOfferService {
                 request.accompanyingText() == null ? 0 : request.accompanyingText().length(),
                 ViewNotificationGoal.orDefault(request.viewNotificationGoal()));
 
-        String recordingKey = parser.extractRecordingKey(request.recordingUrl());
+        String sourceUrl = request.recordingUrl().trim();
+        String recordingKey = parser.isKonturRecordingUrl(sourceUrl)
+                ? parser.extractRecordingKey(sourceUrl)
+                : "external-" + UUID.randomUUID();
         VideoOffer offer = VideoOffer.create(
                 request.entityType(),
                 request.entityId(),
                 normalize(request.bitrixMemberId()),
                 request.bitrixUserId(),
-                request.recordingUrl().trim(),
+                sourceUrl,
                 recordingKey,
                 normalize(request.accompanyingText()),
                 request.viewNotificationGoal(),

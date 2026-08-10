@@ -22,8 +22,20 @@ const playRecordingButton = document.getElementById('play-recording');
 const playGlyph = document.getElementById('play-glyph');
 const recordingBadge = document.getElementById('recording-badge');
 const recordingTimer = document.getElementById('recording-timer');
-const fallbackFileButton = document.getElementById('fallback-file-button');
-const fallbackFileInput = document.getElementById('fallback-file');
+const mobileSourceModeInput = document.getElementById('mobile-source-mode');
+const mobileSourcePicker = document.getElementById('mobile-source-picker');
+const mobileLinkSource = document.getElementById('mobile-link-source');
+const mobileCameraSource = document.getElementById('mobile-camera-source');
+const mobileFileSource = document.getElementById('mobile-file-source');
+const mobileVideoUrl = document.getElementById('mobile-video-url');
+const mobileVideoFile = document.getElementById('mobile-video-file');
+const mobileChooseFile = document.getElementById('mobile-choose-file');
+const mobileSelectedFile = document.getElementById('mobile-selected-file');
+const mobileSelectedFileName = document.getElementById('mobile-selected-file-name');
+const mobileSelectedFileMeta = document.getElementById('mobile-selected-file-meta');
+const mobileReplaceFile = document.getElementById('mobile-replace-file');
+const mobileFilePreview = document.getElementById('mobile-file-preview');
+const fileError = document.getElementById('file-error');
 const uploadProcessing = document.getElementById('upload-processing');
 const uploadStatus = document.getElementById('upload-status');
 const uploadBytes = document.getElementById('upload-bytes');
@@ -51,8 +63,8 @@ const closePermissionsButton = document.getElementById('close-permissions');
 const permissionFallback = document.getElementById('permission-fallback');
 
 const isBitrixMobile = /BitrixMobile/i.test(navigator.userAgent || '');
-const MAX_FALLBACK_FILE_BYTES = 512 * 1024 * 1024;
-const FALLBACK_CHUNK_BYTES = 4 * 1024 * 1024;
+const MAX_MANUAL_FILE_BYTES = 100 * 1024 * 1024;
+const MANUAL_FILE_CHUNK_BYTES = 4 * 1024 * 1024;
 const MEDIA_CHUNK_INTERVAL_MS = 2000;
 const MAX_PARALLEL_UPLOADS = 4;
 const CHUNK_UPLOAD_TIMEOUT_MS = 30_000;
@@ -91,6 +103,7 @@ let offerPollTimer = null;
 initializeBitrixFrame();
 initializeEntityPicker();
 initializeGoalPicker();
+initializeMobileSourcePicker();
 initializeRecorder();
 reportClientEvent('CAPABILITIES', JSON.stringify({
     mediaDevices: !!navigator.mediaDevices,
@@ -119,8 +132,30 @@ changeSelectionButton.addEventListener('click', async () => {
 
 form.addEventListener('submit', async (event) => {
     event.preventDefault();
-    if (!uploadSession || uploadSession.status !== 'READY') {
-        setFormError('Сначала дождитесь сохранения видео на сервере.');
+    if (!selectedEntity || !selectedEntity.contextToken) {
+        setFormError('Сначала выберите карточку Bitrix24.');
+        return;
+    }
+
+    const sourceMode = mobileSourceModeInput.value;
+    if (sourceMode === 'LINK') {
+        const url = mobileVideoUrl.value.trim();
+        if (!url) {
+            setFormError('Вставьте ссылку на видео.');
+            mobileVideoUrl.focus();
+            return;
+        }
+        try {
+            new URL(url);
+        } catch (_) {
+            setFormError('Введите корректную ссылку на видео.');
+            mobileVideoUrl.focus();
+            return;
+        }
+    } else if (!uploadSession || uploadSession.status !== 'READY') {
+        setFormError(sourceMode === 'FILE'
+            ? 'Сначала выберите и дождитесь подготовки видеофайла.'
+            : 'Сначала запишите и дождитесь сохранения видео.');
         return;
     }
 
@@ -130,27 +165,42 @@ form.addEventListener('submit', async (event) => {
     processing.hidden = false;
     submitButton.disabled = true;
     submitButton.textContent = 'Создаём…';
-    renderProgress(100, 'Создаём видеооффер…');
-    deliveryStatus.textContent = 'Добавляем ссылку в выбранную карточку Bitrix24…';
+    renderProgress(sourceMode === 'LINK' ? 2 : 100, sourceMode === 'LINK' ? 'Получаем видео по ссылке…' : 'Создаём видеооффер…');
+    deliveryStatus.textContent = sourceMode === 'LINK'
+        ? 'Источник определяется автоматически…'
+        : 'Добавляем ссылку в выбранную карточку Bitrix24…';
 
     try {
-        const response = await fetch(`/bitrix/mobile/uploads/${encodeURIComponent(uploadSession.id)}/offer`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                uploadToken: uploadSession.uploadToken,
-                accompanyingText: document.getElementById('accompanying-text').value.trim() || null,
-                viewNotificationGoal: goalInput.value
-            })
-        });
-        const data = await readJson(response);
-        if (!response.ok) {
-            throw new Error(data.message || 'Не удалось создать видеооффер');
+        let response;
+        if (sourceMode === 'LINK') {
+            response = await fetch('/bitrix/video-offers', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    contextToken: selectedEntity.contextToken,
+                    recordingUrl: mobileVideoUrl.value.trim(),
+                    accompanyingText: document.getElementById('accompanying-text').value.trim() || null,
+                    viewNotificationGoal: goalInput.value
+                })
+            });
+        } else {
+            response = await fetch(`/bitrix/mobile/uploads/${encodeURIComponent(uploadSession.id)}/offer`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    uploadToken: uploadSession.uploadToken,
+                    accompanyingText: document.getElementById('accompanying-text').value.trim() || null,
+                    viewNotificationGoal: goalInput.value
+                })
+            });
         }
+        const data = await readJson(response);
+        if (!response.ok) throw new Error(data.message || 'Не удалось создать видеооффер');
 
         activeOfferId = data.id;
         renderOffer(data);
-        if (data.bitrixDeliveryStatus === 'PENDING' || data.bitrixDeliveryStatus === 'SENDING') {
+        if (data.bitrixDeliveryStatus === 'PENDING' || data.bitrixDeliveryStatus === 'SENDING'
+            || data.status === 'QUEUED' || data.status === 'PREPARING') {
             offerPollTimer = setInterval(checkOfferStatus, 1000);
         } else {
             submitButton.disabled = false;
@@ -191,28 +241,68 @@ function initializeGoalPicker() {
     });
 }
 
+function initializeMobileSourcePicker() {
+    mobileSourcePicker.querySelectorAll('[data-mobile-source]').forEach((button) => {
+        button.addEventListener('click', async () => {
+            const mode = button.dataset.mobileSource;
+            if (!mode || mode === mobileSourceModeInput.value || isRecordingActive() || recordingFinalizing) return;
+            await switchMobileSource(mode);
+        });
+    });
+    mobileVideoUrl.addEventListener('input', () => setFormError(null));
+    mobileChooseFile.addEventListener('click', () => mobileVideoFile.click());
+    mobileReplaceFile.addEventListener('click', () => mobileVideoFile.click());
+    mobileVideoFile.addEventListener('change', async () => {
+        const file = mobileVideoFile.files && mobileVideoFile.files[0];
+        mobileVideoFile.value = '';
+        if (file) await uploadManualFile(file);
+    });
+}
+
+async function switchMobileSource(mode) {
+    const normalized = ['LINK', 'CAMERA', 'FILE'].includes(mode) ? mode : 'CAMERA';
+    await resetRecordingState(false);
+    mobileSourceModeInput.value = normalized;
+    mobileSourcePicker.querySelectorAll('[data-mobile-source]').forEach((button) => {
+        const active = button.dataset.mobileSource === normalized;
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    mobileLinkSource.hidden = normalized !== 'LINK';
+    mobileCameraSource.hidden = normalized !== 'CAMERA';
+    mobileFileSource.hidden = normalized !== 'FILE';
+    clearFileUi();
+    offerSection.hidden = normalized !== 'LINK';
+    if (normalized === 'CAMERA' && selectedEntity && supportsEmbeddedRecording()) {
+        setTimeout(() => startCamera(false), 100);
+    } else if (normalized === 'LINK') {
+        setTimeout(() => mobileVideoUrl.focus(), 80);
+    }
+    fitWindow();
+}
+
 function initializeRecorder() {
     startCameraButton.addEventListener('click', () => startCamera(false));
     switchCameraButton.addEventListener('click', switchCamera);
     recordToggleButton.addEventListener('click', toggleRecording);
     playRecordingButton.addEventListener('click', toggleRecordedPlayback);
-    fallbackFileButton.addEventListener('click', () => fallbackFileInput.click());
-    fallbackFileInput.addEventListener('change', () => {
-        const file = fallbackFileInput.files && fallbackFileInput.files[0];
-        if (file) uploadFallbackFile(file);
-        fallbackFileInput.value = '';
-    });
 
     openPermissionsButton.addEventListener('click', openBitrixAndroidSettings);
     retryPermissionsButton.addEventListener('click', retryPermissionsNow);
     closePermissionsButton.addEventListener('click', hidePermissionDialog);
 
     document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) retryCameraAfterPermissionReturn();
+        if (!document.hidden && mobileSourceModeInput.value === 'CAMERA') retryCameraAfterPermissionReturn();
     });
-    window.addEventListener('focus', retryCameraAfterPermissionReturn);
-    window.addEventListener('pageshow', retryCameraAfterPermissionReturn);
-    document.addEventListener('resume', retryCameraAfterPermissionReturn, false);
+    window.addEventListener('focus', () => {
+        if (mobileSourceModeInput.value === 'CAMERA') retryCameraAfterPermissionReturn();
+    });
+    window.addEventListener('pageshow', () => {
+        if (mobileSourceModeInput.value === 'CAMERA') retryCameraAfterPermissionReturn();
+    });
+    document.addEventListener('resume', () => {
+        if (mobileSourceModeInput.value === 'CAMERA') retryCameraAfterPermissionReturn();
+    }, false);
 
     cameraPreview.addEventListener('play', updatePlayButtonState);
     cameraPreview.addEventListener('pause', updatePlayButtonState);
@@ -223,9 +313,10 @@ function initializeRecorder() {
         switchCameraButton.hidden = true;
         recordToggleButton.hidden = true;
         playRecordingButton.hidden = true;
-        setCameraError('Встроенная камера недоступна в этом WebView. Используйте системную камеру ниже.');
+        setCameraError('Встроенная камера недоступна в этом WebView. Используйте режим «Файл».');
     }
 }
+
 
 function scheduleSearch(immediate = false) {
     clearTimeout(debounceTimer);
@@ -327,24 +418,33 @@ async function selectEntity(item) {
         + (item.subtitle ? ' · ' + item.subtitle : '');
     selectedCard.hidden = false;
     recorderSection.hidden = false;
-    offerSection.hidden = true;
     searchResults.hidden = true;
     searchState.hidden = true;
     clearCameraMessages();
+    clearFileUi();
+
+    const mode = mobileSourceModeInput.value || 'CAMERA';
+    mobileLinkSource.hidden = mode !== 'LINK';
+    mobileCameraSource.hidden = mode !== 'CAMERA';
+    mobileFileSource.hidden = mode !== 'FILE';
+    offerSection.hidden = mode !== 'LINK';
     recorderSection.scrollIntoView({behavior: 'smooth', block: 'start'});
     fitWindow();
 
-    if (supportsEmbeddedRecording()) {
+    if (mode === 'CAMERA' && supportsEmbeddedRecording()) {
         setTimeout(() => startCamera(false), 120);
     }
 }
+
 
 async function resetSelection() {
     selectedEntity = null;
     selectedCard.hidden = true;
     recorderSection.hidden = true;
     await resetRecordingState(false);
+    clearFileUi();
 }
+
 
 function resetSearchOutput(message) {
     if (activeSearchController) activeSearchController.abort();
@@ -361,7 +461,7 @@ function setSearchState(message, loading) {
 }
 
 async function startCamera(switching) {
-    if (!selectedEntity) return false;
+    if (!selectedEntity || mobileSourceModeInput.value !== 'CAMERA') return false;
     if (!supportsEmbeddedRecording()) {
         setCameraError('Этот WebView не предоставляет доступ к встроенной камере. Используйте системную камеру.');
         return false;
@@ -663,52 +763,61 @@ async function finalizeRecordedVideo() {
     }
 }
 
-async function uploadFallbackFile(file) {
-    if (!selectedEntity) return;
-    if (!file || file.size <= 0) return;
-    if (file.size > MAX_FALLBACK_FILE_BYTES) {
-        setCameraError('Файл слишком большой. Максимальный размер — 512 МБ.');
+async function uploadManualFile(file) {
+    if (!selectedEntity || mobileSourceModeInput.value !== 'FILE') return;
+    setFileError(null);
+    try {
+        validateManualVideoFile(file);
+    } catch (error) {
+        setFileError(error.message || 'Неподдерживаемый видеофайл');
         return;
     }
 
     await resetRecordingState(false);
     recorderSection.hidden = false;
+    mobileFileSource.hidden = false;
+    mobileCameraSource.hidden = true;
+    mobileLinkSource.hidden = true;
     clearCameraMessages();
     stopCameraStream();
     clearRecordedPreview();
+    clearFilePreview();
+
+    mobileSelectedFile.hidden = false;
+    mobileSelectedFileName.textContent = file.name;
+    mobileSelectedFileMeta.textContent = `${formatBytes(file.size)} · ${file.type || fileExtension(file.name).toUpperCase()}`;
+    mobileChooseFile.hidden = true;
     uploadProcessing.hidden = false;
-    uploadStatus.textContent = 'Сохраняем видео…';
-    startCameraButton.hidden = true;
-    switchCameraButton.hidden = true;
-    recordToggleButton.hidden = true;
-    playRecordingButton.hidden = true;
+    uploadStatus.textContent = 'Загружаем видео 0%';
+    offerSection.hidden = true;
 
     try {
-        uploadSession = await createUploadSession(file.type || 'application/octet-stream');
+        uploadSession = await createUploadSession(file.type || mimeFromFileName(file.name), 'FILE', file.size);
         resetChunkUploader();
         let offset = 0;
         while (offset < file.size) {
-            const blob = file.slice(offset, Math.min(file.size, offset + FALLBACK_CHUNK_BYTES));
+            const blob = file.slice(offset, Math.min(file.size, offset + MANUAL_FILE_CHUNK_BYTES));
             enqueueChunkUpload(blob);
             offset += blob.size;
         }
         finalChunkCount = nextChunkSequence;
         renderUploadSaveProgress();
-        await waitForChunkUploads(UPLOAD_DRAIN_TIMEOUT_MS);
+        await waitForChunkUploads(Math.max(UPLOAD_DRAIN_TIMEOUT_MS, 5 * 60 * 1000));
         if (uploadFailure) throw uploadFailure;
         setUploadProgress(100);
         uploadStatus.textContent = 'Подготавливаем видео…';
         uploadSession = await completeUploadSession(finalChunkCount);
         await waitForNormalization();
     } catch (error) {
-        setCameraError(error.message || 'Не удалось загрузить видео');
+        setFileError(error.message || 'Не удалось загрузить видео');
         uploadProcessing.hidden = true;
-        startCameraButton.hidden = !supportsEmbeddedRecording();
-        recordToggleButton.hidden = !supportsEmbeddedRecording();
+        mobileChooseFile.hidden = false;
     }
+    fitWindow();
 }
 
-async function createUploadSession(mimeType) {
+
+async function createUploadSession(mimeType, sourceKind = 'RECORDING', declaredSizeBytes = null) {
     if (!selectedEntity || !selectedEntity.contextToken) {
         throw new Error('Не выбрана карточка Bitrix24');
     }
@@ -717,7 +826,9 @@ async function createUploadSession(mimeType) {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
             contextToken: selectedEntity.contextToken,
-            mimeType: mimeType || 'application/octet-stream'
+            mimeType: mimeType || 'application/octet-stream',
+            sourceKind,
+            declaredSizeBytes
         })
     });
     const data = await readJson(response);
@@ -726,6 +837,7 @@ async function createUploadSession(mimeType) {
     }
     return data;
 }
+
 
 async function uploadChunkWithRetry(blob, sequence, session) {
     let lastError = null;
@@ -814,26 +926,39 @@ function showNormalizedVideo(data) {
     uploadProcessing.hidden = true;
     stopCameraStream();
     recordedPreviewUrl = data.previewUrl || '';
-    cameraPlaceholder.hidden = true;
-    cameraPreview.hidden = false;
-    cameraPreview.autoplay = false;
-    cameraPreview.muted = false;
-    cameraPreview.srcObject = null;
-    cameraPreview.src = recordedPreviewUrl;
-    cameraPreview.load();
-    switchCameraButton.hidden = true;
-    switchCameraButton.disabled = false;
-    startCameraButton.hidden = true;
-    recordToggleButton.hidden = false;
-    recordToggleButton.disabled = false;
-    updateRecordButtonState(false);
-    playRecordingButton.hidden = !recordedPreviewUrl;
-    updatePlayButtonState();
+
+    if (mobileSourceModeInput.value === 'FILE') {
+        clearFilePreview();
+        mobileFilePreview.src = recordedPreviewUrl;
+        mobileFilePreview.hidden = !recordedPreviewUrl;
+        mobileFilePreview.load();
+        mobileChooseFile.hidden = true;
+        mobileSelectedFile.hidden = false;
+    } else {
+        cameraPlaceholder.hidden = true;
+        cameraPreview.hidden = false;
+        cameraPreview.autoplay = false;
+        cameraPreview.muted = false;
+        cameraPreview.srcObject = null;
+        cameraPreview.src = recordedPreviewUrl;
+        cameraPreview.load();
+        switchCameraButton.hidden = true;
+        switchCameraButton.disabled = false;
+        startCameraButton.hidden = true;
+        recordToggleButton.hidden = false;
+        recordToggleButton.disabled = false;
+        updateRecordButtonState(false);
+        playRecordingButton.hidden = !recordedPreviewUrl;
+        updatePlayButtonState();
+    }
+
     offerSection.hidden = false;
     setCameraError(null);
-    reportClientEvent('UPLOAD_READY', 'bytes=' + Number(data.bytesReceived || 0));
+    setFileError(null);
+    reportClientEvent('UPLOAD_READY', 'bytes=' + Number(data.bytesReceived || 0) + ';source=' + (data.sourceKind || mobileSourceModeInput.value));
     fitWindow();
 }
+
 
 async function resetRecordingState(showCameraButton) {
     stopTimer(true);
@@ -857,6 +982,7 @@ async function resetRecordingState(showCameraButton) {
     uploadSession = null;
     resetChunkUploader();
     clearRecordedPreview();
+    clearFilePreview();
     offerSection.hidden = true;
     processing.hidden = true;
     readyResult.hidden = true;
@@ -958,7 +1084,7 @@ function renderUploadSaveProgress() {
     const completed = Math.min(uploadedChunkCount, total);
     const percent = Math.max(0, Math.min(99, Math.round(completed * 100 / total)));
     setUploadProgress(percent);
-    uploadStatus.textContent = 'Сохраняем видео ' + percent + '%';
+    uploadStatus.textContent = (mobileSourceModeInput.value === 'FILE' ? 'Загружаем видео ' : 'Сохраняем видео ') + percent + '%';
 }
 
 function setUploadProgress(percent) {
@@ -980,6 +1106,46 @@ async function fetchWithTimeout(url, options, timeoutMs) {
     } finally {
         clearTimeout(timeoutHandle);
     }
+}
+
+function validateManualVideoFile(file) {
+    if (!file || file.size <= 0) throw new Error('Выбран пустой видеофайл.');
+    if (file.size > MAX_MANUAL_FILE_BYTES) throw new Error('Размер видеофайла не должен превышать 100 МБ.');
+    const extension = fileExtension(file.name);
+    if (!['mp4', 'mov', 'webm', 'mkv', 'm4v'].includes(extension)) {
+        throw new Error('Поддерживаются MP4, MOV, WebM, MKV и M4V.');
+    }
+}
+
+function fileExtension(name) {
+    const value = String(name || '');
+    const index = value.lastIndexOf('.');
+    return index >= 0 ? value.substring(index + 1).toLowerCase() : '';
+}
+
+function mimeFromFileName(name) {
+    return ({mp4:'video/mp4', mov:'video/quicktime', webm:'video/webm', mkv:'video/x-matroska', m4v:'video/x-m4v'})[fileExtension(name)]
+        || 'application/octet-stream';
+}
+
+function setFileError(message) {
+    fileError.hidden = !message;
+    fileError.textContent = message || '';
+}
+
+function clearFilePreview() {
+    try { mobileFilePreview.pause(); } catch (_) {}
+    mobileFilePreview.removeAttribute('src');
+    mobileFilePreview.hidden = true;
+}
+
+function clearFileUi() {
+    clearFilePreview();
+    mobileSelectedFile.hidden = true;
+    mobileSelectedFileName.textContent = '';
+    mobileSelectedFileMeta.textContent = '';
+    mobileChooseFile.hidden = false;
+    setFileError(null);
 }
 
 function clearRecordedPreview() {
@@ -1157,7 +1323,7 @@ async function retryPermissionsNow() {
 }
 
 async function retryCameraAfterPermissionReturn(force = false) {
-    if (permissionRetryInFlight || !selectedEntity || !supportsEmbeddedRecording()) return;
+    if (permissionRetryInFlight || !selectedEntity || mobileSourceModeInput.value !== 'CAMERA' || !supportsEmbeddedRecording()) return;
     let awaiting = permissionReturnPending;
     try {
         awaiting = awaiting || sessionStorage.getItem('b24-awaiting-media-permission') === '1';

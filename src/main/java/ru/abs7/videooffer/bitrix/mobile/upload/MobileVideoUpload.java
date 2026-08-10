@@ -29,6 +29,13 @@ public class MobileVideoUpload {
     @Column(name = "mime_type", nullable = false, length = 160)
     private String mimeType;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source_kind", nullable = false, length = 20)
+    private MobileVideoSourceKind sourceKind;
+
+    @Column(name = "declared_size_bytes")
+    private Long declaredSizeBytes;
+
     @Column(name = "source_file_path", nullable = false, columnDefinition = "text")
     private String sourceFilePath;
 
@@ -71,6 +78,8 @@ public class MobileVideoUpload {
             CrmEntityType entityType,
             long entityId,
             String mimeType,
+            MobileVideoSourceKind sourceKind,
+            Long declaredSizeBytes,
             String sourceDirectory,
             int retentionHours) {
         MobileVideoUpload upload = new MobileVideoUpload();
@@ -81,6 +90,8 @@ public class MobileVideoUpload {
         upload.crmEntityType = entityType;
         upload.crmEntityId = entityId;
         upload.mimeType = mimeType;
+        upload.sourceKind = MobileVideoSourceKind.orDefault(sourceKind);
+        upload.declaredSizeBytes = declaredSizeBytes;
         upload.sourceFilePath = Path.of(sourceDirectory).resolve(upload.id + ".source").toString();
         upload.bytesReceived = 0L;
         upload.nextSequence = 0;
@@ -136,8 +147,13 @@ public class MobileVideoUpload {
     }
 
     public void markReady(String normalizedPath) {
+        markReady(normalizedPath, bytesReceived == null ? 0L : bytesReceived);
+    }
+
+    public void markReady(String normalizedPath, long readyBytes) {
         status = MobileVideoUploadStatus.READY;
         normalizedFilePath = normalizedPath;
+        bytesReceived = Math.max(0L, readyBytes);
         errorMessage = null;
         readyAt = OffsetDateTime.now();
         updatedAt = readyAt;
@@ -161,6 +177,8 @@ public class MobileVideoUpload {
     public CrmEntityType getCrmEntityType() { return crmEntityType; }
     public Long getCrmEntityId() { return crmEntityId; }
     public String getMimeType() { return mimeType; }
+    public MobileVideoSourceKind getSourceKind() { return sourceKind; }
+    public Long getDeclaredSizeBytes() { return declaredSizeBytes; }
     public String getSourceFilePath() { return sourceFilePath; }
     public String getNormalizedFilePath() { return normalizedFilePath; }
     public Long getBytesReceived() { return bytesReceived; }
