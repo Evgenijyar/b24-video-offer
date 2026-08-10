@@ -9,6 +9,8 @@ const UPLOAD_DRAIN_TIMEOUT_MS = 90000;
 // client area on the tested Windows chrome, matching the native chooser.
 const PICKER_OUTER_WIDTH = 612;
 const PICKER_OUTER_HEIGHT = 614;
+const SIZE_LOCK_TOLERANCE_PX = 2;
+const SIZE_LOCK_WATCHDOG_MS = 180;
 
 const query = new URLSearchParams(location.search);
 const agentId = query.get('agentId') || '';
@@ -27,6 +29,10 @@ let captureRequestInFlight = false;
 let automaticCaptureAttempted = false;
 let activationFallbackArmed = false;
 let captureController = null;
+let pickerSizeLocked = true;
+let sizeCorrectionInFlight = false;
+let sizeLockTimer = null;
+let nativeResizeLockMethod = null;
 
 // There is deliberately no visible helper UI. If Chromium refuses the automatic
 // request because the newly-created top-level window has no transient activation,
@@ -46,6 +52,20 @@ document.addEventListener('keydown', event => {
     void chooseScreen(false);
 }, true);
 
+// `resizable=no` is only a hint for modern Chromium popups. Keep the picker
+// geometrically locked even when the host ignores that hint. Native window
+// APIs are preferred when exposed by the Bitrix Desktop shell; this watchdog
+// is the browser-level fallback.
+window.addEventListener('resize', () => {
+    if (!pickerSizeLocked || sizeCorrectionInFlight) return;
+    schedulePickerSizeCorrection();
+});
+
+sizeLockTimer = setInterval(() => {
+    if (!pickerSizeLocked || document.visibilityState === 'hidden') return;
+    enforcePickerSize();
+}, SIZE_LOCK_WATCHDOG_MS);
+
 window.addEventListener('message', event => {
     if (event.origin !== location.origin || event.source !== window.opener) return;
     const message = event.data || {};
@@ -54,6 +74,7 @@ window.addEventListener('message', event => {
 });
 
 window.addEventListener('beforeunload', () => {
+    if (sizeLockTimer) clearInterval(sizeLockTimer);
     if (!intentionalShutdown) post('AGENT_CLOSED');
 });
 
@@ -67,6 +88,7 @@ async function handleMessage(message) {
                     microphone: message.microphone !== false
                 };
                 post('INITIALIZED');
+                void postNativeCapabilities();
                 if (config.contextToken && !displayStream && !captureRequestInFlight && !automaticCaptureAttempted) {
                     automaticCaptureAttempted = true;
                     // Best effort: some Chromium embedders may preserve/delegate activation.
@@ -459,38 +481,201 @@ async function parkWindow() {
     document.body.classList.add('is-parked');
     document.title = '\u200b';
     activationFallbackArmed = false;
+    pickerSizeLocked = false;
 
-    // Additional Windowing Controls can genuinely minimize a top-level window,
-    // but Chromium only permits it in supported app contexts with an already
-    // granted window-management permission. Never trigger an extra permission
-    // prompt just to hide this technical window.
-    if (await tryNativeMinimize()) {
-        post('AGENT_PARKED', {method: 'minimize'});
+    // 1) Prefer a real OS-level minimize if the host exposes one. Bitrix
+    // Desktop has changed Chromium embedders over time, so probe only known,
+    // explicit bridges and never call arbitrary globals.
+    const minimizedBy = await tryAllNativeMinimizePaths();
+    if (minimizedBy) {
+        post('AGENT_PARKED', {method: minimizedBy});
         return;
     }
 
-    // Stable web fallback: do NOT shrink/move the helper. Remove it from focus
-    // and explicitly focus the actual top Bitrix window (not merely our iframe).
-    // Cross-origin WindowProxy permits focus() on top, so this is safe even
-    // though the Bitrix shell has a different origin.
-    focusBitrixWindow();
-    setTimeout(focusBitrixWindow, 80);
-    setTimeout(focusBitrixWindow, 240);
-    post('AGENT_PARKED', {method: 'background'});
+    // 2) A normal web popup has no standards-based minimize primitive. The
+    // best browser-only behavior is to return foreground to Bitrix. Do this
+    // repeatedly from both the agent and the embedded app: Chromium can
+    // refocus the capture origin asynchronously after the native chooser
+    // disappears.
+    post('REQUEST_HOST_FOCUS', {reason: 'capture-ready'});
+    const delays = [0, 60, 140, 280, 500, 850, 1300, 1900];
+    delays.forEach(delay => setTimeout(() => {
+        focusBitrixWindow();
+        post('REQUEST_HOST_FOCUS', {reason: 'capture-ready', delay});
+    }, delay));
+    post('AGENT_PARKED', {method: 'background-focus'});
 }
 
-async function tryNativeMinimize() {
-    if (typeof window.minimize !== 'function') return false;
-    try {
-        if (!navigator.permissions?.query) return false;
-        const permission = await navigator.permissions.query({name: 'window-management'});
-        if (permission?.state !== 'granted') return false;
-        const result = window.minimize();
-        if (result && typeof result.then === 'function') await result;
-        return true;
-    } catch (_) {
-        return false;
+async function tryAllNativeMinimizePaths() {
+    const attempts = [
+        tryAdditionalWindowingControlsMinimize,
+        tryChromeAppWindowMinimize,
+        tryChromeWindowsMinimize,
+        tryElectronMinimize,
+        tryKnownHostBridgeMinimize
+    ];
+    for (const attempt of attempts) {
+        try {
+            const method = await attempt();
+            if (method) return method;
+        } catch (_) { }
     }
+    return null;
+}
+
+async function tryAdditionalWindowingControlsMinimize() {
+    if (typeof window.minimize !== 'function') return null;
+    // Do not pre-filter on Permissions API: some Chromium embedders expose the
+    // control but implement permission internally. Calling the API is the only
+    // reliable feature test. If the host refuses it, the promise/exception is
+    // caught and the next path is tried.
+    const result = window.minimize();
+    if (result && typeof result.then === 'function') {
+        await Promise.race([
+            result,
+            new Promise((_, reject) => setTimeout(() => reject(new Error('minimize-timeout')), 1200))
+        ]);
+    }
+    await new Promise(resolve => setTimeout(resolve, 80));
+    return 'window.minimize';
+}
+
+async function tryChromeAppWindowMinimize() {
+    const current = window.chrome?.app?.window?.current?.();
+    if (!current || typeof current.minimize !== 'function') return null;
+    current.minimize();
+    return 'chrome.app.window.minimize';
+}
+
+async function tryChromeWindowsMinimize() {
+    const api = window.chrome?.windows;
+    if (!api || typeof api.getCurrent !== 'function' || typeof api.update !== 'function') return null;
+    const current = await new Promise((resolve, reject) => {
+        try {
+            const maybe = api.getCurrent(windowInfo => {
+                const err = window.chrome?.runtime?.lastError;
+                if (err) reject(new Error(err.message));
+                else resolve(windowInfo);
+            });
+            if (maybe && typeof maybe.then === 'function') maybe.then(resolve, reject);
+        } catch (error) { reject(error); }
+    });
+    if (!current?.id) return null;
+    await new Promise((resolve, reject) => {
+        try {
+            const maybe = api.update(current.id, {state: 'minimized'}, () => {
+                const err = window.chrome?.runtime?.lastError;
+                if (err) reject(new Error(err.message));
+                else resolve();
+            });
+            if (maybe && typeof maybe.then === 'function') maybe.then(resolve, reject);
+        } catch (error) { reject(error); }
+    });
+    return 'chrome.windows.update';
+}
+
+async function tryElectronMinimize() {
+    if (typeof window.require !== 'function') return null;
+    try {
+        const electron = window.require('electron');
+        const current = electron?.remote?.getCurrentWindow?.();
+        if (current && typeof current.minimize === 'function') {
+            current.minimize();
+            return 'electron.remote.minimize';
+        }
+    } catch (_) { }
+    try {
+        const remote = window.require('@electron/remote');
+        const current = remote?.getCurrentWindow?.();
+        if (current && typeof current.minimize === 'function') {
+            current.minimize();
+            return 'electron-remote.minimize';
+        }
+    } catch (_) { }
+    return null;
+}
+
+async function tryKnownHostBridgeMinimize() {
+    const candidates = [
+        ['electronAPI', window.electronAPI],
+        ['desktopAPI', window.desktopAPI],
+        ['nativeWindow', window.nativeWindow]
+    ];
+    for (const [name, bridge] of candidates) {
+        if (!bridge || typeof bridge.minimize !== 'function') continue;
+        const result = bridge.minimize();
+        if (result && typeof result.then === 'function') await result;
+        return `${name}.minimize`;
+    }
+    return null;
+}
+
+async function tryNativeResizeLock() {
+    if (nativeResizeLockMethod) return nativeResizeLockMethod;
+
+    // Additional Windowing Controls. Use only when permission is already
+    // granted so opening the screen chooser never gains another permission
+    // dialog just for window decoration behavior.
+    if (typeof window.setResizable === 'function') {
+        try {
+            const state = await navigator.permissions?.query?.({name: 'window-management'});
+            if (state?.state === 'granted') {
+                const result = window.setResizable(false);
+                if (result && typeof result.then === 'function') await result;
+                nativeResizeLockMethod = 'window.setResizable';
+                return nativeResizeLockMethod;
+            }
+        } catch (_) { }
+    }
+
+    // Legacy/embedded Chrome App shell.
+    try {
+        const current = window.chrome?.app?.window?.current?.();
+        const bounds = current?.outerBounds;
+        if (bounds?.setMinimumSize && bounds?.setMaximumSize) {
+            bounds.setMinimumSize(PICKER_OUTER_WIDTH, PICKER_OUTER_HEIGHT);
+            bounds.setMaximumSize(PICKER_OUTER_WIDTH, PICKER_OUTER_HEIGHT);
+            nativeResizeLockMethod = 'chrome.app.window.bounds';
+            return nativeResizeLockMethod;
+        }
+    } catch (_) { }
+
+    // Electron shell, if Node integration/remote bridge is intentionally
+    // exposed by the host.
+    if (typeof window.require === 'function') {
+        for (const loader of [
+            () => window.require('electron')?.remote?.getCurrentWindow?.(),
+            () => window.require('@electron/remote')?.getCurrentWindow?.()
+        ]) {
+            try {
+                const current = loader();
+                if (current && typeof current.setResizable === 'function') {
+                    current.setResizable(false);
+                    nativeResizeLockMethod = 'electron.setResizable';
+                    return nativeResizeLockMethod;
+                }
+            } catch (_) { }
+        }
+    }
+
+    return null;
+}
+
+function schedulePickerSizeCorrection() {
+    setTimeout(enforcePickerSize, 0);
+    setTimeout(enforcePickerSize, 40);
+    setTimeout(enforcePickerSize, 120);
+}
+
+function enforcePickerSize() {
+    if (!pickerSizeLocked || sizeCorrectionInFlight) return;
+    const width = Number(window.outerWidth) || 0;
+    const height = Number(window.outerHeight) || 0;
+    if (Math.abs(width - PICKER_OUTER_WIDTH) <= SIZE_LOCK_TOLERANCE_PX
+        && Math.abs(height - PICKER_OUTER_HEIGHT) <= SIZE_LOCK_TOLERANCE_PX) return;
+    sizeCorrectionInFlight = true;
+    try { window.resizeTo(PICKER_OUTER_WIDTH, PICKER_OUTER_HEIGHT); } catch (_) { }
+    setTimeout(() => { sizeCorrectionInFlight = false; }, 70);
 }
 
 function focusBitrixWindow() {
@@ -508,6 +693,8 @@ function focusBitrixWindow() {
 function preparePickerWindow(focus = true) {
     document.body.classList.remove('is-parked');
     document.title = '\u200b';
+    pickerSizeLocked = true;
+    void tryNativeResizeLock();
     try { window.resizeTo(PICKER_OUTER_WIDTH, PICKER_OUTER_HEIGHT); } catch (_) { }
     try {
         const availLeft = Number(screen.availLeft) || 0;
@@ -547,6 +734,33 @@ function post(type, payload = {}) {
     try {
         window.opener.postMessage({channel: SCREEN_AGENT_CHANNEL, agentId, type, ...payload}, location.origin);
     } catch (_) { }
+}
+
+async function postNativeCapabilities() {
+    let permissionState = 'unsupported';
+    try {
+        if (navigator.permissions?.query) {
+            const result = await navigator.permissions.query({name: 'window-management'});
+            permissionState = result?.state || 'unknown';
+        }
+    } catch (_) { }
+    post('NATIVE_CAPABILITIES', buildNativeCapabilities(permissionState));
+}
+
+function buildNativeCapabilities(permissionState) {
+    let chromeAppWindow = false;
+    try { chromeAppWindow = !!window.chrome?.app?.window?.current?.(); } catch (_) { }
+    return {
+        windowMinimize: typeof window.minimize === 'function',
+        windowSetResizable: typeof window.setResizable === 'function',
+        windowManagementPermission: permissionState,
+        chromeAppWindow,
+        chromeWindows: !!(window.chrome?.windows?.getCurrent && window.chrome?.windows?.update),
+        electronRequire: typeof window.require === 'function',
+        electronAPI: !!window.electronAPI,
+        desktopAPI: !!window.desktopAPI,
+        nativeWindow: !!window.nativeWindow
+    };
 }
 
 function chooseRecorderMimeType() {

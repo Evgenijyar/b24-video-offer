@@ -62,7 +62,7 @@ const UPLOAD_DRAIN_TIMEOUT_MS = 90000;
 const FILE_CHUNK_BYTES = 4 * 1024 * 1024;
 const MAX_FILE_BYTES = 100 * 1024 * 1024;
 const SCREEN_AGENT_CHANNEL = 'video-offer-screen-agent-v1';
-const SCREEN_AGENT_URL = '/bitrix/screen-capture?v=026';
+const SCREEN_AGENT_URL = '/bitrix/screen-capture?v=027';
 const SCREEN_AGENT_PICKER_OUTER_WIDTH = 612;
 const SCREEN_AGENT_PICKER_OUTER_HEIGHT = 614;
 const SCREEN_AGENT_INITIAL_INNER_WIDTH = 610;
@@ -514,6 +514,22 @@ async function handleScreenAgentMessage(message) {
                 screenY: message.screenY ?? null
             }));
             break;
+        case 'NATIVE_CAPABILITIES':
+            reportDesktopEvent('SCREEN_AGENT_NATIVE_CAPABILITIES', JSON.stringify({
+                windowMinimize: !!message.windowMinimize,
+                windowSetResizable: !!message.windowSetResizable,
+                windowManagementPermission: message.windowManagementPermission || 'unknown',
+                chromeAppWindow: !!message.chromeAppWindow,
+                chromeWindows: !!message.chromeWindows,
+                electronRequire: !!message.electronRequire,
+                electronAPI: !!message.electronAPI,
+                desktopAPI: !!message.desktopAPI,
+                nativeWindow: !!message.nativeWindow
+            }));
+            break;
+        case 'REQUEST_HOST_FOCUS':
+            focusBitrixHostWindow();
+            break;
         case 'AGENT_PARKED':
             reportDesktopEvent('SCREEN_AGENT_PARKED', JSON.stringify({method: message.method || 'unknown'}));
             break;
@@ -524,6 +540,20 @@ async function handleScreenAgentMessage(message) {
             break;
     }
     fitWindow();
+}
+
+function focusBitrixHostWindow() {
+    // Run the focus handoff from the embedded app as well as from the capture
+    // agent. Some Chromium shells refocus the popup after getDisplayMedia()
+    // resolves, so repeat the request for a short period.
+    try { window.blur(); } catch (_) { }
+    try { window.parent?.focus(); } catch (_) { }
+    try { window.top?.focus(); } catch (_) { }
+    const delays = [40, 120, 260, 520, 900, 1500, 2200];
+    delays.forEach(delay => setTimeout(() => {
+        try { window.parent?.focus(); } catch (_) { }
+        try { window.top?.focus(); } catch (_) { }
+    }, delay));
 }
 
 async function openScreenCaptureAgent(focus = true) {
