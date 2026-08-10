@@ -70,7 +70,7 @@ public class BitrixTimelineService {
      * the lead/deal/contact. Bitrix recommends crm.activity.todo.add for new
      * integrations; the older crm.activity.add is deprecated.
      */
-    public Long createViewGoalTodo(VideoOffer offer) {
+    public ViewGoalTodo createViewGoalTodo(VideoOffer offer) {
         log.info("Bitrix view-goal todo creation started: offerId={}, memberId={}, entityType={}, entityId={}, goal={}",
                 offer.getId(), offer.getBitrixMemberId(), offer.getCrmEntityType(),
                 offer.getCrmEntityId(), offer.getViewNotificationGoal());
@@ -108,8 +108,44 @@ public class BitrixTimelineService {
         log.info("Bitrix view-goal todo created: offerId={}, entityType={}, entityId={}, responsibleId={}, activityId={}, goal={}",
                 offer.getId(), offer.getCrmEntityType(), offer.getCrmEntityId(), responsibleId, activityId,
                 offer.getViewNotificationGoal());
-        return activityId;
+        return new ViewGoalTodo(activityId, responsibleId);
     }
+
+    /**
+     * Sends a native Bitrix24 system notification to the responsible employee.
+     * It is intentionally a separate REST call from CRM todo creation: Bitrix24
+     * does not guarantee that adding a CRM todo creates a bell notification.
+     * A stable TAG makes network retries effectively idempotent on the Bitrix
+     * notifications side. Scope `im` is required by Bitrix24.
+     */
+    public Long sendViewGoalSystemNotification(VideoOffer offer, long responsibleId, long activityId) {
+        String goalText = viewGoalText(offer);
+        String publicUrl = publicBaseUrl + "/o/" + offer.getPublicToken();
+        String message = "[B]Видео просмотрено[/B]\n"
+                + "Клиент достиг цели просмотра: " + goalText + ".\n"
+                + "Поставлено дело «Связаться с клиентом».\n"
+                + "[URL=" + publicUrl + "]Открыть видеооффер[/URL]";
+        Map<String, Object> parameters = new LinkedHashMap<>();
+        parameters.put("USER_ID", responsibleId);
+        parameters.put("MESSAGE", message);
+        parameters.put("TAG", "VIDEO_OFFER_VIEW_" + offer.getId());
+
+        Map<String, Object> response = restClient.call(
+                offer.getBitrixMemberId(),
+                "im.notify.system.add",
+                parameters);
+
+        Long notificationId = tryParseLong(response.get("result"));
+        if (notificationId == null) {
+            throw new IllegalStateException("Bitrix24 не вернул ID системного уведомления");
+        }
+        log.info("Bitrix view-goal system notification sent: offerId={}, entityType={}, entityId={}, responsibleId={}, activityId={}, notificationId={}, goal={}",
+                offer.getId(), offer.getCrmEntityType(), offer.getCrmEntityId(), responsibleId, activityId,
+                notificationId, offer.getViewNotificationGoal());
+        return notificationId;
+    }
+
+    public record ViewGoalTodo(long activityId, long responsibleId) {}
 
     private String renderClientMessage(VideoOffer offer, String publicUrl) {
         String message = offer.getClientMessage();

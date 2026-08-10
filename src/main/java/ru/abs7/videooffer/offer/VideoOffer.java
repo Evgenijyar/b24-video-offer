@@ -47,6 +47,8 @@ public class VideoOffer {
     @Column(name="view_goal_duration_seconds", precision=12, scale=3) private BigDecimal viewGoalDurationSeconds;
     @Column(name="view_notification_comment_id") private Long viewNotificationCommentId;
     @Column(name="view_notification_activity_id") private Long viewNotificationActivityId;
+    @Column(name="view_notification_responsible_id") private Long viewNotificationResponsibleId;
+    @Column(name="view_notification_im_id") private Long viewNotificationImId;
     @Column(name="view_notification_error", columnDefinition="text") private String viewNotificationError;
     @Column(name="view_notification_sent_at") private OffsetDateTime viewNotificationSentAt;
 
@@ -138,9 +140,17 @@ public class VideoOffer {
         return true;
     }
 
-    public void markViewNotificationDelivered(Long activityId) {
+    public void markViewNotificationActivityCreated(Long activityId, Long responsibleId) {
+        viewNotificationActivityId = activityId;
+        viewNotificationResponsibleId = responsibleId;
+        updatedAt = OffsetDateTime.now();
+    }
+
+    public void markViewNotificationDelivered(Long activityId, Long responsibleId, Long imNotificationId) {
         viewNotificationStatus = ViewNotificationStatus.DELIVERED;
         viewNotificationActivityId = activityId;
+        viewNotificationResponsibleId = responsibleId;
+        viewNotificationImId = imNotificationId;
         viewNotificationError = null;
         viewNotificationSentAt = OffsetDateTime.now();
         updatedAt = viewNotificationSentAt;
@@ -161,5 +171,5 @@ public class VideoOffer {
     }
 
     public UUID getId(){return id;} public String getPublicToken(){return publicToken;} public CrmEntityType getCrmEntityType(){return crmEntityType;} public Long getCrmEntityId(){return crmEntityId;} public String getBitrixMemberId(){return bitrixMemberId;} public Long getBitrixUserId(){return bitrixUserId;} public String getSourceRecordingUrl(){return sourceRecordingUrl;} public String getRecordingKey(){return recordingKey;} public String getAccompanyingText(){return accompanyingText;} public String getClientMessage(){return clientMessage;} public VideoOfferStatus getStatus(){return status;} public Integer getProgressPercent(){return progressPercent;} public String getVideoFilePath(){return videoFilePath;} public Long getVideoFileSize(){return videoFileSize;} public String getVideoQuality(){return videoQuality;} public String getErrorMessage(){return errorMessage;} public OffsetDateTime getCreatedAt(){return createdAt;} public OffsetDateTime getUpdatedAt(){return updatedAt;} public OffsetDateTime getReadyAt(){return readyAt;} public OffsetDateTime getExpiresAt(){return expiresAt;} public String getBitrixDeliveryStatus(){return bitrixDeliveryStatus;} public Long getBitrixTimelineCommentId(){return bitrixTimelineCommentId;} public String getBitrixDeliveryError(){return bitrixDeliveryError;} public OffsetDateTime getBitrixDeliveredAt(){return bitrixDeliveredAt;}
-    public ViewNotificationGoal getViewNotificationGoal(){return viewNotificationGoal;} public ViewNotificationStatus getViewNotificationStatus(){return viewNotificationStatus;} public OffsetDateTime getViewGoalReachedAt(){return viewGoalReachedAt;} public String getViewGoalSessionId(){return viewGoalSessionId;} public BigDecimal getViewGoalPositionSeconds(){return viewGoalPositionSeconds;} public BigDecimal getViewGoalDurationSeconds(){return viewGoalDurationSeconds;} public Long getViewNotificationCommentId(){return viewNotificationCommentId;} public Long getViewNotificationActivityId(){return viewNotificationActivityId;} public String getViewNotificationError(){return viewNotificationError;} public OffsetDateTime getViewNotificationSentAt(){return viewNotificationSentAt;}
+    public ViewNotificationGoal getViewNotificationGoal(){return viewNotificationGoal;} public ViewNotificationStatus getViewNotificationStatus(){return viewNotificationStatus;} public OffsetDateTime getViewGoalReachedAt(){return viewGoalReachedAt;} public String getViewGoalSessionId(){return viewGoalSessionId;} public BigDecimal getViewGoalPositionSeconds(){return viewGoalPositionSeconds;} public BigDecimal getViewGoalDurationSeconds(){return viewGoalDurationSeconds;} public Long getViewNotificationCommentId(){return viewNotificationCommentId;} public Long getViewNotificationActivityId(){return viewNotificationActivityId;} public Long getViewNotificationResponsibleId(){return viewNotificationResponsibleId;} public Long getViewNotificationImId(){return viewNotificationImId;} public String getViewNotificationError(){return viewNotificationError;} public OffsetDateTime getViewNotificationSentAt(){return viewNotificationSentAt;}
 }

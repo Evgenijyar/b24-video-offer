@@ -93,14 +93,38 @@ public class VideoOfferViewNotificationService {
         }
 
         try {
-            Long activityId = timelineService.createViewGoalTodo(claimed);
+            Long activityId = claimed.getViewNotificationActivityId();
+            Long responsibleId = claimed.getViewNotificationResponsibleId();
+
+            if (activityId == null || responsibleId == null || responsibleId <= 0) {
+                BitrixTimelineService.ViewGoalTodo todo = timelineService.createViewGoalTodo(claimed);
+                activityId = todo.activityId();
+                responsibleId = todo.responsibleId();
+                Long persistedActivityId = activityId;
+                Long persistedResponsibleId = responsibleId;
+                transactionTemplate.executeWithoutResult(status -> repository.findByIdForUpdate(offerId)
+                        .ifPresent(offer -> {
+                            offer.markViewNotificationActivityCreated(persistedActivityId, persistedResponsibleId);
+                            repository.saveAndFlush(offer);
+                        }));
+                log.info("Bitrix view-goal CRM todo persisted before bell notification: offerId={}, activityId={}, responsibleId={}",
+                        offerId, activityId, responsibleId);
+            } else {
+                log.info("Reusing existing Bitrix view-goal CRM todo before bell retry: offerId={}, activityId={}, responsibleId={}",
+                        offerId, activityId, responsibleId);
+            }
+
+            Long notificationId = timelineService.sendViewGoalSystemNotification(
+                    claimed, responsibleId, activityId);
+            Long finalActivityId = activityId;
+            Long finalResponsibleId = responsibleId;
             transactionTemplate.executeWithoutResult(status -> repository.findByIdForUpdate(offerId)
                     .ifPresent(offer -> {
-                        offer.markViewNotificationDelivered(activityId);
+                        offer.markViewNotificationDelivered(finalActivityId, finalResponsibleId, notificationId);
                         repository.saveAndFlush(offer);
                     }));
-            log.info("Bitrix view notification delivery completed as CRM todo: offerId={}, activityId={}",
-                    offerId, activityId);
+            log.info("Bitrix view notification delivery completed: offerId={}, activityId={}, responsibleId={}, notificationId={}",
+                    offerId, activityId, responsibleId, notificationId);
         } catch (Exception error) {
             String message = rootMessage(error);
             transactionTemplate.executeWithoutResult(status -> repository.findByIdForUpdate(offerId)
