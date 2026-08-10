@@ -62,7 +62,11 @@ const UPLOAD_DRAIN_TIMEOUT_MS = 90000;
 const FILE_CHUNK_BYTES = 4 * 1024 * 1024;
 const MAX_FILE_BYTES = 100 * 1024 * 1024;
 const SCREEN_AGENT_CHANNEL = 'video-offer-screen-agent-v1';
-const SCREEN_AGENT_URL = '/bitrix/screen-capture?v=025';
+const SCREEN_AGENT_URL = '/bitrix/screen-capture?v=026';
+const SCREEN_AGENT_PICKER_OUTER_WIDTH = 612;
+const SCREEN_AGENT_PICKER_OUTER_HEIGHT = 614;
+const SCREEN_AGENT_INITIAL_INNER_WIDTH = 610;
+const SCREEN_AGENT_INITIAL_INNER_HEIGHT = 582;
 
 let activeOfferId = null;
 let pollTimer = null;
@@ -493,6 +497,26 @@ async function handleScreenAgentMessage(message) {
                 }
             }
             break;
+        case 'ACTIVATION_REQUIRED':
+            reportDesktopEvent('SCREEN_AGENT_ACTIVATION_REQUIRED', JSON.stringify({
+                reason: message.reason || '',
+                userActivation: !!message.userActivation
+            }));
+            break;
+        case 'WINDOW_GEOMETRY':
+            reportDesktopEvent('SCREEN_AGENT_WINDOW_GEOMETRY', JSON.stringify({
+                state: message.state || '',
+                outerWidth: message.outerWidth || null,
+                outerHeight: message.outerHeight || null,
+                innerWidth: message.innerWidth || null,
+                innerHeight: message.innerHeight || null,
+                screenX: message.screenX ?? null,
+                screenY: message.screenY ?? null
+            }));
+            break;
+        case 'AGENT_PARKED':
+            reportDesktopEvent('SCREEN_AGENT_PARKED', JSON.stringify({method: message.method || 'unknown'}));
+            break;
         case 'AGENT_ERROR':
             setCameraError(message.message || 'Ошибка записи экрана.');
             break;
@@ -521,10 +545,29 @@ async function openScreenCaptureAgent(focus = true) {
     releaseScreenPreview();
     screenAgentId = createScreenAgentId();
     const url = `${SCREEN_AGENT_URL}&agentId=${encodeURIComponent(screenAgentId)}`;
+    const availLeft = Number(screen.availLeft) || 0;
+    const availTop = Number(screen.availTop) || 0;
+    const availWidth = Number(screen.availWidth) || Number(screen.width) || SCREEN_AGENT_PICKER_OUTER_WIDTH;
+    const availHeight = Number(screen.availHeight) || Number(screen.height) || SCREEN_AGENT_PICKER_OUTER_HEIGHT;
+    const left = availLeft + Math.max(0, Math.round((availWidth - SCREEN_AGENT_PICKER_OUTER_WIDTH) / 2));
+    const top = availTop + Math.max(0, Math.round((availHeight - SCREEN_AGENT_PICKER_OUTER_HEIGHT) / 2));
+    const features = [
+        'popup=yes',
+        `width=${SCREEN_AGENT_INITIAL_INNER_WIDTH}`,
+        `height=${SCREEN_AGENT_INITIAL_INNER_HEIGHT}`,
+        `left=${left}`,
+        `top=${top}`,
+        'resizable=no',
+        'scrollbars=no',
+        'menubar=no',
+        'toolbar=no',
+        'location=no',
+        'status=no'
+    ].join(',');
     screenAgent = window.open(
         url,
         `videoOfferScreenCapture_${screenAgentId.replace(/[^a-zA-Z0-9]/g, '')}`,
-        'popup=yes,width=430,height=220,resizable=no,scrollbars=no,menubar=no,toolbar=no,location=no,status=no');
+        features);
     if (!screenAgent) {
         screenAgentId = null;
         throw new Error('Браузер заблокировал окно выбора экрана. Разрешите всплывающие окна и повторите.');
