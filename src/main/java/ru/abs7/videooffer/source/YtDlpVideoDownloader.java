@@ -94,7 +94,11 @@ public class YtDlpVideoDownloader {
         command.add("--remux-video");
         command.add("mp4");
         command.add("--format");
-        command.add("bv*[height<=1080]+ba/b[height<=1080]/best[height<=1080]/best");
+        command.add("bv*[ext=mp4][vcodec^=avc1][height<=1080]+ba[ext=m4a][acodec^=mp4a]/"
+                + "b[ext=mp4][vcodec^=avc1][height<=1080]/"
+                + "bv*[vcodec^=avc1][height<=1080]+ba/"
+                + "b[vcodec^=avc1][height<=1080]/"
+                + "bv*[height<=1080]+ba/b[height<=1080]/best[height<=1080]/best");
         command.add("--concurrent-fragments");
         command.add("4");
         command.add("--retries");
@@ -132,8 +136,8 @@ public class YtDlpVideoDownloader {
                     Matcher matcher = PROGRESS_PATTERN.matcher(line);
                     if (matcher.find()) {
                         try {
-                            int percent = Math.max(0, Math.min(90,
-                                    (int) Math.floor(Double.parseDouble(matcher.group(1).trim()) * 0.90)));
+                            int percent = Math.max(0, Math.min(60,
+                                    (int) Math.floor(Double.parseDouble(matcher.group(1).trim()) * 0.60)));
                             int previous = lastProgress.getAndUpdate(old -> Math.max(old, percent));
                             if (percent > previous) {
                                 progressConsumer.accept(percent);
@@ -192,13 +196,34 @@ public class YtDlpVideoDownloader {
                     + Math.round(maxDownloadBytes / 1024.0 / 1024.0) + " МБ");
         }
 
-        progressConsumer.accept(92);
+        progressConsumer.accept(61);
         Path normalized = videoStorageDir.resolve(targetBaseName + ".mp4");
         String mime = downloaded.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".mp4")
                 ? "video/mp4" : "application/octet-stream";
-        MobileVideoTranscoder.TranscodeResult normalizedResult = transcoder.transcode(downloaded, normalized, mime);
+        MobileVideoTranscoder.TranscodeResult normalizedResult = transcoder.transcode(
+                downloaded,
+                normalized,
+                mime,
+                mediaProgress -> progressConsumer.accept(Math.max(61, Math.min(99, 61 + (mediaProgress * 38 / 100)))));
         progressConsumer.accept(99);
-        Files.deleteIfExists(downloaded);
+
+        // Fast-path MP4/H.264 may already be the file downloaded by yt-dlp.  Never delete
+        // that ready file: move it into the canonical video storage instead.
+        Path readyPath = normalizedResult.path().toAbsolutePath().normalize();
+        Path downloadedPath = downloaded.toAbsolutePath().normalize();
+        if (readyPath.equals(downloadedPath)) {
+            Files.createDirectories(normalized.getParent());
+            try {
+                Files.move(downloaded, normalized, java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                        java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+            } catch (java.nio.file.AtomicMoveNotSupportedException ignored) {
+                Files.move(downloaded, normalized, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+            normalizedResult = new MobileVideoTranscoder.TranscodeResult(
+                    normalized, Files.size(normalized), normalizedResult.quality());
+        } else {
+            Files.deleteIfExists(downloaded);
+        }
         cleanupTargetArtifacts(targetBaseName);
 
         log.info("External video download completed: host={}, targetBase={}, bytes={}, quality={}, durationMs={}",

@@ -565,7 +565,23 @@ textarea { resize: vertical; }
 .selected-file-copy b { color: #3d4d56; font-size: 13px; }
 .selected-file-copy small { margin-top: 2px; color: #82919a; font-size: 11px; }
 .selected-file-card button { border: 0; background: transparent; color: #2477b5; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
-.file-preview { width: 100%; max-height: 390px; margin-top: 12px; border-radius: 9px; background: #111; }
+.file-preview-frame { position: relative; margin-top: 12px; }
+.file-preview-frame[hidden] { display: none !important; }
+.file-preview { width: 100%; max-height: 390px; border-radius: 9px; background: #111; display: block; }
+.video-fullscreen-button {
+    position: absolute; top: 10px; right: 10px; z-index: 6; display: grid; place-items: center;
+    width: 34px; height: 34px; padding: 0; border: 1px solid rgba(255,255,255,.38); border-radius: 8px;
+    color: #fff; background: rgba(16,24,30,.70); backdrop-filter: blur(5px); cursor: pointer;
+    font: 700 18px/1 Arial,sans-serif; box-shadow: 0 2px 10px rgba(0,0,0,.22);
+}
+.video-fullscreen-button:hover { background: rgba(16,24,30,.88); }
+.video-fullscreen-button.is-local-exit { position: fixed; top: 14px; right: 14px; z-index: 100001; }
+video.is-local-fullscreen {
+    position: fixed !important; inset: 0 !important; z-index: 100000 !important;
+    width: 100vw !important; height: 100vh !important; max-width: none !important; max-height: none !important;
+    margin: 0 !important; border-radius: 0 !important; background: #000 !important; object-fit: contain !important;
+}
+body.has-local-video-fullscreen { overflow: hidden !important; }
 
 .capture-mode-option:disabled { cursor: wait; opacity: .72; }
 .capture-check input:disabled + span { opacity: .62; }

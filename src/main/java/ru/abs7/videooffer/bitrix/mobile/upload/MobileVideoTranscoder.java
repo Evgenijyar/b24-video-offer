@@ -6,7 +6,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -16,6 +18,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.IntConsumer;
 
 @Service
 public class MobileVideoTranscoder {
@@ -49,38 +53,50 @@ public class MobileVideoTranscoder {
 
     public TranscodeResult transcode(Path input, Path output, String declaredMimeType)
             throws IOException, InterruptedException {
+        return transcode(input, output, declaredMimeType, ignored -> { });
+    }
+
+    /**
+     * Normalizes a video only when this is required for reliable browser playback.
+     * progressConsumer receives real media-processing progress from 0 to 100.
+     */
+    public TranscodeResult transcode(
+            Path input,
+            Path output,
+            String declaredMimeType,
+            IntConsumer progressConsumer) throws IOException, InterruptedException {
+        IntConsumer progress = progressConsumer == null ? ignored -> { } : progressConsumer;
         Files.createDirectories(output.toAbsolutePath().normalize().getParent());
         Files.deleteIfExists(output);
 
+        progress.accept(1);
         long probeStartedAt = System.nanoTime();
         ProbeResult probe = probe(input);
-        log.info("Mobile video probe completed: input={}, declaredMimeType={}, format={}, videoCodec={}, audioCodec={}, width={}, height={}, durationMs={}",
+        log.info("Mobile video probe completed: input={}, declaredMimeType={}, format={}, videoCodec={}, audioCodec={}, width={}, height={}, durationSeconds={}, durationMs={}",
                 input, declaredMimeType, probe.formatName(), probe.videoCodec(), probe.audioCodec(), probe.width(), probe.height(),
-                elapsedMillis(probeStartedAt));
+                probe.durationSeconds(), elapsedMillis(probeStartedAt));
 
-        // MP4/H.264/AAC is already the exact format used by public offers. Do not copy or
-        // re-encode it: after ffprobe validation the source file itself becomes READY.
-        // This is especially important for browser MediaRecorder output and manual MP4 uploads.
+        // The public player already consumes MP4/H.264/AAC directly. This is the fast path
+        // for the vast majority of phone/desktop files and modern MediaRecorder output.
         if (canUseMp4AsIs(probe, declaredMimeType)) {
             long size = Files.size(input);
+            progress.accept(100);
             log.info("Mobile video accepted without FFmpeg: input={}, bytes={}, quality=mp4-h264-as-is", input, size);
             return new TranscodeResult(input, size, "mp4-h264-as-is");
         }
 
-        // Container-only conversion is cheap and must not wait behind CPU-heavy transcodes.
-        if (canRemuxWithoutReencoding(probe, declaredMimeType)) {
+        // H.264 never needs to be re-encoded merely because of its container or audio codec.
+        // Copy the video bit-for-bit and only convert audio to AAC when needed.
+        if ("h264".equalsIgnoreCase(probe.videoCodec())) {
             long startedAt = System.nanoTime();
-            try {
-                runFfmpeg(remuxCommand(input, output), REMUX_TIMEOUT, output, "быстрый MP4 remux");
-                long size = Files.size(output);
-                log.info("Mobile video fast remux completed: input={}, output={}, bytes={}, durationMs={}",
-                        input, output, size, elapsedMillis(startedAt));
-                return new TranscodeResult(output, size, "mp4-h264-remux");
-            } catch (IOException error) {
-                Files.deleteIfExists(output);
-                log.warn("Fast mobile MP4 remux failed; falling back to full normalization: input={}, error={}",
-                        input, error.getMessage());
-            }
+            runFfmpeg(h264CopyCommand(input, output, probe), REMUX_TIMEOUT, output, "быстрая упаковка H.264 в MP4");
+            long size = Files.size(output);
+            progress.accept(100);
+            log.info("Mobile H.264 fast packaging completed: input={}, output={}, bytes={}, durationMs={}",
+                    input, output, size, elapsedMillis(startedAt));
+            return new TranscodeResult(output, size,
+                    "aac".equalsIgnoreCase(probe.audioCodec()) || probe.audioCodec() == null
+                            ? "mp4-h264-remux" : "mp4-h264-audio-normalized");
         }
 
         log.info("Waiting for full video transcode slot: input={}, availableSlots={}",
@@ -90,8 +106,10 @@ public class MobileVideoTranscoder {
             long startedAt = System.nanoTime();
             log.info("Starting full mobile video normalization: input={}, output={}, timeoutMinutes={}",
                     input, output, timeout.toMinutes());
-            runFfmpeg(fullTranscodeCommand(input, output), timeout, output, "полная обработка видео");
+            runFfmpegWithProgress(fullTranscodeCommand(input, output), timeout, output,
+                    "полная обработка видео", probe.durationSeconds(), progress);
             long size = Files.size(output);
+            progress.accept(100);
             log.info("Full mobile video normalization completed: input={}, output={}, bytes={}, durationMs={}",
                     input, output, size, elapsedMillis(startedAt));
             return new TranscodeResult(output, size, "mobile-h264-normalized");
@@ -116,7 +134,7 @@ public class MobileVideoTranscoder {
         List<String> command = List.of(
                 ffprobeExecutable,
                 "-v", "error",
-                "-show_entries", "stream=codec_type,codec_name,width,height:format=format_name",
+                "-show_entries", "stream=codec_type,codec_name,width,height:format=format_name,duration",
                 "-of", "default=noprint_wrappers=0",
                 input.toString());
         ProcessResult result = runProcess(command, PROBE_TIMEOUT);
@@ -130,6 +148,7 @@ public class MobileVideoTranscoder {
         String audioCodec = null;
         int width = 0;
         int height = 0;
+        double durationSeconds = 0;
         String section = "";
         String currentType = null;
         String currentCodec = null;
@@ -157,14 +176,8 @@ public class MobileVideoTranscoder {
                 section = "";
                 continue;
             }
-            if ("[FORMAT]".equals(line)) {
-                section = "FORMAT";
-                continue;
-            }
-            if ("[/FORMAT]".equals(line)) {
-                section = "";
-                continue;
-            }
+            if ("[FORMAT]".equals(line)) { section = "FORMAT"; continue; }
+            if ("[/FORMAT]".equals(line)) { section = ""; continue; }
             int equals = line.indexOf('=');
             if (equals <= 0) continue;
             String key = line.substring(0, equals);
@@ -177,31 +190,19 @@ public class MobileVideoTranscoder {
                     case "height" -> currentHeight = parseInt(value);
                     default -> { }
                 }
-            } else if ("FORMAT".equals(section) && "format_name".equals(key)) {
-                format = value;
+            } else if ("FORMAT".equals(section)) {
+                if ("format_name".equals(key)) format = value;
+                else if ("duration".equals(key)) durationSeconds = parseDouble(value);
             }
         }
 
         if (videoCodec == null || videoCodec.isBlank()) {
             throw new IOException("В загруженном файле не найден видеопоток");
         }
-        return new ProbeResult(format, videoCodec, audioCodec, width, height);
+        return new ProbeResult(format, videoCodec, audioCodec, width, height, durationSeconds);
     }
 
-    private boolean canRemuxWithoutReencoding(ProbeResult probe, String declaredMimeType) {
-        String mime = declaredMimeType == null ? "" : declaredMimeType.toLowerCase(Locale.ROOT);
-        String format = probe.formatName() == null ? "" : probe.formatName().toLowerCase(Locale.ROOT);
-        boolean mp4FamilyContainer = mime.startsWith("video/mp4")
-                || mime.startsWith("video/quicktime")
-                || mime.startsWith("video/x-m4v")
-                || format.contains("mp4")
-                || format.contains("mov");
-        boolean compatibleVideo = "h264".equalsIgnoreCase(probe.videoCodec());
-        boolean compatibleAudio = probe.audioCodec() == null || "aac".equalsIgnoreCase(probe.audioCodec());
-        return mp4FamilyContainer && compatibleVideo && compatibleAudio;
-    }
-
-    private List<String> remuxCommand(Path input, Path output) {
+    private List<String> h264CopyCommand(Path input, Path output, ProbeResult probe) {
         List<String> command = new ArrayList<>();
         command.add(ffmpegExecutable);
         command.add("-hide_banner");
@@ -215,8 +216,17 @@ public class MobileVideoTranscoder {
         command.add("0:v:0");
         command.add("-map");
         command.add("0:a:0?");
-        command.add("-c");
+        command.add("-c:v");
         command.add("copy");
+        if (probe.audioCodec() == null || "aac".equalsIgnoreCase(probe.audioCodec())) {
+            command.add("-c:a");
+            command.add("copy");
+        } else {
+            command.add("-c:a");
+            command.add("aac");
+            command.add("-b:a");
+            command.add("128k");
+        }
         command.add("-movflags");
         command.add("+faststart");
         command.add(output.toString());
@@ -231,8 +241,6 @@ public class MobileVideoTranscoder {
         command.add("warning");
         command.add("-nostdin");
         command.add("-y");
-        command.add("-filter_threads");
-        command.add("1");
         command.add("-i");
         command.add(input.toString());
         command.add("-map");
@@ -244,23 +252,20 @@ public class MobileVideoTranscoder {
         command.add("-c:v");
         command.add("libx264");
         command.add("-preset");
-        command.add("superfast");
+        command.add("ultrafast");
         command.add("-crf");
-        command.add("23");
-        command.add("-maxrate");
-        command.add("2600k");
-        command.add("-bufsize");
-        command.add("5200k");
-        command.add("-r");
-        command.add("30");
+        command.add("20");
         command.add("-threads");
         command.add("0");
         command.add("-c:a");
         command.add("aac");
         command.add("-b:a");
-        command.add("112k");
+        command.add("128k");
         command.add("-movflags");
         command.add("+faststart");
+        command.add("-progress");
+        command.add("pipe:1");
+        command.add("-nostats");
         command.add(output.toString());
         return command;
     }
@@ -275,12 +280,62 @@ public class MobileVideoTranscoder {
         }
     }
 
+    private void runFfmpegWithProgress(
+            List<String> command,
+            Duration processTimeout,
+            Path output,
+            String operation,
+            double durationSeconds,
+            IntConsumer progressConsumer) throws IOException, InterruptedException {
+        Process process = new ProcessBuilder(command).redirectErrorStream(true).start();
+        StringBuilder diagnostics = new StringBuilder();
+        AtomicInteger lastProgress = new AtomicInteger(1);
+
+        Thread reader = Thread.ofVirtual().start(() -> {
+            try (BufferedReader input = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = input.readLine()) != null) {
+                    if (diagnostics.length() < 32_000) diagnostics.append(line).append('\n');
+                    int equals = line.indexOf('=');
+                    if (equals <= 0 || durationSeconds <= 0) continue;
+                    String key = line.substring(0, equals).trim();
+                    String value = line.substring(equals + 1).trim();
+                    double outSeconds = 0;
+                    if ("out_time_us".equals(key) || "out_time_ms".equals(key)) {
+                        outSeconds = parseLong(value) / 1_000_000.0;
+                    } else if ("out_time".equals(key)) {
+                        outSeconds = parseClockSeconds(value);
+                    }
+                    if (outSeconds <= 0) continue;
+                    int percent = Math.max(1, Math.min(99, (int) Math.floor(outSeconds * 100.0 / durationSeconds)));
+                    int previous = lastProgress.getAndUpdate(old -> Math.max(old, percent));
+                    if (percent > previous) {
+                        try { progressConsumer.accept(percent); } catch (RuntimeException ignored) { }
+                    }
+                }
+            } catch (IOException ignored) {
+                // Exit status below is authoritative.
+            }
+        });
+
+        boolean finished = process.waitFor(processTimeout.toSeconds(), TimeUnit.SECONDS);
+        if (!finished) {
+            process.destroyForcibly();
+            reader.join(TimeUnit.SECONDS.toMillis(2));
+            Files.deleteIfExists(output);
+            throw new IOException("Обработка видео превысила лимит времени " + processTimeout.toSeconds() + " секунд");
+        }
+        reader.join(TimeUnit.SECONDS.toMillis(2));
+        if (process.exitValue() != 0 || !Files.isRegularFile(output) || Files.size(output) <= 0) {
+            Files.deleteIfExists(output);
+            throw new IOException("FFmpeg: " + operation + " завершилась с кодом " + process.exitValue()
+                    + diagnosticSuffix(diagnostics.toString()));
+        }
+    }
+
     private ProcessResult runProcess(List<String> command, Duration processTimeout)
             throws IOException, InterruptedException {
-        Process process = new ProcessBuilder(command)
-                .redirectErrorStream(true)
-                .start();
-
+        Process process = new ProcessBuilder(command).redirectErrorStream(true).start();
         StringBuilder diagnostics = new StringBuilder();
         Thread reader = Thread.ofVirtual().start(() -> {
             try (var stream = process.getInputStream()) {
@@ -291,11 +346,8 @@ public class MobileVideoTranscoder {
                         diagnostics.append(new String(buffer, 0, read, StandardCharsets.UTF_8));
                     }
                 }
-            } catch (IOException ignored) {
-                // Process exit status below is authoritative.
-            }
+            } catch (IOException ignored) { }
         });
-
         boolean finished = process.waitFor(processTimeout.toSeconds(), TimeUnit.SECONDS);
         if (!finished) {
             process.destroyForcibly();
@@ -309,18 +361,14 @@ public class MobileVideoTranscoder {
     private String verifyExecutable(String executable, String label) {
         Path path = Path.of(executable);
         if (!Files.isRegularFile(path) || !Files.isExecutable(path)) {
-            throw new IllegalStateException(label + " is required for mobile video processing but is not executable: "
-                    + executable);
+            throw new IllegalStateException(label + " is required for mobile video processing but is not executable: " + executable);
         }
         try {
             ProcessResult result = runProcess(List.of(executable, "-version"), Duration.ofSeconds(5));
-            if (result.exitCode() != 0) {
-                throw new IllegalStateException(label + " availability check failed with code " + result.exitCode());
-            }
+            if (result.exitCode() != 0) throw new IllegalStateException(label + " availability check failed with code " + result.exitCode());
             return result.output().lines().findFirst().orElse(label + " available");
         } catch (IOException error) {
-            throw new IllegalStateException("Cannot start " + label + " required for mobile video processing: "
-                    + executable, error);
+            throw new IllegalStateException("Cannot start " + label + " required for mobile video processing: " + executable, error);
         } catch (InterruptedException error) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Interrupted while checking " + label + " availability", error);
@@ -333,35 +381,41 @@ public class MobileVideoTranscoder {
 
     private String diagnosticSuffix(String output) {
         String details = output == null ? "" : output.trim();
-        if (details.length() > 1600) {
-            details = details.substring(details.length() - 1600);
-        }
+        if (details.length() > 1600) details = details.substring(details.length() - 1600);
         return details.isBlank() ? "" : ": " + details;
     }
 
     private int parseInt(String value) {
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException error) {
-            return 0;
-        }
+        try { return Integer.parseInt(value); } catch (NumberFormatException error) { return 0; }
     }
 
-    private long elapsedMillis(long startedAt) {
-        return (System.nanoTime() - startedAt) / 1_000_000L;
+    private long parseLong(String value) {
+        try { return Long.parseLong(value); } catch (NumberFormatException error) { return 0; }
     }
+
+    private double parseDouble(String value) {
+        try { return Double.parseDouble(value); } catch (NumberFormatException error) { return 0; }
+    }
+
+    private double parseClockSeconds(String value) {
+        try {
+            String[] parts = value.split(":");
+            if (parts.length != 3) return 0;
+            return Double.parseDouble(parts[0]) * 3600 + Double.parseDouble(parts[1]) * 60 + Double.parseDouble(parts[2]);
+        } catch (RuntimeException error) { return 0; }
+    }
+
+    private long elapsedMillis(long startedAt) { return (System.nanoTime() - startedAt) / 1_000_000L; }
 
     private record ProbeResult(
             String formatName,
             String videoCodec,
             String audioCodec,
             int width,
-            int height) {
-    }
+            int height,
+            double durationSeconds) { }
 
-    private record ProcessResult(int exitCode, String output) {
-    }
+    private record ProcessResult(int exitCode, String output) { }
 
-    public record TranscodeResult(Path path, long size, String quality) {
-    }
+    public record TranscodeResult(Path path, long size, String quality) { }
 }

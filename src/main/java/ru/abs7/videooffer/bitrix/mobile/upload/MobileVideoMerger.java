@@ -219,7 +219,7 @@ public class MobileVideoMerger {
             filter.append('[').append(i).append(":v:0]")
                     .append("scale=1280:720:force_original_aspect_ratio=decrease,")
                     .append("pad=1280:720:(ow-iw)/2:(oh-ih)/2:color=black,")
-                    .append("setsar=1,fps=30,format=yuv420p[v").append(i).append("]; ")
+                    .append("setsar=1,format=yuv420p[v").append(i).append("]; ")
                     .append('[').append(i).append(":a:0]")
                     .append("aformat=sample_rates=48000:channel_layouts=stereo,")
                     .append("aresample=48000,asetpts=PTS-STARTPTS[a").append(i).append("]; ");
@@ -232,8 +232,7 @@ public class MobileVideoMerger {
         command.addAll(List.of(
                 "-filter_complex", filter.toString(),
                 "-map", "[outv]", "-map", "[outa]",
-                "-c:v", "libx264", "-preset", "superfast", "-crf", "23",
-                "-maxrate", "2600k", "-bufsize", "5200k", "-threads", "0",
+                "-c:v", "libx264", "-preset", "ultrafast", "-crf", "20", "-threads", "0",
                 "-c:a", "aac", "-b:a", "112k", "-movflags", "+faststart",
                 output.toString()));
         ProcessResult result = run(command, TRANSCODE_TIMEOUT);

@@ -16,7 +16,6 @@ const progressBar = document.getElementById('progress-bar');
 const deliveryStatus = document.getElementById('delivery-status');
 const readyResult = document.getElementById('ready-result');
 const readyMessage = document.getElementById('ready-message');
-const publicLink = document.getElementById('public-link');
 
 const cameraPreview = document.getElementById('camera-preview');
 const cameraPlaceholder = document.getElementById('camera-placeholder');
@@ -52,6 +51,9 @@ const fileUploadStatus = document.getElementById('file-upload-status');
 const fileUploadProgressText = document.getElementById('file-upload-progress-text');
 const fileUploadProgressBar = document.getElementById('file-upload-progress-bar');
 const filePreview = document.getElementById('file-preview');
+const filePreviewFrame = document.getElementById('file-preview-frame');
+const fileFullscreenButton = document.getElementById('file-fullscreen-button');
+const recordFullscreenButton = document.getElementById('record-fullscreen-button');
 
 const MEDIA_CHUNK_INTERVAL_MS = 2000;
 const MAX_PARALLEL_UPLOADS = 4;
@@ -63,6 +65,8 @@ const MAX_FILE_BYTES = 100 * 1024 * 1024;
 let activeOfferId = null;
 let pollTimer = null;
 let finalUploadSession = null;
+let activeFileUploader = null;
+let fileUploadGeneration = 0;
 
 let captureMode = 'CAMERA';
 let cameraStream = null;
@@ -92,6 +96,14 @@ initializeBitrixFrame();
 initializeSourcePicker();
 initializeRecorder();
 initializeFileUpload();
+initializeFullscreenControls();
+reportDesktopEvent('CAPABILITIES', JSON.stringify({
+    mediaDevices: !!navigator.mediaDevices,
+    getDisplayMedia: !!navigator.mediaDevices?.getDisplayMedia,
+    mediaRecorder: typeof window.MediaRecorder !== 'undefined',
+    fullscreenEnabled: !!document.fullscreenEnabled,
+    displayCapturePolicy: featureAllowed('display-capture')
+}));
 
 form.addEventListener('submit', handleOfferSubmit);
 
@@ -103,7 +115,7 @@ async function handleOfferSubmit(event) {
     processing.hidden = false;
     submitButton.disabled = true;
     submitButton.textContent = 'Создаём…';
-    renderProgress(sourceModeInput.value === 'LINK' ? 0 : 100, 'Создаём видеооффер…');
+    renderProgress(sourceModeInput.value === 'LINK' ? 0 : 100, 'Загрузка видео');
     fitWindow();
 
     try {
@@ -306,13 +318,14 @@ function showScreenPreview() {
     cameraPreview.removeAttribute('src');
     cameraPreview.srcObject = screenDisplayStream;
     cameraPreview.play().catch(() => {});
+    recordFullscreenButton.hidden = true;
     recordToggleButton.hidden = false;
 }
 
 async function ensureScreenCapture(fromUserGesture) {
     if (sourceModeInput.value !== 'RECORD') return false;
     if (!navigator.mediaDevices?.getDisplayMedia || typeof window.MediaRecorder === 'undefined') {
-        setCameraError('Этот браузер не поддерживает запись экрана внутри приложения Bitrix24.');
+        setCameraError('Этот браузер не поддерживает запись экрана.');
         return false;
     }
     if (screenCaptureRequestPending) return false;
@@ -321,22 +334,25 @@ async function ensureScreenCapture(fromUserGesture) {
         return true;
     }
 
+    const displayCaptureAllowed = featureAllowed('display-capture');
+    if (displayCaptureAllowed === false) {
+            // Do not abort before calling getDisplayMedia. Embedded Chromium/Bitrix builds are not
+            // perfectly consistent in feature-policy reporting; the browser call below is authoritative.
+        console.warn('[video-offer] parent iframe reports display-capture blocked; trying getDisplayMedia anyway');
+    }
+
     clearCameraError();
     screenCaptureRequestPending = true;
+    reportDesktopEvent('SCREEN_CAPTURE_REQUEST', JSON.stringify({policy: displayCaptureAllowed, systemAudio: !!captureSystemAudio.checked, microphone: !!captureMicrophone.checked}));
     renderScreenPlaceholder('Открываем системный выбор экрана…');
     fitWindow();
     try {
         stopScreenCapture();
+        // Keep the initial request deliberately minimal. Some embedded Chromium builds reject
+        // optional Screen Capture hints. Size/FPS constraints are applied after user selection.
         const display = await navigator.mediaDevices.getDisplayMedia({
-            video: {
-                width: {ideal: 1280, max: 1280},
-                height: {ideal: 720, max: 720},
-                frameRate: {ideal: 30, max: 30}
-            },
-            audio: captureSystemAudio.checked,
-            systemAudio: captureSystemAudio.checked ? 'include' : 'exclude',
-            surfaceSwitching: 'include',
-            selfBrowserSurface: 'exclude'
+            video: true,
+            audio: !!captureSystemAudio.checked
         });
         const videoTrack = display.getVideoTracks?.()[0];
         if (!videoTrack) throw new Error('Браузер не передал видеодорожку выбранного экрана.');
@@ -344,9 +360,10 @@ async function ensureScreenCapture(fromUserGesture) {
             await videoTrack.applyConstraints({
                 width: {max: 1280},
                 height: {max: 720},
-                frameRate: {max: 30}
+                frameRate: {ideal: 30, max: 30}
             });
         } catch (_) { }
+        try { videoTrack.contentHint = 'detail'; } catch (_) { }
 
         let microphone = null;
         if (captureMicrophone.checked) {
@@ -361,17 +378,30 @@ async function ensureScreenCapture(fromUserGesture) {
         screenRecordingStream = await composeScreenRecordingStream(display, microphone);
         screenCaptureReady = true;
         screenCaptureStopping = false;
+        reportDesktopEvent('SCREEN_CAPTURE_READY', JSON.stringify({settings: videoTrack.getSettings?.() || {}, audioTracks: display.getAudioTracks?.().length || 0}));
         videoTrack.addEventListener('ended', handleScreenCaptureEnded, {once: true});
         showScreenPreview();
         clearCameraError();
         return true;
     } catch (error) {
         stopScreenCapture();
-        const name = error?.name || '';
-        if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
-            setCameraError('Выбор экрана отменён или Bitrix24 не дал браузеру разрешение на захват экрана. Нажмите «Экран» и повторите выбор.');
+        const name = error?.name || 'Error';
+        const detail = error?.message || '';
+        console.error('[video-offer] getDisplayMedia failed', name, detail);
+        reportDesktopEvent('SCREEN_CAPTURE_ERROR', JSON.stringify({name, detail, policy: featureAllowed('display-capture')}));
+        if (name === 'InvalidStateError') {
+            setCameraError('Браузер не разрешил открыть выбор экрана без прямого нажатия пользователя. Нажмите «Экран» ещё раз.');
+        } else if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+            const policyNow = document.permissionsPolicy || document.featurePolicy;
+            let blockedByPolicy = false;
+            try { blockedByPolicy = !!policyNow && typeof policyNow.allowsFeature === 'function' && !policyNow.allowsFeature('display-capture'); } catch (_) { }
+            setCameraError(blockedByPolicy
+                ? 'Bitrix24 не делегировал этому встроенному приложению разрешение display-capture. Это блокировка родительского iframe, а не отмена выбора.'
+                : 'Браузер не получил разрешение на демонстрацию экрана. Нажмите «Экран» и выберите экран, окно или вкладку в системном окне.');
+        } else if (name === 'NotReadableError') {
+            setCameraError('Выбранный экран сейчас нельзя захватить. Закройте программу, которая блокирует захват, и повторите выбор.');
         } else {
-            setCameraError(error?.message || 'Не удалось получить доступ к экрану.');
+            setCameraError(`${name}: ${detail || 'Не удалось получить доступ к экрану.'}`);
         }
         renderScreenPlaceholder();
         return false;
@@ -417,7 +447,7 @@ function handleScreenCaptureEnded() {
     if (screenCaptureStopping) return;
     screenCaptureReady = false;
     if (recordingSessionActive && currentSegment?.mode === 'SCREEN') {
-        setCameraError('Демонстрация экрана завершена. Сохраняем уже записанное видео…');
+        setCameraError('Демонстрация экрана завершена.');
         stopRecordingSession();
         return;
     }
@@ -475,16 +505,23 @@ async function ensureCameraCapture(switching) {
         if (micTrack) cameraStream.addTrack(micTrack);
         // Keep ownership on the composed stream; tracks are the same objects as source streams.
         cameraStream._sourceStreams = [videoStream, micStream].filter(Boolean);
+        try { videoTrack.contentHint = 'motion'; } catch (_) { }
         cameraPreview.hidden = false;
         cameraPlaceholder.hidden = true;
+        cameraPreview.controls = false;
         cameraPreview.muted = true;
         cameraPreview.autoplay = true;
         cameraPreview.srcObject = cameraStream;
-        await cameraPreview.play();
+        recordFullscreenButton.hidden = true;
+        await cameraPreview.play().catch(async () => {
+            await new Promise(resolve => requestAnimationFrame(resolve));
+            if (cameraPreview.srcObject === cameraStream) await cameraPreview.play().catch(() => {});
+        });
         await refreshCameraDevices();
         const id = videoTrack.getSettings?.().deviceId;
         const index = cameraDevices.findIndex(device => device.deviceId === id);
         if (index >= 0) activeCameraIndex = index;
+        reportDesktopEvent('CAMERA_READY', JSON.stringify({settings: videoTrack.getSettings?.() || {}, devices: cameraDevices.length}));
         switchCameraButton.hidden = cameraDevices.length < 2 || captureMode !== 'CAMERA';
         switchCameraButton.disabled = recordingSessionActive;
         recordToggleButton.hidden = false;
@@ -627,9 +664,9 @@ async function stopRecordingSession() {
     recordToggleButton.disabled = true;
     captureSwitching = true;
     uploadProcessing.hidden = false;
-    uploadStatus.textContent = 'Сохраняем запись…';
-    uploadProgressText.textContent = '';
-    uploadProgressBar.style.width = '45%';
+    uploadStatus.textContent = 'Загрузка видео';
+    uploadProgressText.textContent = '0%';
+    uploadProgressBar.style.width = '0%';
     stopSessionTimer(false);
     updateRecordButtonState(false);
 
@@ -641,10 +678,9 @@ async function stopRecordingSession() {
 
         const results = await Promise.all(segmentPromises.filter(Boolean));
         if (!results.length) throw new Error('Запись не содержит видеоданных.');
-        uploadStatus.textContent = results.length > 1 ? 'Собираем единое видео…' : 'Подготавливаем видео…';
-        uploadProgressBar.style.width = '80%';
+        setRecordingProgress(results.length > 1 ? 98 : 100);
         finalUploadSession = results.length === 1 ? results[0] : await mergeRecordingSegments(results);
-        uploadProgressBar.style.width = '100%';
+        setRecordingProgress(100);
         showNormalizedRecording(finalUploadSession);
     } catch (error) {
         uploadProcessing.hidden = true;
@@ -681,9 +717,9 @@ async function startCameraSegment(index) {
     if (currentCameraSegment) throw new Error('Камера уже записывает сегмент.');
     const mimeType = chooseRecorderMimeType();
     const recorder = mimeType
-        ? new MediaRecorder(cameraStream, {mimeType, videoBitsPerSecond: 1800000, audioBitsPerSecond: 96000})
-        : new MediaRecorder(cameraStream, {videoBitsPerSecond: 1800000, audioBitsPerSecond: 96000});
-    const uploader = new ChunkUploader(contextToken, recorder.mimeType || mimeType || 'video/webm', 'RECORDING', null);
+        ? new MediaRecorder(cameraStream, {mimeType, videoBitsPerSecond: 3500000, audioBitsPerSecond: 128000})
+        : new MediaRecorder(cameraStream, {videoBitsPerSecond: 3500000, audioBitsPerSecond: 128000});
+    const uploader = new ChunkUploader(contextToken, recorder.mimeType || mimeType || 'video/webm', 'RECORDING', null, renderRecordingUploadProgress);
     await uploader.init();
     recorder.addEventListener('dataavailable', event => {
         if (event.data?.size > 0) uploader.enqueue(event.data);
@@ -694,6 +730,7 @@ async function startCameraSegment(index) {
     });
     recorder.start(MEDIA_CHUNK_INTERVAL_MS);
     await started;
+    reportDesktopEvent('CAMERA_RECORDING_STARTED', JSON.stringify({mimeType: recorder.mimeType || mimeType || 'default', videoBitsPerSecond: recorder.videoBitsPerSecond || null, audioBitsPerSecond: recorder.audioBitsPerSecond || null}));
     currentCameraSegment = {index, recorder, uploader, stopPromise: null};
 }
 
@@ -737,11 +774,15 @@ function showNormalizedRecording(data) {
     cameraPlaceholder.hidden = true;
     cameraPreview.hidden = false;
     cameraPreview.autoplay = false;
+    cameraPreview.controls = true;
+    cameraPreview.preload = 'auto';
     cameraPreview.muted = false;
     cameraPreview.srcObject = null;
     cameraPreview.src = recordedPreviewUrl;
     cameraPreview.load();
-    playRecordingButton.hidden = !recordedPreviewUrl;
+    prepareVideoFirstFrame(cameraPreview);
+    playRecordingButton.hidden = true;
+    recordFullscreenButton.hidden = false;
     updatePlayButtonState();
     offerFields.hidden = false;
     submitButton.hidden = false;
@@ -778,14 +819,24 @@ function renderSessionTimer() {
 
 function clearRecordedPreview() {
     recordedPreviewUrl = null;
-    try { cameraPreview.pause(); } catch (_) { }
-    if (!cameraPreview.srcObject) {
+    // Never pause a live camera/screen srcObject. 023 did this and froze the preview
+    // exactly when recording started.
+    if (cameraPreview.srcObject) {
+        cameraPreview.controls = false;
+        cameraPreview.muted = true;
+        cameraPreview.autoplay = true;
+        if (cameraPreview.paused) cameraPreview.play().catch(() => {});
+    } else {
+        try { cameraPreview.pause(); } catch (_) { }
         cameraPreview.removeAttribute('src');
         try { cameraPreview.load(); } catch (_) { }
     }
     playRecordingButton.hidden = true;
+    recordFullscreenButton.hidden = true;
+    exitLocalVideoFullscreen(cameraPreview, recordFullscreenButton);
     updatePlayButtonState();
 }
+
 function toggleRecordedPlayback() {
     if (!recordedPreviewUrl || cameraPreview.srcObject) return;
     if (cameraPreview.paused || cameraPreview.ended) {
@@ -808,9 +859,9 @@ async function startScreenSegment(index) {
     if (currentScreenSegment) throw new Error('Экран уже записывает сегмент.');
     const mimeType = chooseRecorderMimeType();
     const recorder = mimeType
-        ? new MediaRecorder(screenRecordingStream, {mimeType, videoBitsPerSecond: 1800000, audioBitsPerSecond: 96000})
-        : new MediaRecorder(screenRecordingStream, {videoBitsPerSecond: 1800000, audioBitsPerSecond: 96000});
-    const uploader = new ChunkUploader(contextToken, recorder.mimeType || mimeType || 'video/webm', 'RECORDING', null);
+        ? new MediaRecorder(screenRecordingStream, {mimeType, videoBitsPerSecond: 3500000, audioBitsPerSecond: 128000})
+        : new MediaRecorder(screenRecordingStream, {videoBitsPerSecond: 3500000, audioBitsPerSecond: 128000});
+    const uploader = new ChunkUploader(contextToken, recorder.mimeType || mimeType || 'video/webm', 'RECORDING', null, renderRecordingUploadProgress);
     await uploader.init();
     recorder.addEventListener('dataavailable', event => {
         if (event.data?.size > 0) uploader.enqueue(event.data);
@@ -821,6 +872,7 @@ async function startScreenSegment(index) {
     });
     recorder.start(MEDIA_CHUNK_INTERVAL_MS);
     await started;
+    reportDesktopEvent('SCREEN_RECORDING_STARTED', JSON.stringify({mimeType: recorder.mimeType || mimeType || 'default', videoBitsPerSecond: recorder.videoBitsPerSecond || null, audioBitsPerSecond: recorder.audioBitsPerSecond || null}));
     currentScreenSegment = {index, recorder, uploader, stopPromise: null};
 }
 
@@ -843,8 +895,8 @@ function stopScreenSegment(index) {
 }
 
 function initializeFileUpload() {
-    chooseFileButton.addEventListener('click', () => fileInput.click());
-    replaceFileButton.addEventListener('click', () => fileInput.click());
+    chooseFileButton.addEventListener('click', () => { fileInput.value = ''; fileInput.click(); });
+    replaceFileButton.addEventListener('click', () => { fileInput.value = ''; fileInput.click(); });
     fileInput.addEventListener('change', async () => {
         const file = fileInput.files?.[0];
         if (!file) return;
@@ -853,11 +905,18 @@ function initializeFileUpload() {
 }
 
 async function handleSelectedFile(file) {
+    const generation = ++fileUploadGeneration;
     setError(null);
     clearFilePreview();
+    if (activeFileUploader) {
+        const previousUploader = activeFileUploader;
+        activeFileUploader = null;
+        previousUploader.discard().catch(() => {});
+    }
     try {
         validateVideoFile(file);
         await discardFinalUpload();
+        if (generation !== fileUploadGeneration) return;
         selectedFileCard.hidden = false;
         selectedFileName.textContent = file.name;
         selectedFileMeta.textContent = `${formatBytes(file.size)} · ${file.type || fileExtension(file.name).toUpperCase()}`;
@@ -865,22 +924,41 @@ async function handleSelectedFile(file) {
         offerFields.hidden = true;
         submitButton.hidden = true;
         fileUploadProcessing.hidden = false;
-        setFileProgress(1, 'Подготавливаем загрузку…');
+        setFileProgress(0, 'Загрузка видео');
 
         const uploader = new ChunkUploader(
             contextToken,
             file.type || mimeFromFileName(file.name),
             'FILE',
             file.size,
-            progress => renderFileUploadProgress(progress, file.size));
+            progress => {
+                if (generation === fileUploadGeneration) renderFileUploadProgress(progress, file.size);
+            });
+        activeFileUploader = uploader;
         await uploader.init();
-        finalUploadSession = await uploader.uploadFile(file, FILE_CHUNK_BYTES);
-        setFileProgress(100, 'Видео готово');
+        if (generation !== fileUploadGeneration) {
+            await uploader.discard().catch(() => {});
+            return;
+        }
+        const ready = await uploader.uploadFile(file, FILE_CHUNK_BYTES);
+        if (generation !== fileUploadGeneration) {
+            await uploader.discard().catch(() => {});
+            return;
+        }
+        finalUploadSession = ready;
+        activeFileUploader = null;
+        setFileProgress(100, 'Загрузка видео');
         fileUploadProcessing.hidden = true;
         showFilePreview(finalUploadSession);
         offerFields.hidden = false;
         submitButton.hidden = false;
     } catch (error) {
+        if (generation !== fileUploadGeneration || error?.cancelledUpload) return;
+        if (activeFileUploader) {
+            const failedUploader = activeFileUploader;
+            activeFileUploader = null;
+            failedUploader.discard().catch(() => {});
+        }
         fileUploadProcessing.hidden = true;
         chooseFileButton.hidden = false;
         setError(error.message || 'Не удалось загрузить видеофайл');
@@ -889,27 +967,91 @@ async function handleSelectedFile(file) {
 }
 
 function renderFileUploadProgress(progress, fileSize) {
-    const phase = progress?.phase || 'uploading';
-    const rawPercent = Math.max(0, Math.min(100, Number(progress?.percent) || 0));
-    if (phase === 'starting') {
-        setFileProgress(1, 'Подготавливаем загрузку…');
+    const percent = Math.max(0, Math.min(100, Number(progress?.percent) || 0));
+    setFileProgress(percent, 'Загрузка видео');
+}
+
+function initializeFullscreenControls() {
+    fileFullscreenButton?.addEventListener('click', () => toggleVideoFullscreen(filePreview, fileFullscreenButton));
+    recordFullscreenButton?.addEventListener('click', () => toggleVideoFullscreen(cameraPreview, recordFullscreenButton));
+    document.addEventListener('fullscreenchange', syncFullscreenButtons);
+    document.addEventListener('webkitfullscreenchange', syncFullscreenButtons);
+    document.addEventListener('keydown', event => {
+        if (event.key !== 'Escape') return;
+        exitLocalVideoFullscreen(filePreview, fileFullscreenButton);
+        exitLocalVideoFullscreen(cameraPreview, recordFullscreenButton);
+    });
+    filePreview?.addEventListener('dblclick', () => toggleVideoFullscreen(filePreview, fileFullscreenButton));
+    cameraPreview?.addEventListener('dblclick', () => {
+        if (recordedPreviewUrl && !cameraPreview.srcObject) toggleVideoFullscreen(cameraPreview, recordFullscreenButton);
+    });
+}
+
+async function toggleVideoFullscreen(video, button) {
+    if (!video) return;
+    if (video.classList.contains('is-local-fullscreen')) {
+        exitLocalVideoFullscreen(video, button);
         return;
     }
-    if (phase === 'uploading') {
-        const uiPercent = Math.max(2, Math.min(92, Math.round(rawPercent * 0.9 + 2)));
-        const sent = Math.min(Number(progress?.loadedBytes) || 0, Number(fileSize) || 0);
-        setFileProgress(uiPercent, `Загружаем видео · ${formatBytes(sent)} из ${formatBytes(fileSize)}`);
+    const current = document.fullscreenElement || document.webkitFullscreenElement;
+    if (current) {
+        try {
+            if (document.exitFullscreen) await document.exitFullscreen();
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        } catch (_) { }
         return;
     }
-    if (phase === 'uploaded') {
-        setFileProgress(94, 'Видео загружено. Проверяем файл…');
-        return;
+    try {
+        if (video.requestFullscreen) {
+            await video.requestFullscreen();
+            syncFullscreenButtons();
+            return;
+        }
+        if (video.webkitRequestFullscreen) {
+            video.webkitRequestFullscreen();
+            return;
+        }
+        if (video.webkitEnterFullscreen) {
+            video.webkitEnterFullscreen();
+            return;
+        }
+    } catch (error) {
+        console.warn('[video-offer] native fullscreen rejected; using iframe-local fullscreen', error?.name, error?.message);
     }
-    if (phase === 'processing') {
-        setFileProgress(97, 'Подготавливаем видео…');
-        return;
+    // Bitrix may not delegate the browser fullscreen permission to a placement iframe.
+    // In that case fill the entire available application iframe instead of doing nothing.
+    video.classList.add('is-local-fullscreen');
+    document.body.classList.add('has-local-video-fullscreen');
+    if (button) {
+        button.classList.add('is-local-exit');
+        button.textContent = '×';
+        button.title = 'Закрыть полноэкранный режим';
+        button.setAttribute('aria-label', 'Закрыть полноэкранный режим');
     }
-    if (phase === 'ready') setFileProgress(100, 'Видео готово');
+}
+
+function exitLocalVideoFullscreen(video, button) {
+    if (!video) return;
+    video.classList.remove('is-local-fullscreen');
+    if (!document.querySelector('video.is-local-fullscreen')) document.body.classList.remove('has-local-video-fullscreen');
+    if (button) {
+        button.classList.remove('is-local-exit');
+        button.textContent = '⛶';
+        button.title = 'Развернуть видео';
+        button.setAttribute('aria-label', 'Развернуть видео');
+    }
+}
+
+function syncFullscreenButtons() {
+    const active = document.fullscreenElement || document.webkitFullscreenElement;
+    if (!active) {
+        for (const button of [fileFullscreenButton, recordFullscreenButton]) {
+            if (!button || button.classList.contains('is-local-exit')) continue;
+            button.textContent = '⛶';
+            button.title = 'Развернуть видео';
+            button.setAttribute('aria-label', 'Развернуть видео');
+        }
+    }
 }
 
 function validateVideoFile(file) {
@@ -921,14 +1063,19 @@ function validateVideoFile(file) {
     }
 }
 function showFilePreview(data) {
+    filePreviewFrame.hidden = false;
     filePreview.hidden = false;
     filePreview.src = data.previewUrl || '';
+    filePreview.preload = 'auto';
     filePreview.load();
+    prepareVideoFirstFrame(filePreview);
 }
 function clearFilePreview() {
     filePreview.pause?.();
     filePreview.removeAttribute('src');
     filePreview.hidden = true;
+    filePreviewFrame.hidden = true;
+    exitLocalVideoFullscreen(filePreview, fileFullscreenButton);
 }
 function setFileProgress(percent, text) {
     const normalized = Math.max(0, Math.min(100, Math.round(percent || 0)));
@@ -1013,7 +1160,7 @@ class ChunkUploader {
         const loadedBytes = this.completedBytes + activeBytes;
         const totalBytes = Math.max(Number(this.declaredSizeBytes) || 0, this.enqueuedBytes, 1);
         const percent = forcedPercent == null
-            ? Math.max(0, Math.min(99, Math.round(loadedBytes * 100 / totalBytes)))
+            ? Math.max(0, Math.min(65, Math.round(loadedBytes * 65 / totalBytes)))
             : Math.max(0, Math.min(100, Math.round(forcedPercent)));
         return {phase, percent, loadedBytes: Math.min(loadedBytes, totalBytes), totalBytes};
     }
@@ -1087,14 +1234,14 @@ class ChunkUploader {
         await this.waitDrain(timeoutMs);
         if (this.failure) throw this.failure;
         if (this.totalExpected <= 0) throw new Error('Видео не содержит данных.');
-        this.emitProgress('uploaded', 100);
+        this.emitProgress('uploaded', 65);
         const response = await fetchWithTimeout(
             `/bitrix/mobile/uploads/${encodeURIComponent(this.session.id)}/complete?chunkCount=${encodeURIComponent(this.totalExpected)}`,
             {method: 'POST', headers: {'X-Upload-Token': this.session.uploadToken}}, 60000);
         const data = await readJson(response);
         if (!response.ok) throw new Error(data.message || 'Не удалось завершить загрузку видео');
         this.session = data;
-        this.emitProgress('processing', 100);
+        this.emitProgress('processing', 66);
         return this.waitReady();
     }
     async waitReady() {
@@ -1107,11 +1254,12 @@ class ChunkUploader {
             if (!response.ok) throw new Error(data.message || 'Не удалось проверить обработку видео');
             this.session = data;
             if (data.status === 'READY') {
-                this.emitProgress('ready', 100);
+                this.emitProgress('ready', this.sourceKind === 'RECORDING' ? 99 : 100);
                 return data;
             }
             if (data.status === 'ERROR') throw new Error(data.errorMessage || 'Не удалось обработать видео');
-            this.emitProgress('processing', 100);
+            const serverProgress = Math.max(0, Math.min(99, Number(data.processingProgressPercent) || 0));
+            this.emitProgress('processing', Math.max(66, Math.min(99, 66 + Math.floor(serverProgress * 33 / 100))));
             await sleep(250);
         }
         throw new Error('Обработка видео заняла слишком много времени');
@@ -1123,6 +1271,27 @@ class ChunkUploader {
             this.enqueue(file.slice(i * chunkBytes, Math.min(file.size, (i + 1) * chunkBytes)));
         }
         return this.finish(Math.max(UPLOAD_DRAIN_TIMEOUT_MS, 10 * 60 * 1000));
+    }
+    cancel() {
+        this.generation++;
+        const error = new Error('Загрузка заменена');
+        error.cancelledUpload = true;
+        this.failure = error;
+        this.queue = [];
+        this.inFlightBytes.clear();
+        this.activeRequests.forEach(xhr => { try { xhr.abort(); } catch (_) { } });
+        this.activeRequests.clear();
+        this.notify();
+    }
+    async discard() {
+        const session = this.session;
+        this.cancel();
+        if (!session?.id || !session?.uploadToken || session.status === 'CONSUMED') return;
+        try {
+            await fetch(`/bitrix/mobile/uploads/${encodeURIComponent(session.id)}`, {
+                method: 'DELETE', headers: {'X-Upload-Token': session.uploadToken}
+            });
+        } catch (_) { }
     }
 }
 
@@ -1139,6 +1308,12 @@ async function discardFinalUpload() {
 
 async function resetTransientMedia() {
     if (recordingSessionActive) return;
+    fileUploadGeneration++;
+    if (activeFileUploader) {
+        const uploader = activeFileUploader;
+        activeFileUploader = null;
+        uploader.discard().catch(() => {});
+    }
     stopCameraCapture();
     stopScreenCapture();
     clearRecordedPreview();
@@ -1150,6 +1325,50 @@ async function resetTransientMedia() {
     uploadProcessing.hidden = true;
     offerFields.hidden = sourceModeInput.value !== 'LINK';
     await discardFinalUpload();
+}
+
+
+function renderRecordingUploadProgress(progress) {
+    if (uploadProcessing.hidden) return;
+    const percent = Math.max(0, Math.min(99, Number(progress?.percent) || 0));
+    setRecordingProgress(percent);
+}
+
+function setRecordingProgress(percent) {
+    const normalized = Math.max(0, Math.min(100, Math.round(Number(percent) || 0)));
+    uploadStatus.textContent = 'Загрузка видео';
+    uploadProgressText.textContent = normalized + '%';
+    uploadProgressBar.style.width = normalized + '%';
+}
+
+function prepareVideoFirstFrame(video) {
+    if (!video) return;
+    const reveal = () => {
+        try {
+            video.pause();
+            const duration = Number(video.duration);
+            if (Number.isFinite(duration) && duration > 0.05) video.currentTime = Math.min(0.05, duration / 10);
+        } catch (_) { }
+    };
+    if (video.readyState >= 2) reveal();
+    else video.addEventListener('loadeddata', reveal, {once: true});
+}
+
+function featureAllowed(name) {
+    const policy = document.permissionsPolicy || document.featurePolicy;
+    if (!policy || typeof policy.allowsFeature !== 'function') return null;
+    try { return !!policy.allowsFeature(name); } catch (_) { return null; }
+}
+
+function reportDesktopEvent(event, details) {
+    try {
+        fetch('/bitrix/client-events', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({contextToken, event, details: details || ''}),
+            keepalive: true
+        }).catch(() => {});
+    } catch (_) { }
 }
 
 function cameraErrorMessage(error) {
@@ -1179,32 +1398,43 @@ async function checkStatus() {
 }
 
 function renderOffer(data) {
-    const percent = Math.max(0, Math.min(100, data.progressPercent || 0));
-    const statusText = {
-        QUEUED: 'Задача поставлена в очередь',
-        PREPARING: sourceModeInput.value === 'LINK' ? 'Загружаем и подготавливаем видео по ссылке' : 'Подготавливаем видео',
-        READY: 'Публичная страница готова',
-        ERROR: data.errorMessage || 'Ошибка подготовки видео',
-        CANCELLED: 'Подготовка отменена'
-    };
-    renderProgress(percent, statusText[data.status] || data.status);
-    if (data.status === 'READY') {
-        publicLink.href = data.publicUrl + '?preview=1';
-        readyResult.hidden = false;
-        if (data.bitrixDeliveryStatus === 'DELIVERED') {
-            deliveryStatus.textContent = 'Ссылка добавлена в таймлайн текущей карточки.';
-            readyMessage.textContent = 'Ссылка добавлена в таймлайн. ' + viewGoalMessage(data.viewNotificationGoal);
-        } else if (data.bitrixDeliveryStatus === 'ERROR') {
-            deliveryStatus.textContent = 'Видео готово, но Bitrix24 не принял комментарий.';
-            readyMessage.textContent = data.bitrixDeliveryError ? 'Страница готова. Ошибка добавления в карточку: ' + data.bitrixDeliveryError : 'Страница готова, но ссылку не удалось добавить в карточку.';
-        } else {
-            deliveryStatus.textContent = 'Добавляем ссылку в таймлайн карточки…';
-            readyMessage.textContent = 'Публичная страница готова. Завершаем запись ссылки в Bitrix24.';
-        }
+    const percent = Math.max(0, Math.min(100, Number(data.progressPercent) || 0));
+    if (data.status === 'ERROR') {
+        processing.hidden = true;
+        setError(data.errorMessage || 'Не удалось подготовить видеооффер');
+        fitWindow();
+        return;
     }
-    if (data.status === 'ERROR') setError(data.errorMessage || 'Не удалось подготовить видеооффер');
+    if (data.status === 'CANCELLED') {
+        processing.hidden = true;
+        setError('Подготовка видео отменена');
+        fitWindow();
+        return;
+    }
+    if (data.status !== 'READY') {
+        readyResult.hidden = true;
+        deliveryStatus.textContent = '';
+        renderProgress(percent, 'Загрузка видео');
+    } else if (data.bitrixDeliveryStatus === 'DELIVERED' || data.bitrixDeliveryStatus === 'NOT_REQUIRED') {
+        processing.hidden = true;
+        readyResult.hidden = false;
+        deliveryStatus.textContent = '';
+        readyMessage.textContent = 'Ссылка добавлена в таймлайн. ' + viewGoalMessage(data.viewNotificationGoal);
+    } else if (data.bitrixDeliveryStatus === 'ERROR') {
+        processing.hidden = true;
+        readyResult.hidden = false;
+        deliveryStatus.textContent = '';
+        readyMessage.textContent = data.bitrixDeliveryError
+            ? 'Видео готово, но ссылку не удалось добавить в карточку: ' + data.bitrixDeliveryError
+            : 'Видео готово, но ссылку не удалось добавить в карточку Bitrix24.';
+    } else {
+        readyResult.hidden = true;
+        deliveryStatus.textContent = '';
+        renderProgress(100, 'Загрузка видео');
+    }
     fitWindow();
 }
+
 function renderProgress(percent, text) {
     processing.hidden = false;
     progressBar.style.width = percent + '%';

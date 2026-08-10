@@ -21,7 +21,7 @@ public class VideoOffer {
     @Column(name="progress_percent", nullable=false) private Integer progressPercent;
     @Column(name="video_file_path", columnDefinition="text") private String videoFilePath;
     @Column(name="video_file_size") private Long videoFileSize;
-    @Column(name="video_quality", length=30) private String videoQuality;
+    @Column(name="video_quality", length=120) private String videoQuality;
     @Column(name="error_message", columnDefinition="text") private String errorMessage;
     @Column(name="created_at", nullable=false) private OffsetDateTime createdAt;
     @Column(name="updated_at", nullable=false) private OffsetDateTime updatedAt;

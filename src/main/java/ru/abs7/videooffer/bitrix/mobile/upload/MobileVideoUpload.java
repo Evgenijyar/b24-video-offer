@@ -48,6 +48,9 @@ public class MobileVideoUpload {
     @Column(name = "next_sequence", nullable = false)
     private Integer nextSequence;
 
+    @Column(name = "processing_progress_percent", nullable = false)
+    private Integer processingProgressPercent;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private MobileVideoUploadStatus status;
@@ -95,6 +98,7 @@ public class MobileVideoUpload {
         upload.sourceFilePath = Path.of(sourceDirectory).resolve(upload.id + ".source").toString();
         upload.bytesReceived = 0L;
         upload.nextSequence = 0;
+        upload.processingProgressPercent = 0;
         upload.status = MobileVideoUploadStatus.RECORDING;
         upload.createdAt = OffsetDateTime.now();
         upload.updatedAt = upload.createdAt;
@@ -134,6 +138,7 @@ public class MobileVideoUpload {
         bytesReceived = totalBytes;
         nextSequence = chunkCount;
         status = MobileVideoUploadStatus.UPLOADED;
+        processingProgressPercent = 0;
         updatedAt = OffsetDateTime.now();
     }
 
@@ -142,7 +147,14 @@ public class MobileVideoUpload {
             return;
         }
         status = MobileVideoUploadStatus.PROCESSING;
+        processingProgressPercent = Math.max(1, processingProgressPercent == null ? 0 : processingProgressPercent);
         errorMessage = null;
+        updatedAt = OffsetDateTime.now();
+    }
+
+    public void markProcessingProgress(int percent) {
+        if (status != MobileVideoUploadStatus.PROCESSING) return;
+        processingProgressPercent = Math.max(1, Math.min(99, percent));
         updatedAt = OffsetDateTime.now();
     }
 
@@ -152,6 +164,7 @@ public class MobileVideoUpload {
 
     public void markReady(String normalizedPath, long readyBytes) {
         status = MobileVideoUploadStatus.READY;
+        processingProgressPercent = 100;
         normalizedFilePath = normalizedPath;
         bytesReceived = Math.max(0L, readyBytes);
         errorMessage = null;
@@ -167,6 +180,7 @@ public class MobileVideoUpload {
 
     public void markError(String message) {
         status = MobileVideoUploadStatus.ERROR;
+        processingProgressPercent = 100;
         errorMessage = message;
         updatedAt = OffsetDateTime.now();
     }
@@ -183,6 +197,7 @@ public class MobileVideoUpload {
     public String getNormalizedFilePath() { return normalizedFilePath; }
     public Long getBytesReceived() { return bytesReceived; }
     public Integer getNextSequence() { return nextSequence; }
+    public Integer getProcessingProgressPercent() { return processingProgressPercent; }
     public MobileVideoUploadStatus getStatus() { return status; }
     public String getErrorMessage() { return errorMessage; }
     public UUID getVideoOfferId() { return videoOfferId; }

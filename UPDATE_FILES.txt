@@ -1,0 +1,15 @@
+CHANGELOG_024.txt
+src/main/java/ru/abs7/videooffer/offer/VideoOffer.java
+src/main/java/ru/abs7/videooffer/source/YtDlpVideoDownloader.java
+src/main/java/ru/abs7/videooffer/bitrix/BitrixController.java
+src/main/java/ru/abs7/videooffer/bitrix/mobile/upload/MobileVideoTranscoder.java
+src/main/java/ru/abs7/videooffer/bitrix/mobile/upload/MobileVideoUploadProcessor.java
+src/main/java/ru/abs7/videooffer/bitrix/mobile/upload/MobileVideoMerger.java
+src/main/java/ru/abs7/videooffer/bitrix/mobile/upload/MobileVideoUpload.java
+src/main/java/ru/abs7/videooffer/bitrix/mobile/upload/MobileVideoUploadResponse.java
+src/main/resources/static/bitrix-mobile.html
+src/main/resources/static/bitrix-widget.html
+src/main/resources/db/migration/V6__video_pipeline_progress_and_quality.sql
+src/main/resources/static/assets/bitrix-widget.css
+src/main/resources/static/assets/bitrix-widget.js
+src/main/resources/static/assets/bitrix-mobile.js

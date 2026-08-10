@@ -1,4 +1,0 @@
-src/main/java/ru/abs7/videooffer/bitrix/BitrixScreenRecorderController.java
-src/main/resources/static/bitrix-screen-recorder.html
-src/main/resources/static/assets/bitrix-screen-recorder.js
-src/main/resources/static/assets/bitrix-screen-recorder.css

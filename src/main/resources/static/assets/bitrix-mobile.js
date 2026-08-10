@@ -53,7 +53,6 @@ const progressBar = document.getElementById('progress-bar');
 const deliveryStatus = document.getElementById('delivery-status');
 const readyResult = document.getElementById('ready-result');
 const readyMessage = document.getElementById('ready-message');
-const publicLink = document.getElementById('public-link');
 
 const permissionDialog = document.getElementById('permission-dialog');
 const permissionMessage = document.getElementById('permission-message');
@@ -99,6 +98,7 @@ let activeUploadControllers = new Set();
 let finalChunkCount = 0;
 let uploadGeneration = 0;
 let recordingFinalizing = false;
+let recordingToneContext = null;
 let normalizationPollTimer = null;
 let activeOfferId = null;
 let offerPollTimer = null;
@@ -168,10 +168,8 @@ form.addEventListener('submit', async (event) => {
     processing.hidden = false;
     submitButton.disabled = true;
     submitButton.textContent = 'Создаём…';
-    renderProgress(sourceMode === 'LINK' ? 2 : 100, sourceMode === 'LINK' ? 'Получаем видео по ссылке…' : 'Создаём видеооффер…');
-    deliveryStatus.textContent = sourceMode === 'LINK'
-        ? 'Источник определяется автоматически…'
-        : 'Добавляем ссылку в выбранную карточку Bitrix24…';
+    renderProgress(sourceMode === 'LINK' ? 1 : 99, 'Загрузка видео');
+    deliveryStatus.textContent = '';
 
     try {
         let response;
@@ -499,13 +497,7 @@ async function startCamera(switching) {
         };
 
         cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
-        cameraPreview.removeAttribute('src');
-        cameraPreview.srcObject = cameraStream;
-        cameraPreview.muted = true;
-        cameraPreview.autoplay = true;
-        cameraPreview.playsInline = true;
-        cameraPreview.hidden = false;
-        await cameraPreview.play().catch(() => {});
+        await attachLiveCameraPreview(cameraStream);
         cameraPlaceholder.hidden = true;
         startCameraButton.hidden = true;
         switchCameraButton.hidden = false;
@@ -565,6 +557,7 @@ async function toggleRecording() {
         return;
     }
 
+    primeRecordingTone();
     if (uploadSession && (uploadSession.status === 'READY' || uploadSession.status === 'ERROR')) {
         await discardCurrentUpload();
     }
@@ -585,6 +578,7 @@ async function startRecording() {
     uploadProcessing.hidden = true;
     resetChunkUploader();
     recordingFinalizing = false;
+    let sessionForAttempt = null;
 
     try {
         const mimeType = chooseRecorderMimeType();
@@ -600,10 +594,20 @@ async function startRecording() {
             mediaRecorder = new MediaRecorder(cameraStream);
         }
 
-        uploadSession = await createUploadSession(mediaRecorder.mimeType || mimeType || 'video/webm');
+        const sessionGeneration = uploadGeneration;
+        sessionForAttempt = await createUploadSession(mediaRecorder.mimeType || mimeType || 'video/webm');
+        if (sessionGeneration !== uploadGeneration || mobileSourceModeInput.value !== 'CAMERA') {
+            await deleteUploadSession(sessionForAttempt).catch(() => {});
+            throw cancelledUploadError();
+        }
+        uploadSession = sessionForAttempt;
         mediaRecorder.addEventListener('dataavailable', handleRecordedChunk);
         mediaRecorder.addEventListener('error', handleRecorderError);
         mediaRecorder.addEventListener('stop', finalizeRecordedVideo, {once: true});
+
+        // Play the cue immediately before MediaRecorder starts so the phone speaker tone is not
+        // captured into the first frames of the recording by the microphone.
+        await playRecordingStartTone();
 
         await new Promise((resolve, reject) => {
             const started = () => resolve();
@@ -632,9 +636,13 @@ async function startRecording() {
         stopTimer();
         mediaRecorder = null;
         updateRecordButtonState(false);
-        setCameraError(error.message || 'Не удалось начать запись');
-        if (uploadSession) {
+        if (!isCancelledUploadError(error)) {
+            setCameraError(error.message || 'Не удалось начать запись');
+        }
+        if (sessionForAttempt && uploadSession?.id === sessionForAttempt.id) {
             await discardCurrentUpload();
+        } else if (sessionForAttempt) {
+            await deleteUploadSession(sessionForAttempt).catch(() => {});
         }
     }
 }
@@ -668,7 +676,7 @@ function pumpChunkUploads() {
     while (!uploadFailure && activeChunkUploads < MAX_PARALLEL_UPLOADS && uploadQueue.length > 0) {
         const task = uploadQueue.shift();
         activeChunkUploads++;
-        uploadChunkWithRetry(task.blob, task.sequence, task.session)
+        uploadChunkWithRetry(task.blob, task.sequence, task.session, task.generation)
             .then((data) => {
                 if (task.generation !== uploadGeneration) return;
                 activeChunkProgress.delete(task.sequence);
@@ -715,7 +723,7 @@ function stopRecording() {
     stopTimer();
     updateRecordButtonState(false);
     uploadProcessing.hidden = false;
-    uploadStatus.textContent = 'Сохраняем видео…';
+    uploadStatus.textContent = 'Загрузка видео · 0%';
     renderUploadSaveProgress();
     try {
         mediaRecorder.stop();
@@ -733,8 +741,9 @@ async function finalizeRecordedVideo() {
     recordingBadge.hidden = true;
     switchCameraButton.disabled = false;
     recordToggleButton.disabled = true;
-    stopCameraStream();
     finalChunkCount = nextChunkSequence;
+    const session = uploadSession;
+    const generation = uploadGeneration;
     reportClientEvent('RECORDING_STOPPED', JSON.stringify({
         chunks: finalChunkCount,
         alreadyUploaded: uploadedChunkCount,
@@ -745,17 +754,18 @@ async function finalizeRecordedVideo() {
 
     try {
         await waitForChunkUploads(UPLOAD_DRAIN_TIMEOUT_MS);
+        if (generation !== uploadGeneration) return;
         if (uploadFailure) throw uploadFailure;
         if (finalChunkCount <= 0) throw new Error('Запись не содержит видеоданных');
-        setUploadProgress(100);
-        uploadStatus.textContent = 'Подготавливаем видео…';
         reportClientEvent('RECORDING_UPLOAD_DRAINED', JSON.stringify({
             chunks: finalChunkCount,
             bytes: uploadedChunkBytes
         }));
-        uploadSession = await completeUploadSession(finalChunkCount);
-        await waitForNormalization();
+        uploadSession = await completeUploadSession(finalChunkCount, session, generation);
+        if (generation !== uploadGeneration || !uploadSession) return;
+        await waitForNormalization(uploadSession, generation);
     } catch (error) {
+        if (generation !== uploadGeneration || isCancelledUploadError(error)) return;
         setCameraError(error.message || 'Не удалось сохранить видео');
         uploadProcessing.hidden = true;
         startCameraButton.hidden = false;
@@ -764,8 +774,10 @@ async function finalizeRecordedVideo() {
         updateRecordButtonState(false);
     } finally {
         mediaRecorder = null;
-        recordingFinalizing = false;
-        recordToggleButton.disabled = false;
+        if (generation === uploadGeneration) {
+            recordingFinalizing = false;
+            recordToggleButton.disabled = false;
+        }
     }
 }
 
@@ -794,19 +806,27 @@ async function uploadManualFile(file) {
     mobileSelectedFileMeta.textContent = `${formatBytes(file.size)} · ${file.type || fileExtension(file.name).toUpperCase()}`;
     mobileChooseFile.hidden = true;
     uploadProcessing.hidden = false;
-    uploadStatus.textContent = 'Подготавливаем загрузку…';
-    setUploadProgress(1);
-    uploadBytes.textContent = `0 Б из ${formatBytes(file.size)}`;
+    uploadStatus.textContent = 'Загрузка видео · 0%';
+    setUploadProgress(0);
+    uploadBytes.textContent = '';
     offerSection.hidden = true;
 
+    let session = null;
+    const selectionGeneration = uploadGeneration;
+    let generation = selectionGeneration;
     try {
-        uploadSession = await createUploadSession(file.type || mimeFromFileName(file.name), 'FILE', file.size);
+        session = await createUploadSession(file.type || mimeFromFileName(file.name), 'FILE', file.size);
+        if (selectionGeneration !== uploadGeneration || mobileSourceModeInput.value !== 'FILE') {
+            await deleteUploadSession(session).catch(() => {});
+            return;
+        }
+        uploadSession = session;
         resetChunkUploader();
+        generation = uploadGeneration;
         uploadExpectedBytes = file.size;
-        setUploadProgress(2);
-        uploadStatus.textContent = 'Загрузка началась…';
         let offset = 0;
         while (offset < file.size) {
+            if (generation !== uploadGeneration) return;
             const blob = file.slice(offset, Math.min(file.size, offset + MANUAL_FILE_CHUNK_BYTES));
             enqueueChunkUpload(blob);
             offset += blob.size;
@@ -814,15 +834,17 @@ async function uploadManualFile(file) {
         finalChunkCount = nextChunkSequence;
         renderUploadSaveProgress();
         await waitForChunkUploads(Math.max(UPLOAD_DRAIN_TIMEOUT_MS, 5 * 60 * 1000));
+        if (generation !== uploadGeneration) return;
         if (uploadFailure) throw uploadFailure;
-        setUploadProgress(100);
-        uploadStatus.textContent = 'Подготавливаем видео…';
-        uploadSession = await completeUploadSession(finalChunkCount);
-        await waitForNormalization();
+        uploadSession = await completeUploadSession(finalChunkCount, session, generation);
+        if (generation !== uploadGeneration || !uploadSession) return;
+        await waitForNormalization(uploadSession, generation);
     } catch (error) {
+        if (generation !== uploadGeneration || isCancelledUploadError(error)) return;
         setFileError(error.message || 'Не удалось загрузить видео');
         uploadProcessing.hidden = true;
-        mobileChooseFile.hidden = false;
+        // Keep the selected-file card visible. The user can press “Заменить” immediately.
+        mobileChooseFile.hidden = true;
     }
     fitWindow();
 }
@@ -850,18 +872,25 @@ async function createUploadSession(mimeType, sourceKind = 'RECORDING', declaredS
 }
 
 
-async function uploadChunkWithRetry(blob, sequence, session) {
+async function uploadChunkWithRetry(blob, sequence, session, generation) {
     let lastError = null;
     for (let attempt = 1; attempt <= 4; attempt++) {
+        if (generation !== uploadGeneration) throw cancelledUploadError();
         activeChunkProgress.set(sequence, 0);
         renderUploadSaveProgress();
         try {
-            return await uploadChunkOnce(blob, sequence, session);
+            const result = await uploadChunkOnce(blob, sequence, session);
+            if (generation !== uploadGeneration) throw cancelledUploadError();
+            return result;
         } catch (error) {
+            if (generation !== uploadGeneration || isCancelledUploadError(error)) throw cancelledUploadError();
             activeChunkProgress.set(sequence, 0);
             renderUploadSaveProgress();
             lastError = error;
-            if (attempt < 4) await sleep(Math.min(1600, attempt * 400));
+            if (attempt < 4) {
+                await sleep(Math.min(1600, attempt * 400));
+                if (generation !== uploadGeneration) throw cancelledUploadError();
+            }
         }
     }
     throw lastError || new Error('Не удалось загрузить часть видео');
@@ -901,49 +930,45 @@ function uploadChunkOnce(blob, sequence, session) {
     });
 }
 
-async function completeUploadSession(chunkCount) {
+async function completeUploadSession(chunkCount, session, generation) {
+    if (!session?.id || !session?.uploadToken) throw new Error('Сессия загрузки видео потеряна');
+    if (generation !== uploadGeneration) throw cancelledUploadError();
     const response = await fetchWithTimeout(
-        `/bitrix/mobile/uploads/${encodeURIComponent(uploadSession.id)}/complete?chunkCount=${encodeURIComponent(chunkCount)}`,
-        {
-            method: 'POST',
-            headers: {'X-Upload-Token': uploadSession.uploadToken}
-        },
+        `/bitrix/mobile/uploads/${encodeURIComponent(session.id)}/complete?chunkCount=${encodeURIComponent(chunkCount)}`,
+        {method: 'POST', headers: {'X-Upload-Token': session.uploadToken}},
         60_000);
     const data = await readJson(response);
-    if (!response.ok) {
-        throw new Error(data.message || 'Не удалось завершить загрузку видео');
-    }
+    if (!response.ok) throw new Error(data.message || 'Не удалось завершить загрузку видео');
+    if (generation !== uploadGeneration) throw cancelledUploadError();
     return data;
 }
 
-async function waitForNormalization() {
+async function waitForNormalization(session, generation) {
     clearInterval(normalizationPollTimer);
     const startedAt = Date.now();
-
     while (Date.now() - startedAt < 20 * 60 * 1000) {
+        if (generation !== uploadGeneration) throw cancelledUploadError();
         const response = await fetchWithTimeout(
-            `/bitrix/mobile/uploads/${encodeURIComponent(uploadSession.id)}?uploadToken=${encodeURIComponent(uploadSession.uploadToken)}`,
-            {cache: 'no-store'},
-            10_000);
+            `/bitrix/mobile/uploads/${encodeURIComponent(session.id)}?uploadToken=${encodeURIComponent(session.uploadToken)}`,
+            {cache: 'no-store'}, 10_000);
         const data = await readJson(response);
-        if (!response.ok) {
-            throw new Error(data.message || 'Не удалось проверить обработку видео');
-        }
+        if (!response.ok) throw new Error(data.message || 'Не удалось проверить видео');
+        if (generation !== uploadGeneration) throw cancelledUploadError();
+        session = data;
         uploadSession = data;
-        uploadBytes.textContent = formatBytes(data.bytesReceived);
-
         if (data.status === 'READY') {
+            setUploadProgress(100);
             showNormalizedVideo(data);
-            return;
+            return data;
         }
-        if (data.status === 'ERROR') {
-            throw new Error(data.errorMessage || 'Не удалось обработать видео');
-        }
-        uploadStatus.textContent = 'Подготавливаем видео…';
-        const elapsed = Date.now() - startedAt;
-        await sleep(elapsed < 8000 ? 250 : 750);
+        if (data.status === 'ERROR') throw new Error(data.errorMessage || 'Не удалось обработать видео');
+        const serverProgress = Math.max(0, Math.min(99, Number(data.processingProgressPercent) || 0));
+        const overall = Math.max(66, Math.min(99, 66 + Math.floor(serverProgress * 33 / 100)));
+        setUploadProgress(overall);
+        uploadStatus.textContent = `Загрузка видео · ${overall}%`;
+        await sleep(Date.now() - startedAt < 8000 ? 250 : 600);
     }
-    throw new Error('Обработка видео заняла слишком много времени');
+    throw new Error('Загрузка видео заняла слишком много времени');
 }
 
 function showNormalizedVideo(data) {
@@ -955,24 +980,29 @@ function showNormalizedVideo(data) {
         clearFilePreview();
         mobileFilePreview.src = recordedPreviewUrl;
         mobileFilePreview.hidden = !recordedPreviewUrl;
+        mobileFilePreview.preload = 'auto';
         mobileFilePreview.load();
+        prepareVideoFirstFrame(mobileFilePreview);
         mobileChooseFile.hidden = true;
         mobileSelectedFile.hidden = false;
     } else {
         cameraPlaceholder.hidden = true;
         cameraPreview.hidden = false;
         cameraPreview.autoplay = false;
+        cameraPreview.controls = true;
+        cameraPreview.preload = 'auto';
         cameraPreview.muted = false;
         cameraPreview.srcObject = null;
         cameraPreview.src = recordedPreviewUrl;
         cameraPreview.load();
+        prepareVideoFirstFrame(cameraPreview);
         switchCameraButton.hidden = true;
         switchCameraButton.disabled = false;
         startCameraButton.hidden = true;
         recordToggleButton.hidden = false;
         recordToggleButton.disabled = false;
         updateRecordButtonState(false);
-        playRecordingButton.hidden = !recordedPreviewUrl;
+        playRecordingButton.hidden = true;
         updatePlayButtonState();
     }
 
@@ -1111,11 +1141,11 @@ function renderUploadSaveProgress() {
         .reduce((sum, value) => sum + Math.max(0, Number(value) || 0), 0);
     const sentBytes = uploadedChunkBytes + inFlightBytes;
     const totalBytes = Math.max(uploadExpectedBytes || 0, enqueuedChunkBytes || 0, 1);
-    const percent = Math.max(0, Math.min(99, Math.round(sentBytes * 100 / totalBytes)));
+    const networkPercent = Math.max(0, Math.min(100, Math.round(sentBytes * 100 / totalBytes)));
+    const percent = Math.max(0, Math.min(65, Math.floor(networkPercent * 0.65)));
     setUploadProgress(percent);
-    const verb = mobileSourceModeInput.value === 'FILE' ? 'Загружаем видео' : 'Сохраняем видео';
-    uploadStatus.textContent = `${verb} ${percent}%`;
-    uploadBytes.textContent = `${formatBytes(Math.min(sentBytes, totalBytes))} из ${formatBytes(totalBytes)}`;
+    uploadStatus.textContent = `Загрузка видео · ${percent}%`;
+    uploadBytes.textContent = '';
 }
 
 function setUploadProgress(percent) {
@@ -1137,6 +1167,79 @@ async function fetchWithTimeout(url, options, timeoutMs) {
     } finally {
         clearTimeout(timeoutHandle);
     }
+}
+
+
+function cancelledUploadError() {
+    const error = new Error('Загрузка заменена');
+    error.cancelledUpload = true;
+    return error;
+}
+
+function isCancelledUploadError(error) {
+    return !!(error && error.cancelledUpload);
+}
+
+function primeRecordingTone() {
+    try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        if (!recordingToneContext || recordingToneContext.state === 'closed') {
+            recordingToneContext = new AudioContextClass();
+        }
+        if (recordingToneContext.state === 'suspended') recordingToneContext.resume().catch(() => {});
+    } catch (_) { recordingToneContext = null; }
+}
+
+async function playRecordingStartTone() {
+    try {
+        primeRecordingTone();
+        const context = recordingToneContext;
+        if (!context || context.state === 'closed') return;
+        if (context.state === 'suspended') await context.resume().catch(() => {});
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, context.currentTime);
+        gain.gain.setValueAtTime(0.0001, context.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.14, context.currentTime + 0.008);
+        gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.11);
+        oscillator.connect(gain);
+        gain.connect(context.destination);
+        oscillator.start();
+        oscillator.stop(context.currentTime + 0.12);
+        await sleep(130);
+    } catch (_) { }
+}
+
+async function attachLiveCameraPreview(stream) {
+    try { cameraPreview.pause(); } catch (_) { }
+    cameraPreview.controls = false;
+    cameraPreview.removeAttribute('src');
+    cameraPreview.srcObject = stream;
+    cameraPreview.muted = true;
+    cameraPreview.autoplay = true;
+    cameraPreview.playsInline = true;
+    cameraPreview.hidden = false;
+    try {
+        await cameraPreview.play();
+    } catch (_) {
+        await new Promise(resolve => requestAnimationFrame(resolve));
+        if (cameraPreview.srcObject === stream) await cameraPreview.play().catch(() => {});
+    }
+}
+
+function prepareVideoFirstFrame(video) {
+    if (!video) return;
+    const reveal = () => {
+        try {
+            video.pause();
+            const duration = Number(video.duration);
+            if (Number.isFinite(duration) && duration > 0.05) video.currentTime = Math.min(0.05, duration / 10);
+        } catch (_) { }
+    };
+    if (video.readyState >= 2) reveal();
+    else video.addEventListener('loadeddata', reveal, {once: true});
 }
 
 function validateManualVideoFile(file) {
@@ -1184,6 +1287,7 @@ function clearRecordedPreview() {
     try { cameraPreview.pause(); } catch (_) {}
     cameraPreview.removeAttribute('src');
     cameraPreview.srcObject = null;
+    cameraPreview.controls = false;
     cameraPreview.muted = true;
     cameraPreview.autoplay = true;
     try { cameraPreview.load(); } catch (_) {}
@@ -1456,35 +1560,40 @@ async function checkOfferStatus() {
 }
 
 function renderOffer(data) {
-    const percent = Math.max(0, Math.min(100, data.progressPercent || 100));
-    const statusText = {
-        QUEUED: 'Задача поставлена в очередь',
-        PREPARING: 'Подготавливаем видео',
-        READY: 'Публичная страница готова',
-        ERROR: data.errorMessage || 'Ошибка подготовки видео',
-        CANCELLED: 'Подготовка отменена'
-    };
-    renderProgress(percent, statusText[data.status] || data.status);
-
-    if (data.status === 'READY') {
-        publicLink.href = data.publicUrl + '?preview=1';
-        readyResult.hidden = false;
-        if (data.bitrixDeliveryStatus === 'DELIVERED') {
-            deliveryStatus.textContent = 'Ссылка добавлена в таймлайн выбранной карточки.';
-            readyMessage.textContent = 'Ссылка добавлена в Bitrix24. ' + viewGoalMessage(data.viewNotificationGoal);
-        } else if (data.bitrixDeliveryStatus === 'ERROR') {
-            deliveryStatus.textContent = 'Видео готово, но Bitrix24 пока не принял комментарий. Приложение повторит отправку автоматически.';
-            readyMessage.textContent = data.bitrixDeliveryError
-                ? 'Ошибка добавления ссылки: ' + data.bitrixDeliveryError
-                : 'Страница готова, но ссылку пока не удалось добавить в карточку.';
-        } else {
-            deliveryStatus.textContent = 'Добавляем ссылку в таймлайн карточки…';
-            readyMessage.textContent = 'Публичная страница готова. Завершаем запись ссылки в Bitrix24.';
-        }
-    }
-
+    const percent = Math.max(0, Math.min(100, Number(data.progressPercent) || 0));
     if (data.status === 'ERROR') {
         setFormError(data.errorMessage || 'Не удалось подготовить видеооффер');
+        processing.hidden = true;
+        fitWindow();
+        return;
+    }
+    if (data.status === 'CANCELLED') {
+        setFormError('Подготовка видео отменена');
+        processing.hidden = true;
+        fitWindow();
+        return;
+    }
+
+    if (data.status !== 'READY') {
+        readyResult.hidden = true;
+        deliveryStatus.textContent = '';
+        renderProgress(percent, 'Загрузка видео');
+    } else if (data.bitrixDeliveryStatus === 'DELIVERED' || data.bitrixDeliveryStatus === 'NOT_REQUIRED') {
+        processing.hidden = true;
+        readyResult.hidden = false;
+        deliveryStatus.textContent = '';
+        readyMessage.textContent = 'Ссылка добавлена в таймлайн. ' + viewGoalMessage(data.viewNotificationGoal);
+    } else if (data.bitrixDeliveryStatus === 'ERROR') {
+        processing.hidden = true;
+        readyResult.hidden = false;
+        deliveryStatus.textContent = '';
+        readyMessage.textContent = data.bitrixDeliveryError
+            ? 'Видео готово, но ссылку не удалось добавить в карточку: ' + data.bitrixDeliveryError
+            : 'Видео готово, но ссылку не удалось добавить в карточку Bitrix24.';
+    } else {
+        readyResult.hidden = true;
+        deliveryStatus.textContent = '';
+        renderProgress(100, 'Загрузка видео');
     }
     fitWindow();
 }

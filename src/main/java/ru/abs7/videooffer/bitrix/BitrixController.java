@@ -22,6 +22,7 @@ import ru.abs7.videooffer.offer.VideoOfferService;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -116,6 +117,21 @@ public class BitrixController {
     }
 
     @PostMapping(
+            value = "/client-events",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public Map<String, Object> clientEvent(
+            @RequestBody BitrixClientEvent event,
+            HttpServletRequest servletRequest) {
+        BitrixPlacementContext context = contextSigner.verify(event.contextToken());
+        log.info("Bitrix desktop client event: memberId={}, entityType={}, entityId={}, event={}, details={}, userAgent={}",
+                context.memberId(), context.entityType(), context.entityId(),
+                safeLogValue(event.event(), 80), safeLogValue(event.details(), 1600),
+                servletRequest.getHeader("User-Agent"));
+        return Map.of("ok", true);
+    }
+
+    @PostMapping(
             value = "/video-offers",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -141,6 +157,16 @@ public class BitrixController {
                 offer.getId(), offer.getCrmEntityType(), offer.getCrmEntityId(), offer.getStatus());
         return ResponseEntity.accepted().body(videoOfferService.response(offer));
     }
+
+    private String safeLogValue(String value, int maxLength) {
+        if (value == null) return "";
+        String normalized = value.replaceAll("[\r\n\t]+", " ").trim();
+        return normalized.length() <= maxLength
+                ? normalized
+                : normalized.substring(0, maxLength) + "…";
+    }
+
+    public record BitrixClientEvent(String contextToken, String event, String details) { }
 
     private long extractEntityId(String placementOptions) {
         Matcher matcher = ID_PATTERN.matcher(placementOptions);

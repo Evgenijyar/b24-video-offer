@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Сформировать видеооффер</title>
-    <link rel="stylesheet" href="/assets/bitrix-widget.css?v=023">
+    <link rel="stylesheet" href="/assets/bitrix-widget.css?v=024">
     <script src="//api.bitrix24.com/api/v1/"></script>
 </head>
 <body>
@@ -61,10 +61,13 @@
                 <button id="replace-file-button" type="button">Заменить</button>
             </div>
             <div id="file-upload-processing" class="save-state" hidden>
-                <div class="save-state-row"><strong id="file-upload-status">Загружаем видео…</strong><span id="file-upload-progress-text">0%</span></div>
+                <div class="save-state-row"><strong id="file-upload-status">Загрузка видео</strong><span id="file-upload-progress-text">0%</span></div>
                 <div class="save-progress-track"><span id="file-upload-progress-bar" class="save-progress-bar"></span></div>
             </div>
-            <video id="file-preview" class="file-preview" controls playsinline hidden></video>
+            <div id="file-preview-frame" class="file-preview-frame" hidden>
+                <video id="file-preview" class="file-preview" controls playsinline></video>
+                <button id="file-fullscreen-button" class="video-fullscreen-button" type="button" aria-label="Развернуть видео" title="Развернуть видео">⛶</button>
+            </div>
         </section>
 
         <section id="record-source-section" class="desktop-recorder" hidden>
@@ -96,6 +99,7 @@
                     <span id="camera-placeholder-text">Разрешите доступ к камере.</span>
                 </div>
                 <div id="recording-badge" class="recording-badge" hidden><i></i> REC</div>
+                <button id="record-fullscreen-button" class="video-fullscreen-button" type="button" hidden aria-label="Развернуть видео" title="Развернуть видео">⛶</button>
             </div>
 
             <div id="camera-error" class="message message--error camera-message" hidden></div>
@@ -110,7 +114,7 @@
 
 
             <div id="upload-processing" class="save-state" hidden>
-                <div class="save-state-row"><strong id="upload-status">Сохраняем видео…</strong><span id="upload-progress-text"></span></div>
+                <div class="save-state-row"><strong id="upload-status">Загрузка видео · 0%</strong><span id="upload-progress-text"></span></div>
                 <div class="save-progress-track"><span id="upload-save-progress-bar" class="save-progress-bar"></span></div>
             </div>
         </section>
@@ -138,16 +142,16 @@
     </form>
 
     <section id="processing" class="processing-card" hidden>
-        <div class="processing-head"><strong id="processing-status">Подготавливаем видео</strong><span id="processing-percent">0%</span></div>
+        <div class="processing-head"><strong id="processing-status">Загрузка видео</strong><span id="processing-percent">0%</span></div>
         <div class="progress"><div id="progress-bar"></div></div>
         <div id="delivery-status" class="delivery-status"></div>
     </section>
 
     <section id="ready-result" class="ready-card" hidden>
         <div class="ready-icon">✓</div>
-        <div><strong>Видеооффер готов</strong><p id="ready-message">Ссылка добавлена в карточку Bitrix24.</p><a id="public-link" class="secondary-button" target="_blank" rel="noopener">Открыть предпросмотр</a></div>
+        <div><strong>Видеооффер готов</strong><p id="ready-message">Ссылка добавлена в карточку Bitrix24.</p></div>
     </section>
 </main>
-<script src="/assets/bitrix-widget.js?v=023"></script>
+<script src="/assets/bitrix-widget.js?v=024"></script>
 </body>
 </html>
