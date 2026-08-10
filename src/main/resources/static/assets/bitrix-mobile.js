@@ -67,7 +67,7 @@ const MAX_MANUAL_FILE_BYTES = 100 * 1024 * 1024;
 const MANUAL_FILE_CHUNK_BYTES = 4 * 1024 * 1024;
 const MEDIA_CHUNK_INTERVAL_MS = 2000;
 const MAX_PARALLEL_UPLOADS = 4;
-const CHUNK_UPLOAD_TIMEOUT_MS = 30_000;
+const CHUNK_UPLOAD_TIMEOUT_MS = 60_000;
 const UPLOAD_DRAIN_TIMEOUT_MS = 90_000;
 
 let debounceTimer = null;
@@ -91,6 +91,9 @@ let activeChunkUploads = 0;
 let nextChunkSequence = 0;
 let uploadedChunkCount = 0;
 let uploadedChunkBytes = 0;
+let enqueuedChunkBytes = 0;
+let uploadExpectedBytes = 0;
+let activeChunkProgress = new Map();
 let uploadDrainWaiters = [];
 let activeUploadControllers = new Set();
 let finalChunkCount = 0;
@@ -651,6 +654,7 @@ function handleRecordedChunk(event) {
 
 function enqueueChunkUpload(blob) {
     const sequence = nextChunkSequence++;
+    enqueuedChunkBytes += blob.size;
     uploadQueue.push({
         sequence,
         blob,
@@ -667,6 +671,7 @@ function pumpChunkUploads() {
         uploadChunkWithRetry(task.blob, task.sequence, task.session)
             .then((data) => {
                 if (task.generation !== uploadGeneration) return;
+                activeChunkProgress.delete(task.sequence);
                 uploadedChunkCount++;
                 uploadedChunkBytes += task.blob.size;
                 if (uploadSession && task.session && uploadSession.id === task.session.id && data) {
@@ -683,6 +688,7 @@ function pumpChunkUploads() {
             })
             .catch((error) => {
                 if (task.generation !== uploadGeneration) return;
+                activeChunkProgress.delete(task.sequence);
                 if (!uploadFailure) {
                     uploadFailure = error;
                     setCameraError('Не удалось сохранить запись: ' + (error.message || 'ошибка сети'));
@@ -710,7 +716,7 @@ function stopRecording() {
     updateRecordButtonState(false);
     uploadProcessing.hidden = false;
     uploadStatus.textContent = 'Сохраняем видео…';
-    setUploadProgress(0);
+    renderUploadSaveProgress();
     try {
         mediaRecorder.stop();
     } catch (error) {
@@ -788,12 +794,17 @@ async function uploadManualFile(file) {
     mobileSelectedFileMeta.textContent = `${formatBytes(file.size)} · ${file.type || fileExtension(file.name).toUpperCase()}`;
     mobileChooseFile.hidden = true;
     uploadProcessing.hidden = false;
-    uploadStatus.textContent = 'Загружаем видео 0%';
+    uploadStatus.textContent = 'Подготавливаем загрузку…';
+    setUploadProgress(1);
+    uploadBytes.textContent = `0 Б из ${formatBytes(file.size)}`;
     offerSection.hidden = true;
 
     try {
         uploadSession = await createUploadSession(file.type || mimeFromFileName(file.name), 'FILE', file.size);
         resetChunkUploader();
+        uploadExpectedBytes = file.size;
+        setUploadProgress(2);
+        uploadStatus.textContent = 'Загрузка началась…';
         let offset = 0;
         while (offset < file.size) {
             const blob = file.slice(offset, Math.min(file.size, offset + MANUAL_FILE_CHUNK_BYTES));
@@ -842,39 +853,52 @@ async function createUploadSession(mimeType, sourceKind = 'RECORDING', declaredS
 async function uploadChunkWithRetry(blob, sequence, session) {
     let lastError = null;
     for (let attempt = 1; attempt <= 4; attempt++) {
-        const controller = new AbortController();
-        activeUploadControllers.add(controller);
-        const timeoutHandle = setTimeout(() => controller.abort(), CHUNK_UPLOAD_TIMEOUT_MS);
+        activeChunkProgress.set(sequence, 0);
+        renderUploadSaveProgress();
         try {
-            const response = await fetch(
-                `/bitrix/mobile/uploads/${encodeURIComponent(session.id)}/chunks/${sequence}`,
-                {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/octet-stream',
-                        'X-Upload-Token': session.uploadToken
-                    },
-                    body: blob,
-                    signal: controller.signal
-                });
-            const data = await readJson(response);
-            if (!response.ok) {
-                throw new Error(data.message || 'Сервер не принял часть видео');
-            }
-            return data;
+            return await uploadChunkOnce(blob, sequence, session);
         } catch (error) {
-            lastError = error && error.name === 'AbortError'
-                ? new Error('Сервер слишком долго принимал видео')
-                : error;
-            if (attempt < 4) {
-                await sleep(Math.min(1600, attempt * 400));
-            }
-        } finally {
-            clearTimeout(timeoutHandle);
-            activeUploadControllers.delete(controller);
+            activeChunkProgress.set(sequence, 0);
+            renderUploadSaveProgress();
+            lastError = error;
+            if (attempt < 4) await sleep(Math.min(1600, attempt * 400));
         }
     }
     throw lastError || new Error('Не удалось загрузить часть видео');
+}
+
+function uploadChunkOnce(blob, sequence, session) {
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        activeUploadControllers.add(xhr);
+        xhr.open('PUT', `/bitrix/mobile/uploads/${encodeURIComponent(session.id)}/chunks/${sequence}`, true);
+        xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+        xhr.setRequestHeader('X-Upload-Token', session.uploadToken);
+        xhr.timeout = CHUNK_UPLOAD_TIMEOUT_MS;
+        xhr.upload.onprogress = (event) => {
+            activeChunkProgress.set(sequence, Math.min(blob.size, Math.max(0, Number(event.loaded) || 0)));
+            renderUploadSaveProgress();
+        };
+        xhr.onload = () => {
+            activeUploadControllers.delete(xhr);
+            const data = parseJsonText(xhr.responseText);
+            if (xhr.status >= 200 && xhr.status < 300) resolve(data);
+            else reject(new Error(data.message || 'Сервер не принял часть видео'));
+        };
+        xhr.onerror = () => {
+            activeUploadControllers.delete(xhr);
+            reject(new Error('Ошибка сети при загрузке видео'));
+        };
+        xhr.ontimeout = () => {
+            activeUploadControllers.delete(xhr);
+            reject(new Error('Сервер слишком долго принимал видео'));
+        };
+        xhr.onabort = () => {
+            activeUploadControllers.delete(xhr);
+            reject(new Error('Загрузка видео отменена'));
+        };
+        xhr.send(blob);
+    });
 }
 
 async function completeUploadSession(chunkCount) {
@@ -884,7 +908,7 @@ async function completeUploadSession(chunkCount) {
             method: 'POST',
             headers: {'X-Upload-Token': uploadSession.uploadToken}
         },
-        20_000);
+        60_000);
     const data = await readJson(response);
     if (!response.ok) {
         throw new Error(data.message || 'Не удалось завершить загрузку видео');
@@ -1037,6 +1061,9 @@ function resetChunkUploader() {
     nextChunkSequence = 0;
     uploadedChunkCount = 0;
     uploadedChunkBytes = 0;
+    enqueuedChunkBytes = 0;
+    uploadExpectedBytes = 0;
+    activeChunkProgress.clear();
     finalChunkCount = 0;
     uploadDrainWaiters.splice(0).forEach((waiter) => waiter.resolve());
     activeUploadControllers.forEach((controller) => {
@@ -1080,11 +1107,15 @@ function notifyUploadDrainWaiters() {
 
 function renderUploadSaveProgress() {
     if (uploadProcessing.hidden) return;
-    const total = Math.max(finalChunkCount || nextChunkSequence, 1);
-    const completed = Math.min(uploadedChunkCount, total);
-    const percent = Math.max(0, Math.min(99, Math.round(completed * 100 / total)));
+    const inFlightBytes = [...activeChunkProgress.values()]
+        .reduce((sum, value) => sum + Math.max(0, Number(value) || 0), 0);
+    const sentBytes = uploadedChunkBytes + inFlightBytes;
+    const totalBytes = Math.max(uploadExpectedBytes || 0, enqueuedChunkBytes || 0, 1);
+    const percent = Math.max(0, Math.min(99, Math.round(sentBytes * 100 / totalBytes)));
     setUploadProgress(percent);
-    uploadStatus.textContent = (mobileSourceModeInput.value === 'FILE' ? 'Загружаем видео ' : 'Сохраняем видео ') + percent + '%';
+    const verb = mobileSourceModeInput.value === 'FILE' ? 'Загружаем видео' : 'Сохраняем видео';
+    uploadStatus.textContent = `${verb} ${percent}%`;
+    uploadBytes.textContent = `${formatBytes(Math.min(sentBytes, totalBytes))} из ${formatBytes(totalBytes)}`;
 }
 
 function setUploadProgress(percent) {
@@ -1496,6 +1527,11 @@ async function readJson(response) {
     } catch (_) {
         return {message: text};
     }
+}
+
+function parseJsonText(text) {
+    if (!text) return {};
+    try { return JSON.parse(text); } catch (_) { return {message: text}; }
 }
 
 function typeShort(type) {

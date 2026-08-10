@@ -232,8 +232,8 @@ public class MobileVideoMerger {
         command.addAll(List.of(
                 "-filter_complex", filter.toString(),
                 "-map", "[outv]", "-map", "[outa]",
-                "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
-                "-maxrate", "2600k", "-bufsize", "5200k", "-threads", "2",
+                "-c:v", "libx264", "-preset", "superfast", "-crf", "23",
+                "-maxrate", "2600k", "-bufsize", "5200k", "-threads", "0",
                 "-c:a", "aac", "-b:a", "112k", "-movflags", "+faststart",
                 output.toString()));
         ProcessResult result = run(command, TRANSCODE_TIMEOUT);

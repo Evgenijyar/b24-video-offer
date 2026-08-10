@@ -48,11 +48,13 @@ public class MobileVideoUploadProcessor {
         try {
             MobileVideoTranscoder.TranscodeResult result = transcoder.transcode(input, output, upload.getMimeType());
             MobileVideoUpload current = repository.findById(uploadId).orElseThrow();
-            current.markReady(result.path().toString());
+            current.markReady(result.path().toString(), result.size());
             repository.saveAndFlush(current);
-            Files.deleteIfExists(input);
-            log.info("Mobile video upload READY: uploadId={}, bytes={}, path={}",
-                    uploadId, result.size(), result.path());
+            if (!result.path().toAbsolutePath().normalize().equals(input.toAbsolutePath().normalize())) {
+                Files.deleteIfExists(input);
+            }
+            log.info("Mobile video upload READY: uploadId={}, bytes={}, path={}, quality={}",
+                    uploadId, result.size(), result.path(), result.quality());
         } catch (Exception error) {
             log.error("Mobile video normalization failed: uploadId={}, error={}",
                     uploadId, error.getMessage(), error);

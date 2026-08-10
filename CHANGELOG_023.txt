@@ -1,0 +1,31 @@
+Update 023 — in-frame screen capture + fast upload/finalization
+
+Desktop Bitrix24 recorder
+- Removed the external /bitrix/screen-recorder popup flow completely.
+- Screen capture now uses navigator.mediaDevices.getDisplayMedia() directly from the Bitrix24 widget.
+- Selecting the "Экран" capture mode immediately opens the browser/system screen/window/tab chooser; there is no separate "Выбрать экран" button.
+- The selected screen is previewed in the same recorder viewport inside the Bitrix24 application.
+- Camera <-> screen switching during one recording remains supported without opening helper windows.
+- Screen/system audio and microphone are composed into the local recording stream; when both are enabled they are mixed through Web Audio into one audio track.
+- Screen capture is constrained toward 1280x720/30fps to keep recordings compact and make fast MP4 paths more likely.
+- If the user ends OS-level screen sharing while that source is recording, the app finalizes the already recorded material instead of silently losing the recording.
+- Removed BitrixScreenRecorderController and all bitrix-screen-recorder static assets.
+
+Upload UX
+- Desktop manual-file upload now reports byte-level progress while each HTTP chunk is still being transmitted, instead of updating only after a whole 4 MiB chunk finishes.
+- Mobile manual-file and recording uploads now use XHR upload progress and show bytes sent / total bytes immediately.
+- Increased per-chunk network timeout from 30s to 60s and upload-complete HTTP timeout from 20s to 60s to avoid needless retries/false failures on slower links or storage.
+- Desktop manual-file uploads may now drain for up to 10 minutes (with visible progress) instead of failing after the old generic 90-second recording timeout.
+- Updated desktop/mobile static asset cache versions to v=023.
+
+Backend video processing
+- ffprobe validation now happens before the expensive-transcode semaphore.
+- Valid MP4/H.264 with AAC (or no audio) is marked READY directly from the uploaded source file: no FFmpeg, no second copy, no transcode queue.
+- H.264/AAC MOV/MP4-family containers that only need container conversion use a fast stream-copy remux and do not wait behind full transcodes.
+- Removed the old <=1280-pixel condition that forced otherwise compatible 1080p MP4 files through a full re-encode.
+- Only genuinely incompatible inputs (for example VP8/VP9 WebM) enter the CPU-heavy H.264 normalization queue; that fallback now uses the faster x264 superfast preset with automatic thread count.
+- MobileVideoUploadProcessor now preserves the source file when the fast direct path returns that same path.
+
+Validation performed in the working environment
+- node --check passed for every active static JavaScript file.
+- Full Maven build could not be executed in the assistant container because Maven is not installed there.

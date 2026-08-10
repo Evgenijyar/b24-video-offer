@@ -49,25 +49,25 @@ public class MobileVideoTranscoder {
 
     public TranscodeResult transcode(Path input, Path output, String declaredMimeType)
             throws IOException, InterruptedException {
-        log.info("Waiting for mobile video processing slot: input={}, availableSlots={}",
-                input, transcodeSlots.availablePermits());
-        transcodeSlots.acquire();
-        try {
-            return processExclusive(input, output, declaredMimeType);
-        } finally {
-            transcodeSlots.release();
-        }
-    }
-
-    private TranscodeResult processExclusive(Path input, Path output, String declaredMimeType)
-            throws IOException, InterruptedException {
         Files.createDirectories(output.toAbsolutePath().normalize().getParent());
         Files.deleteIfExists(output);
 
+        long probeStartedAt = System.nanoTime();
         ProbeResult probe = probe(input);
-        log.info("Mobile video probe completed: input={}, declaredMimeType={}, format={}, videoCodec={}, audioCodec={}, width={}, height={}",
-                input, declaredMimeType, probe.formatName(), probe.videoCodec(), probe.audioCodec(), probe.width(), probe.height());
+        log.info("Mobile video probe completed: input={}, declaredMimeType={}, format={}, videoCodec={}, audioCodec={}, width={}, height={}, durationMs={}",
+                input, declaredMimeType, probe.formatName(), probe.videoCodec(), probe.audioCodec(), probe.width(), probe.height(),
+                elapsedMillis(probeStartedAt));
 
+        // MP4/H.264/AAC is already the exact format used by public offers. Do not copy or
+        // re-encode it: after ffprobe validation the source file itself becomes READY.
+        // This is especially important for browser MediaRecorder output and manual MP4 uploads.
+        if (canUseMp4AsIs(probe, declaredMimeType)) {
+            long size = Files.size(input);
+            log.info("Mobile video accepted without FFmpeg: input={}, bytes={}, quality=mp4-h264-as-is", input, size);
+            return new TranscodeResult(input, size, "mp4-h264-as-is");
+        }
+
+        // Container-only conversion is cheap and must not wait behind CPU-heavy transcodes.
         if (canRemuxWithoutReencoding(probe, declaredMimeType)) {
             long startedAt = System.nanoTime();
             try {
@@ -75,7 +75,7 @@ public class MobileVideoTranscoder {
                 long size = Files.size(output);
                 log.info("Mobile video fast remux completed: input={}, output={}, bytes={}, durationMs={}",
                         input, output, size, elapsedMillis(startedAt));
-                return new TranscodeResult(output, size, "mobile-h264-direct");
+                return new TranscodeResult(output, size, "mp4-h264-remux");
             } catch (IOException error) {
                 Files.deleteIfExists(output);
                 log.warn("Fast mobile MP4 remux failed; falling back to full normalization: input={}, error={}",
@@ -83,14 +83,33 @@ public class MobileVideoTranscoder {
             }
         }
 
-        long startedAt = System.nanoTime();
-        log.info("Starting full mobile video normalization: input={}, output={}, timeoutMinutes={}",
-                input, output, timeout.toMinutes());
-        runFfmpeg(fullTranscodeCommand(input, output), timeout, output, "полная обработка видео");
-        long size = Files.size(output);
-        log.info("Full mobile video normalization completed: input={}, output={}, bytes={}, durationMs={}",
-                input, output, size, elapsedMillis(startedAt));
-        return new TranscodeResult(output, size, "mobile-720p-h264");
+        log.info("Waiting for full video transcode slot: input={}, availableSlots={}",
+                input, transcodeSlots.availablePermits());
+        transcodeSlots.acquire();
+        try {
+            long startedAt = System.nanoTime();
+            log.info("Starting full mobile video normalization: input={}, output={}, timeoutMinutes={}",
+                    input, output, timeout.toMinutes());
+            runFfmpeg(fullTranscodeCommand(input, output), timeout, output, "полная обработка видео");
+            long size = Files.size(output);
+            log.info("Full mobile video normalization completed: input={}, output={}, bytes={}, durationMs={}",
+                    input, output, size, elapsedMillis(startedAt));
+            return new TranscodeResult(output, size, "mobile-h264-normalized");
+        } finally {
+            transcodeSlots.release();
+        }
+    }
+
+    private boolean canUseMp4AsIs(ProbeResult probe, String declaredMimeType) {
+        String mime = declaredMimeType == null ? "" : declaredMimeType.toLowerCase(Locale.ROOT);
+        String format = probe.formatName() == null ? "" : probe.formatName().toLowerCase(Locale.ROOT);
+        boolean mp4Mime = mime.startsWith("video/mp4")
+                || mime.startsWith("video/x-m4v")
+                || "application/octet-stream".equals(mime);
+        boolean mp4Container = format.contains("mp4") || format.contains("m4v");
+        boolean compatibleVideo = "h264".equalsIgnoreCase(probe.videoCodec());
+        boolean compatibleAudio = probe.audioCodec() == null || "aac".equalsIgnoreCase(probe.audioCodec());
+        return mp4Mime && mp4Container && compatibleVideo && compatibleAudio;
     }
 
     private ProbeResult probe(Path input) throws IOException, InterruptedException {
@@ -172,14 +191,14 @@ public class MobileVideoTranscoder {
     private boolean canRemuxWithoutReencoding(ProbeResult probe, String declaredMimeType) {
         String mime = declaredMimeType == null ? "" : declaredMimeType.toLowerCase(Locale.ROOT);
         String format = probe.formatName() == null ? "" : probe.formatName().toLowerCase(Locale.ROOT);
-        boolean mp4Container = mime.startsWith("video/mp4")
+        boolean mp4FamilyContainer = mime.startsWith("video/mp4")
+                || mime.startsWith("video/quicktime")
+                || mime.startsWith("video/x-m4v")
                 || format.contains("mp4")
                 || format.contains("mov");
         boolean compatibleVideo = "h264".equalsIgnoreCase(probe.videoCodec());
         boolean compatibleAudio = probe.audioCodec() == null || "aac".equalsIgnoreCase(probe.audioCodec());
-        int maxDimension = Math.max(probe.width(), probe.height());
-        boolean sizeOkay = maxDimension > 0 && maxDimension <= 1280;
-        return mp4Container && compatibleVideo && compatibleAudio && sizeOkay;
+        return mp4FamilyContainer && compatibleVideo && compatibleAudio;
     }
 
     private List<String> remuxCommand(Path input, Path output) {
@@ -225,7 +244,7 @@ public class MobileVideoTranscoder {
         command.add("-c:v");
         command.add("libx264");
         command.add("-preset");
-        command.add("veryfast");
+        command.add("superfast");
         command.add("-crf");
         command.add("23");
         command.add("-maxrate");
@@ -235,7 +254,7 @@ public class MobileVideoTranscoder {
         command.add("-r");
         command.add("30");
         command.add("-threads");
-        command.add("2");
+        command.add("0");
         command.add("-c:a");
         command.add("aac");
         command.add("-b:a");

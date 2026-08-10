@@ -541,7 +541,7 @@ textarea { resize: vertical; }
     .primary-button, .secondary-button { width: 100%; }
 }
 
-/* Update 021: universal source picker, local files and external screen helper */
+/* Update 023: universal source picker, local files and in-frame screen capture */
 .source-picker--three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .source-picker--three .source-option { min-width: 0; }
 .source-picker--three .source-option span:last-child { min-width: 0; }
@@ -567,8 +567,6 @@ textarea { resize: vertical; }
 .selected-file-card button { border: 0; background: transparent; color: #2477b5; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
 .file-preview { width: 100%; max-height: 390px; margin-top: 12px; border-radius: 9px; background: #111; }
 
-.screen-helper-state { display: flex; align-items: center; gap: 7px; margin-top: 10px; color: #697a84; font-size: 11px; }
-.screen-helper-dot { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: #31bd77; box-shadow: 0 0 0 3px #31bd7718; }
 .capture-mode-option:disabled { cursor: wait; opacity: .72; }
 .capture-check input:disabled + span { opacity: .62; }
 .source-option:disabled { cursor: default; opacity: .58; }
