@@ -31,6 +31,13 @@ class CrmEntityTypeTest {
     }
 
     @Test
+    void exposesBitrixSystemEntityTypeIds() {
+        assertEquals(1, CrmEntityType.LEAD.bitrixEntityTypeId());
+        assertEquals(2, CrmEntityType.DEAL.bitrixEntityTypeId());
+        assertEquals(3, CrmEntityType.CONTACT.bitrixEntityTypeId());
+    }
+
+    @Test
     void rejectsUnknownPlacement() {
         assertThrows(IllegalArgumentException.class,
                 () -> CrmEntityType.fromBitrixPlacement("CRM_COMPANY_DETAIL_ACTIVITY"));

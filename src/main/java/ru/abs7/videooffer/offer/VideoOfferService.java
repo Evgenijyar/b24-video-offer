@@ -50,13 +50,14 @@ public class VideoOfferService {
     public VideoOffer create(CreateVideoOfferRequest request) {
         long startedAt = System.nanoTime();
         log.info("Creating video offer: entityType={}, entityId={}, bitrixMemberId={}, bitrixUserId={}, "
-                        + "recordingUrlPresent={}, accompanyingTextLength={}, viewNotificationGoal={}",
+                        + "recordingUrlPresent={}, accompanyingTextLength={}, clientMessageLength={}, viewNotificationGoal={}",
                 request.entityType(),
                 request.entityId(),
                 normalize(request.bitrixMemberId()),
                 request.bitrixUserId(),
                 request.recordingUrl() != null && !request.recordingUrl().isBlank(),
                 request.accompanyingText() == null ? 0 : request.accompanyingText().length(),
+                request.clientMessage() == null ? 0 : request.clientMessage().length(),
                 ViewNotificationGoal.orDefault(request.viewNotificationGoal()));
 
         String sourceUrl = request.recordingUrl().trim();
@@ -71,6 +72,7 @@ public class VideoOfferService {
                 sourceUrl,
                 recordingKey,
                 normalize(request.accompanyingText()),
+                normalize(request.clientMessage()),
                 request.viewNotificationGoal(),
                 retentionDays);
 
@@ -104,6 +106,7 @@ public class VideoOfferService {
             String memberId,
             Path normalizedSource,
             String accompanyingText,
+            String clientMessage,
             ViewNotificationGoal viewNotificationGoal,
             String quality) throws IOException {
         if (normalizedSource == null || !Files.isRegularFile(normalizedSource)) {
@@ -118,6 +121,7 @@ public class VideoOfferService {
                 "mobile-upload://" + normalizedSource.getFileName(),
                 "mobile-" + UUID.randomUUID(),
                 normalize(accompanyingText),
+                normalize(clientMessage),
                 viewNotificationGoal,
                 retentionDays);
 

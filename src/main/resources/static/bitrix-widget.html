@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Сформировать видеооффер</title>
-    <link rel="stylesheet" href="/assets/bitrix-widget.css?v=028">
+    <link rel="stylesheet" href="/assets/bitrix-widget.css?v=029">
     <script src="//api.bitrix24.com/api/v1/"></script>
 </head>
 <body>
@@ -17,7 +17,7 @@
         <div class="entity-badge">{{ENTITY_LABEL}} №{{ENTITY_ID}}</div>
     </header>
 
-    <p class="lead">После подготовки ссылка автоматически появится в таймлайне этой карточки Bitrix24.</p>
+    <p class="lead">После подготовки готовое сообщение для отправки автоматически появится в таймлайне этой карточки Bitrix24.</p>
 
     <div id="source-picker" class="source-picker source-picker--three" role="group" aria-label="Источник видео">
         <button type="button" class="source-option is-active" data-source="LINK" aria-pressed="true">
@@ -126,14 +126,20 @@
             </label>
 
             <label class="field">
-                <span>Когда уведомить о просмотре</span>
+                <span>Сообщение для отправки</span>
+                <textarea id="client-message" rows="9" placeholder="Формируем сообщение по контактам ответственного менеджера…"></textarea>
+                <small>Текст можно отредактировать. Вместо «〔ссылка на видео〕» после создания автоматически подставится публичная ссылка.</small>
+            </label>
+
+            <label class="field">
+                <span>Когда поставить дело после просмотра</span>
                 <select id="view-notification-goal">
                     <option value="ONE_MINUTE" selected>После 1 минуты просмотра</option>
                     <option value="HALF">Когда клиент досмотрит до середины</option>
                     <option value="COMPLETED">Когда клиент досмотрит видео целиком</option>
-                    <option value="NONE">Не уведомлять о просмотре</option>
+                    <option value="NONE">Не создавать дело</option>
                 </select>
-                <small>Уведомление появится один раз в таймлайне этой карточки.</small>
+                <small>После достижения цели ответственному за карточку будет поставлено дело «Связаться с клиентом» на текущее время.</small>
             </label>
         </section>
 
@@ -149,9 +155,9 @@
 
     <section id="ready-result" class="ready-card" hidden>
         <div class="ready-icon">✓</div>
-        <div><strong>Видеооффер готов</strong><p id="ready-message">Ссылка добавлена в карточку Bitrix24.</p></div>
+        <div><strong>Видеооффер готов</strong><p id="ready-message">Готовое сообщение для отправки добавлено в карточку Bitrix24.</p></div>
     </section>
 </main>
-<script src="/assets/bitrix-widget.js?v=028"></script>
+<script src="/assets/bitrix-widget.js?v=029"></script>
 </body>
 </html>

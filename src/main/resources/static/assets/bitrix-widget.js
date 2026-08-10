@@ -16,6 +16,7 @@ const progressBar = document.getElementById('progress-bar');
 const deliveryStatus = document.getElementById('delivery-status');
 const readyResult = document.getElementById('ready-result');
 const readyMessage = document.getElementById('ready-message');
+const clientMessageInput = document.getElementById('client-message');
 
 const cameraPreview = document.getElementById('camera-preview');
 const cameraPlaceholder = document.getElementById('camera-placeholder');
@@ -69,6 +70,7 @@ const SCREEN_AGENT_INITIAL_INNER_WIDTH = 610;
 const SCREEN_AGENT_INITIAL_INNER_HEIGHT = 582;
 
 let activeOfferId = null;
+let clientMessageLoadPromise = Promise.resolve();
 let pollTimer = null;
 let finalUploadSession = null;
 let activeFileUploader = null;
@@ -120,6 +122,8 @@ reportDesktopEvent('CAPABILITIES', JSON.stringify({
     displayCapturePolicy: featureAllowed('display-capture')
 }));
 
+initializeClientMessage();
+
 form.addEventListener('submit', handleOfferSubmit);
 
 async function handleOfferSubmit(event) {
@@ -134,6 +138,7 @@ async function handleOfferSubmit(event) {
     fitWindow();
 
     try {
+        await clientMessageLoadPromise;
         let response;
         if (sourceModeInput.value === 'LINK') {
             const url = recordingUrlInput.value.trim();
@@ -145,6 +150,7 @@ async function handleOfferSubmit(event) {
                     contextToken,
                     recordingUrl: url,
                     accompanyingText: document.getElementById('accompanying-text').value.trim() || null,
+                    clientMessage: clientMessageInput.value.trim() || null,
                     viewNotificationGoal: document.getElementById('view-notification-goal').value
                 })
             });
@@ -160,6 +166,7 @@ async function handleOfferSubmit(event) {
                 body: JSON.stringify({
                     uploadToken: finalUploadSession.uploadToken,
                     accompanyingText: document.getElementById('accompanying-text').value.trim() || null,
+                    clientMessage: clientMessageInput.value.trim() || null,
                     viewNotificationGoal: document.getElementById('view-notification-goal').value
                 })
             });
@@ -1821,14 +1828,14 @@ function renderOffer(data) {
         processing.hidden = true;
         readyResult.hidden = false;
         deliveryStatus.textContent = '';
-        readyMessage.textContent = 'Ссылка добавлена в таймлайн. ' + viewGoalMessage(data.viewNotificationGoal);
+        readyMessage.textContent = 'Готовое сообщение для отправки добавлено в таймлайн. ' + viewGoalMessage(data.viewNotificationGoal);
     } else if (data.bitrixDeliveryStatus === 'ERROR') {
         processing.hidden = true;
         readyResult.hidden = false;
         deliveryStatus.textContent = '';
         readyMessage.textContent = data.bitrixDeliveryError
-            ? 'Видео готово, но ссылку не удалось добавить в карточку: ' + data.bitrixDeliveryError
-            : 'Видео готово, но ссылку не удалось добавить в карточку Bitrix24.';
+            ? 'Видео готово, но сообщение для отправки не удалось добавить в карточку: ' + data.bitrixDeliveryError
+            : 'Видео готово, но сообщение для отправки не удалось добавить в карточку Bitrix24.';
     } else {
         readyResult.hidden = true;
         deliveryStatus.textContent = '';
@@ -1876,5 +1883,57 @@ function initializeBitrixFrame() {
 }
 function fitWindow() { if (typeof BX24 === 'undefined') return; try { BX24.fitWindow(); } catch (_) { } }
 function viewGoalMessage(goal) {
-    return ({ONE_MINUTE:'Уведомим, когда клиент посмотрит одну минуту видео.',HALF:'Уведомим, когда клиент досмотрит видео до середины.',COMPLETED:'Уведомим, когда клиент досмотрит видео целиком.',NONE:'Уведомление о просмотре отключено.'})[goal] || '';
+    return ({
+        ONE_MINUTE:'После 1 минуты просмотра ответственному будет поставлено дело.',
+        HALF:'После просмотра 50% ответственному будет поставлено дело.',
+        COMPLETED:'После полного просмотра ответственному будет поставлено дело.',
+        NONE:'Автоматическое дело по просмотру отключено.'
+    })[goal] || '';
+}
+
+function initializeClientMessage() {
+    if (!clientMessageInput) return;
+    clientMessageInput.addEventListener('input', () => {
+        clientMessageInput.dataset.userEdited = 'true';
+    });
+    clientMessageLoadPromise = loadClientMessageTemplate(contextToken);
+}
+
+async function loadClientMessageTemplate(token) {
+    if (!clientMessageInput || !token) return;
+    clientMessageInput.disabled = true;
+    try {
+        const response = await fetchWithTimeout(
+            '/bitrix/client-message?contextToken=' + encodeURIComponent(token),
+            {cache: 'no-store'},
+            10000);
+        const data = await readJson(response);
+        if (!response.ok) throw new Error(data.message || 'Не удалось сформировать сообщение клиенту');
+        if (clientMessageInput.dataset.userEdited !== 'true') {
+            clientMessageInput.value = displayClientMessageTemplate(data.message || defaultClientMessageTemplate());
+        }
+        if (data.warning) {
+            console.warn('[video-offer] client message contacts warning:', data.warning);
+            reportDesktopEvent('CLIENT_MESSAGE_CONTACTS_WARNING', data.warning);
+        } else {
+            reportDesktopEvent('CLIENT_MESSAGE_READY', 'responsibleId=' + (data.responsibleId || '') + ';name=' + (data.responsibleName || ''));
+        }
+    } catch (error) {
+        if (clientMessageInput.dataset.userEdited !== 'true') {
+            clientMessageInput.value = displayClientMessageTemplate(defaultClientMessageTemplate());
+        }
+        console.warn('[video-offer] client message template fallback:', error?.message || error);
+    } finally {
+        clientMessageInput.disabled = false;
+    }
+}
+
+function displayClientMessageTemplate(value) {
+    return String(value || '').replaceAll('{{VIDEO_URL}}', '〔ссылка на видео〕');
+}
+
+function defaultClientMessageTemplate() {
+    return 'В продолжение нашего разговора подготовил для вас короткую видеопрезентацию.\n\n'
+        + 'Посмотреть можно по ссылке:\n{{VIDEO_URL}}\n\n'
+        + 'Связаться со мной можно:';
 }

@@ -17,6 +17,7 @@ public class VideoOffer {
     @Column(name="source_recording_url", nullable=false, columnDefinition="text") private String sourceRecordingUrl;
     @Column(name="recording_key", nullable=false, length=255) private String recordingKey;
     @Column(name="accompanying_text", columnDefinition="text") private String accompanyingText;
+    @Column(name="client_message", columnDefinition="text") private String clientMessage;
     @Enumerated(EnumType.STRING) @Column(nullable=false, length=30) private VideoOfferStatus status;
     @Column(name="progress_percent", nullable=false) private Integer progressPercent;
     @Column(name="video_file_path", columnDefinition="text") private String videoFilePath;
@@ -45,6 +46,7 @@ public class VideoOffer {
     @Column(name="view_goal_position_seconds", precision=12, scale=3) private BigDecimal viewGoalPositionSeconds;
     @Column(name="view_goal_duration_seconds", precision=12, scale=3) private BigDecimal viewGoalDurationSeconds;
     @Column(name="view_notification_comment_id") private Long viewNotificationCommentId;
+    @Column(name="view_notification_activity_id") private Long viewNotificationActivityId;
     @Column(name="view_notification_error", columnDefinition="text") private String viewNotificationError;
     @Column(name="view_notification_sent_at") private OffsetDateTime viewNotificationSentAt;
 
@@ -58,12 +60,13 @@ public class VideoOffer {
             String url,
             String key,
             String text,
+            String clientMessage,
             ViewNotificationGoal requestedGoal,
             int retentionDays) {
         VideoOffer v = new VideoOffer();
         v.id=UUID.randomUUID(); v.publicToken=UUID.randomUUID().toString().replace("-", "");
         v.crmEntityType=type; v.crmEntityId=entityId; v.bitrixMemberId=memberId; v.bitrixUserId=userId;
-        v.sourceRecordingUrl=url; v.recordingKey=key; v.accompanyingText=text;
+        v.sourceRecordingUrl=url; v.recordingKey=key; v.accompanyingText=text; v.clientMessage=clientMessage;
         v.status=VideoOfferStatus.QUEUED; v.progressPercent=0; v.createdAt=OffsetDateTime.now(); v.updatedAt=v.createdAt;
         v.expiresAt=v.createdAt.plusDays(retentionDays);
         v.bitrixDeliveryStatus = memberId == null || memberId.isBlank() ? "NOT_REQUIRED" : "PENDING";
@@ -135,9 +138,9 @@ public class VideoOffer {
         return true;
     }
 
-    public void markViewNotificationDelivered(Long commentId) {
+    public void markViewNotificationDelivered(Long activityId) {
         viewNotificationStatus = ViewNotificationStatus.DELIVERED;
-        viewNotificationCommentId = commentId;
+        viewNotificationActivityId = activityId;
         viewNotificationError = null;
         viewNotificationSentAt = OffsetDateTime.now();
         updatedAt = viewNotificationSentAt;
@@ -157,6 +160,6 @@ public class VideoOffer {
         }
     }
 
-    public UUID getId(){return id;} public String getPublicToken(){return publicToken;} public CrmEntityType getCrmEntityType(){return crmEntityType;} public Long getCrmEntityId(){return crmEntityId;} public String getBitrixMemberId(){return bitrixMemberId;} public Long getBitrixUserId(){return bitrixUserId;} public String getSourceRecordingUrl(){return sourceRecordingUrl;} public String getRecordingKey(){return recordingKey;} public String getAccompanyingText(){return accompanyingText;} public VideoOfferStatus getStatus(){return status;} public Integer getProgressPercent(){return progressPercent;} public String getVideoFilePath(){return videoFilePath;} public Long getVideoFileSize(){return videoFileSize;} public String getVideoQuality(){return videoQuality;} public String getErrorMessage(){return errorMessage;} public OffsetDateTime getCreatedAt(){return createdAt;} public OffsetDateTime getUpdatedAt(){return updatedAt;} public OffsetDateTime getReadyAt(){return readyAt;} public OffsetDateTime getExpiresAt(){return expiresAt;} public String getBitrixDeliveryStatus(){return bitrixDeliveryStatus;} public Long getBitrixTimelineCommentId(){return bitrixTimelineCommentId;} public String getBitrixDeliveryError(){return bitrixDeliveryError;} public OffsetDateTime getBitrixDeliveredAt(){return bitrixDeliveredAt;}
-    public ViewNotificationGoal getViewNotificationGoal(){return viewNotificationGoal;} public ViewNotificationStatus getViewNotificationStatus(){return viewNotificationStatus;} public OffsetDateTime getViewGoalReachedAt(){return viewGoalReachedAt;} public String getViewGoalSessionId(){return viewGoalSessionId;} public BigDecimal getViewGoalPositionSeconds(){return viewGoalPositionSeconds;} public BigDecimal getViewGoalDurationSeconds(){return viewGoalDurationSeconds;} public Long getViewNotificationCommentId(){return viewNotificationCommentId;} public String getViewNotificationError(){return viewNotificationError;} public OffsetDateTime getViewNotificationSentAt(){return viewNotificationSentAt;}
+    public UUID getId(){return id;} public String getPublicToken(){return publicToken;} public CrmEntityType getCrmEntityType(){return crmEntityType;} public Long getCrmEntityId(){return crmEntityId;} public String getBitrixMemberId(){return bitrixMemberId;} public Long getBitrixUserId(){return bitrixUserId;} public String getSourceRecordingUrl(){return sourceRecordingUrl;} public String getRecordingKey(){return recordingKey;} public String getAccompanyingText(){return accompanyingText;} public String getClientMessage(){return clientMessage;} public VideoOfferStatus getStatus(){return status;} public Integer getProgressPercent(){return progressPercent;} public String getVideoFilePath(){return videoFilePath;} public Long getVideoFileSize(){return videoFileSize;} public String getVideoQuality(){return videoQuality;} public String getErrorMessage(){return errorMessage;} public OffsetDateTime getCreatedAt(){return createdAt;} public OffsetDateTime getUpdatedAt(){return updatedAt;} public OffsetDateTime getReadyAt(){return readyAt;} public OffsetDateTime getExpiresAt(){return expiresAt;} public String getBitrixDeliveryStatus(){return bitrixDeliveryStatus;} public Long getBitrixTimelineCommentId(){return bitrixTimelineCommentId;} public String getBitrixDeliveryError(){return bitrixDeliveryError;} public OffsetDateTime getBitrixDeliveredAt(){return bitrixDeliveredAt;}
+    public ViewNotificationGoal getViewNotificationGoal(){return viewNotificationGoal;} public ViewNotificationStatus getViewNotificationStatus(){return viewNotificationStatus;} public OffsetDateTime getViewGoalReachedAt(){return viewGoalReachedAt;} public String getViewGoalSessionId(){return viewGoalSessionId;} public BigDecimal getViewGoalPositionSeconds(){return viewGoalPositionSeconds;} public BigDecimal getViewGoalDurationSeconds(){return viewGoalDurationSeconds;} public Long getViewNotificationCommentId(){return viewNotificationCommentId;} public Long getViewNotificationActivityId(){return viewNotificationActivityId;} public String getViewNotificationError(){return viewNotificationError;} public OffsetDateTime getViewNotificationSentAt(){return viewNotificationSentAt;}
 }

@@ -422,6 +422,7 @@ public class MobileVideoUploadService {
                 upload.getBitrixMemberId(),
                 Path.of(upload.getNormalizedFilePath()),
                 request.accompanyingText(),
+                request.clientMessage(),
                 ViewNotificationGoal.orDefault(request.viewNotificationGoal()),
                 switch (upload.getSourceKind()) {
                     case FILE -> "uploaded-file-h264";

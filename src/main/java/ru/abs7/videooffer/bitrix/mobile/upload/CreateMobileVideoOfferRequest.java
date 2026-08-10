@@ -6,5 +6,6 @@ import ru.abs7.videooffer.offer.ViewNotificationGoal;
 public record CreateMobileVideoOfferRequest(
         @NotBlank String uploadToken,
         String accompanyingText,
+        String clientMessage,
         ViewNotificationGoal viewNotificationGoal) {
 }

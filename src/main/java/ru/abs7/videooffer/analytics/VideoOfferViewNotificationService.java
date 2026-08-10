@@ -93,14 +93,14 @@ public class VideoOfferViewNotificationService {
         }
 
         try {
-            Long commentId = timelineService.publishViewGoalReached(claimed);
+            Long activityId = timelineService.createViewGoalTodo(claimed);
             transactionTemplate.executeWithoutResult(status -> repository.findByIdForUpdate(offerId)
                     .ifPresent(offer -> {
-                        offer.markViewNotificationDelivered(commentId);
+                        offer.markViewNotificationDelivered(activityId);
                         repository.saveAndFlush(offer);
                     }));
-            log.info("Bitrix view notification delivery completed: offerId={}, commentId={}",
-                    offerId, commentId);
+            log.info("Bitrix view notification delivery completed as CRM todo: offerId={}, activityId={}",
+                    offerId, activityId);
         } catch (Exception error) {
             String message = rootMessage(error);
             transactionTemplate.executeWithoutResult(status -> repository.findByIdForUpdate(offerId)

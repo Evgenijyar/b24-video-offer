@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import ru.abs7.videooffer.offer.VideoOffer;
 
+import java.time.OffsetDateTime;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Service
@@ -13,12 +15,15 @@ public class BitrixTimelineService {
     private static final Logger log = LoggerFactory.getLogger(BitrixTimelineService.class);
 
     private final BitrixRestClient restClient;
+    private final BitrixResponsibleEmployeeService responsibleEmployeeService;
     private final String publicBaseUrl;
 
     public BitrixTimelineService(
             BitrixRestClient restClient,
+            BitrixResponsibleEmployeeService responsibleEmployeeService,
             @Value("${app.public-base-url}") String publicBaseUrl) {
         this.restClient = restClient;
+        this.responsibleEmployeeService = responsibleEmployeeService;
         this.publicBaseUrl = publicBaseUrl.replaceAll("/+$", "");
     }
 
@@ -32,11 +37,12 @@ public class BitrixTimelineService {
         }
 
         String publicUrl = publicBaseUrl + "/o/" + offer.getPublicToken();
-        String comment = "Видео-оффер готов.\n\nСсылка: " + publicUrl;
+        String comment = renderClientMessage(offer, publicUrl);
 
         try {
-            log.info("Calling crm.timeline.comment.add: offerId={}, entityType={}, entityId={}, publicUrl={}",
-                    offer.getId(), offer.getCrmEntityType().bitrixApiName(), offer.getCrmEntityId(), publicUrl);
+            log.info("Calling crm.timeline.comment.add: offerId={}, entityType={}, entityId={}, publicUrl={}, clientMessageLength={}",
+                    offer.getId(), offer.getCrmEntityType().bitrixApiName(), offer.getCrmEntityId(),
+                    publicUrl, comment.length());
             Map<String, Object> response = restClient.call(
                     offer.getBitrixMemberId(),
                     "crm.timeline.comment.add",
@@ -50,56 +56,106 @@ public class BitrixTimelineService {
                     ? number.longValue()
                     : tryParseLong(result);
             offer.markBitrixDelivered(commentId);
-            log.info("Ссылка видеооффера {} добавлена в {} №{}",
-                    offer.getId(), offer.getCrmEntityType(), offer.getCrmEntityId());
+            log.info("Client-ready video offer message added to Bitrix timeline: offerId={}, entityType={}, entityId={}, commentId={}",
+                    offer.getId(), offer.getCrmEntityType(), offer.getCrmEntityId(), commentId);
         } catch (Exception error) {
             offer.markBitrixDeliveryError(rootMessage(error));
-            log.error("Не удалось добавить ссылку видеооффера {} в Bitrix24: {}",
+            log.error("Не удалось добавить сообщение видеооффера {} в Bitrix24: {}",
                     offer.getId(), rootMessage(error), error);
         }
     }
 
-    public Long publishViewGoalReached(VideoOffer offer) {
-        log.info("Bitrix view notification publication started: offerId={}, memberId={}, entityType={}, entityId={}, goal={}",
+    /**
+     * Creates a current CRM todo for the employee currently responsible for
+     * the lead/deal/contact. Bitrix recommends crm.activity.todo.add for new
+     * integrations; the older crm.activity.add is deprecated.
+     */
+    public Long createViewGoalTodo(VideoOffer offer) {
+        log.info("Bitrix view-goal todo creation started: offerId={}, memberId={}, entityType={}, entityId={}, goal={}",
                 offer.getId(), offer.getBitrixMemberId(), offer.getCrmEntityType(),
                 offer.getCrmEntityId(), offer.getViewNotificationGoal());
         if (offer.getBitrixMemberId() == null || offer.getBitrixMemberId().isBlank()) {
             throw new IllegalStateException("Для видеооффера отсутствует member_id Bitrix24");
         }
 
+        long responsibleId = responsibleEmployeeService.resolveResponsibleId(
+                offer.getBitrixMemberId(), offer.getCrmEntityType(), offer.getCrmEntityId());
+
+        String goalText = viewGoalText(offer);
         String publicUrl = publicBaseUrl + "/o/" + offer.getPublicToken();
-        String resultText = switch (offer.getViewNotificationGoal()) {
-            case NONE -> "Просмотр видео не отслеживается.";
-            case ONE_MINUTE -> isShorterThanOneMinute(offer)
-                    ? "Клиент досмотрел видео целиком (ролик короче одной минуты)."
-                    : "Клиент посмотрел одну минуту видео.";
-            case HALF -> "Клиент досмотрел видео до середины.";
-            case COMPLETED -> "Клиент досмотрел видео целиком.";
-        };
-        String comment = "Клиент просмотрел видеооффер.\n\n"
-                + resultText
-                + "\n\nСсылка: " + publicUrl;
+        String title = "Связаться с клиентом — видео просмотрено: " + goalText;
+        String description = "Клиент достиг цели просмотра видеооффера: " + goalText + ".\n\n"
+                + "Ссылка на видеооффер:\n" + publicUrl;
+
+        Map<String, Object> parameters = new LinkedHashMap<>();
+        parameters.put("ownerTypeId", offer.getCrmEntityType().bitrixEntityTypeId());
+        parameters.put("ownerId", offer.getCrmEntityId());
+        parameters.put("deadline", OffsetDateTime.now().toString());
+        parameters.put("title", title);
+        parameters.put("description", description);
+        parameters.put("responsibleId", responsibleId);
+        parameters.put("pingOffsets", java.util.List.of(0));
 
         Map<String, Object> response = restClient.call(
                 offer.getBitrixMemberId(),
-                "crm.timeline.comment.add",
-                Map.of("fields", Map.of(
-                        "ENTITY_ID", offer.getCrmEntityId(),
-                        "ENTITY_TYPE", offer.getCrmEntityType().bitrixApiName(),
-                        "COMMENT", comment)));
+                "crm.activity.todo.add",
+                parameters);
 
-        Object result = response.get("result");
-        Long commentId = result instanceof Number number
-                ? number.longValue()
-                : tryParseLong(result);
-        log.info("Bitrix view notification published: offerId={}, entityType={}, entityId={}, commentId={}",
-                offer.getId(), offer.getCrmEntityType(), offer.getCrmEntityId(), commentId);
-        return commentId;
+        Long activityId = activityId(response.get("result"));
+        if (activityId == null) {
+            throw new IllegalStateException("Bitrix24 создал дело, но не вернул его ID");
+        }
+        log.info("Bitrix view-goal todo created: offerId={}, entityType={}, entityId={}, responsibleId={}, activityId={}, goal={}",
+                offer.getId(), offer.getCrmEntityType(), offer.getCrmEntityId(), responsibleId, activityId,
+                offer.getViewNotificationGoal());
+        return activityId;
+    }
+
+    private String renderClientMessage(VideoOffer offer, String publicUrl) {
+        String message = offer.getClientMessage();
+        if (message == null || message.isBlank()) {
+            message = "В продолжение нашего разговора подготовил для вас короткую видеопрезентацию.\n\n"
+                    + "Посмотреть можно по ссылке:\n"
+                    + BitrixResponsibleEmployeeService.VIDEO_URL_PLACEHOLDER;
+        }
+        String rendered = message
+                .replace(BitrixResponsibleEmployeeService.VIDEO_URL_PLACEHOLDER, publicUrl)
+                .replace("[ссылка на видео]", publicUrl)
+                .replace("〔ссылка на видео〕", publicUrl)
+                .trim();
+        if (!rendered.contains(publicUrl)) {
+            rendered += "\n\nПосмотреть можно по ссылке:\n" + publicUrl;
+        }
+        return rendered;
+    }
+
+    private String viewGoalText(VideoOffer offer) {
+        return switch (offer.getViewNotificationGoal()) {
+            case NONE -> "просмотр не отслеживается";
+            case ONE_MINUTE -> isShorterThanOneMinute(offer)
+                    ? "полный просмотр (ролик короче одной минуты)"
+                    : "1 минута";
+            case HALF -> "50% видео";
+            case COMPLETED -> "полный просмотр";
+        };
     }
 
     private boolean isShorterThanOneMinute(VideoOffer offer) {
         return offer.getViewGoalDurationSeconds() != null
                 && offer.getViewGoalDurationSeconds().compareTo(java.math.BigDecimal.valueOf(60)) < 0;
+    }
+
+    private Long activityId(Object result) {
+        if (result instanceof Number number) {
+            return number.longValue();
+        }
+        if (result instanceof Map<?, ?> map) {
+            Object id = map.get("id");
+            if (id == null) id = map.get("ID");
+            if (id instanceof Number number) return number.longValue();
+            return tryParseLong(id);
+        }
+        return tryParseLong(result);
     }
 
     private Long tryParseLong(Object value) {

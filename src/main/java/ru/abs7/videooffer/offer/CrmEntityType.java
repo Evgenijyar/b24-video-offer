@@ -3,16 +3,18 @@ package ru.abs7.videooffer.offer;
 import java.util.Locale;
 
 public enum CrmEntityType {
-    DEAL("deal", "Сделка"),
-    LEAD("lead", "Лид"),
-    CONTACT("contact", "Контакт");
+    DEAL("deal", "Сделка", 2),
+    LEAD("lead", "Лид", 1),
+    CONTACT("contact", "Контакт", 3);
 
     private final String bitrixApiName;
     private final String russianLabel;
+    private final int bitrixEntityTypeId;
 
-    CrmEntityType(String bitrixApiName, String russianLabel) {
+    CrmEntityType(String bitrixApiName, String russianLabel, int bitrixEntityTypeId) {
         this.bitrixApiName = bitrixApiName;
         this.russianLabel = russianLabel;
+        this.bitrixEntityTypeId = bitrixEntityTypeId;
     }
 
     public String bitrixApiName() {
@@ -21,6 +23,10 @@ public enum CrmEntityType {
 
     public String russianLabel() {
         return russianLabel;
+    }
+
+    public int bitrixEntityTypeId() {
+        return bitrixEntityTypeId;
     }
 
     public static CrmEntityType fromBitrixPlacement(String placement) {

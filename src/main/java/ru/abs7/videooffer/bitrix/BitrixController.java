@@ -36,16 +36,19 @@ public class BitrixController {
     private final BitrixInstallationService installationService;
     private final BitrixContextSigner contextSigner;
     private final VideoOfferService videoOfferService;
+    private final BitrixResponsibleEmployeeService responsibleEmployeeService;
     private final String widgetTemplate;
     private final String installTemplate;
 
     public BitrixController(
             BitrixInstallationService installationService,
             BitrixContextSigner contextSigner,
-            VideoOfferService videoOfferService) throws IOException {
+            VideoOfferService videoOfferService,
+            BitrixResponsibleEmployeeService responsibleEmployeeService) throws IOException {
         this.installationService = installationService;
         this.contextSigner = contextSigner;
         this.videoOfferService = videoOfferService;
+        this.responsibleEmployeeService = responsibleEmployeeService;
         this.widgetTemplate = new ClassPathResource("static/bitrix-widget.html")
                 .getContentAsString(StandardCharsets.UTF_8);
         this.installTemplate = new ClassPathResource("static/bitrix-install.html")
@@ -116,6 +119,34 @@ public class BitrixController {
                 .body(html);
     }
 
+    @GetMapping(value = "/client-message", produces = MediaType.APPLICATION_JSON_VALUE)
+    public BitrixClientMessageResponse clientMessage(
+            @RequestParam String contextToken) {
+        BitrixPlacementContext context = contextSigner.verify(contextToken);
+        try {
+            return BitrixClientMessageResponse.available(
+                    responsibleEmployeeService.buildClientMessageTemplate(
+                            context.memberId(), context.entityType(), context.entityId()));
+        } catch (BitrixRestException error) {
+            String warning = "Контакты ответственного сотрудника недоступны";
+            if ("INSUFFICIENT_SCOPE".equalsIgnoreCase(error.getErrorCode())
+                    || "insufficient_scope".equalsIgnoreCase(error.getErrorCode())) {
+                warning = "Для контактов ответственного сотрудника приложению требуется scope user_basic";
+            }
+            log.warn("Bitrix client message generated without employee contacts: memberId={}, entityType={}, entityId={}, errorCode={}, error={}",
+                    context.memberId(), context.entityType(), context.entityId(),
+                    error.getErrorCode(), error.getMessage());
+            return BitrixClientMessageResponse.fallback(
+                    responsibleEmployeeService.fallbackTemplate(), warning);
+        } catch (RuntimeException error) {
+            log.warn("Bitrix client message generated with fallback: memberId={}, entityType={}, entityId={}, error={}",
+                    context.memberId(), context.entityType(), context.entityId(), error.getMessage());
+            return BitrixClientMessageResponse.fallback(
+                    responsibleEmployeeService.fallbackTemplate(),
+                    "Не удалось получить контакты ответственного сотрудника");
+        }
+    }
+
     @PostMapping(
             value = "/client-events",
             consumes = MediaType.APPLICATION_JSON_VALUE,
@@ -151,6 +182,7 @@ public class BitrixController {
                 null,
                 request.recordingUrl(),
                 request.accompanyingText(),
+                request.clientMessage(),
                 request.viewNotificationGoal()));
 
         log.info("Bitrix video offer accepted: offerId={}, entityType={}, entityId={}, status={}",

@@ -53,6 +53,7 @@ const progressBar = document.getElementById('progress-bar');
 const deliveryStatus = document.getElementById('delivery-status');
 const readyResult = document.getElementById('ready-result');
 const readyMessage = document.getElementById('ready-message');
+const clientMessageInput = document.getElementById('client-message');
 
 const permissionDialog = document.getElementById('permission-dialog');
 const permissionMessage = document.getElementById('permission-message');
@@ -102,6 +103,8 @@ let recordingToneContext = null;
 let normalizationPollTimer = null;
 let activeOfferId = null;
 let offerPollTimer = null;
+let clientMessageGeneration = 0;
+let clientMessageLoadPromise = Promise.resolve();
 
 initializeBitrixFrame();
 initializeEntityPicker();
@@ -162,6 +165,7 @@ form.addEventListener('submit', async (event) => {
         return;
     }
 
+    await clientMessageLoadPromise;
     clearInterval(offerPollTimer);
     setFormError(null);
     readyResult.hidden = true;
@@ -181,6 +185,7 @@ form.addEventListener('submit', async (event) => {
                     contextToken: selectedEntity.contextToken,
                     recordingUrl: mobileVideoUrl.value.trim(),
                     accompanyingText: document.getElementById('accompanying-text').value.trim() || null,
+                    clientMessage: clientMessageInput.value.trim() || null,
                     viewNotificationGoal: goalInput.value
                 })
             });
@@ -191,6 +196,7 @@ form.addEventListener('submit', async (event) => {
                 body: JSON.stringify({
                     uploadToken: uploadSession.uploadToken,
                     accompanyingText: document.getElementById('accompanying-text').value.trim() || null,
+                    clientMessage: clientMessageInput.value.trim() || null,
                     viewNotificationGoal: goalInput.value
                 })
             });
@@ -414,6 +420,11 @@ function renderSearchResults(results) {
 async function selectEntity(item) {
     await resetRecordingState(false);
     selectedEntity = item;
+    if (clientMessageInput) {
+        clientMessageInput.value = '';
+        delete clientMessageInput.dataset.userEdited;
+        clientMessageLoadPromise = loadClientMessageTemplate(item.contextToken);
+    }
     selectedTitle.textContent = item.title;
     selectedMeta.textContent = typeLabel(item.entityType) + ' №' + item.id
         + (item.subtitle ? ' · ' + item.subtitle : '');
@@ -440,6 +451,11 @@ async function selectEntity(item) {
 
 async function resetSelection() {
     selectedEntity = null;
+    clientMessageGeneration++;
+    if (clientMessageInput) {
+        clientMessageInput.value = '';
+        delete clientMessageInput.dataset.userEdited;
+    }
     selectedCard.hidden = true;
     recorderSection.hidden = true;
     await resetRecordingState(false);
@@ -1582,14 +1598,14 @@ function renderOffer(data) {
         processing.hidden = true;
         readyResult.hidden = false;
         deliveryStatus.textContent = '';
-        readyMessage.textContent = 'Ссылка добавлена в таймлайн. ' + viewGoalMessage(data.viewNotificationGoal);
+        readyMessage.textContent = 'Готовое сообщение для отправки добавлено в таймлайн. ' + viewGoalMessage(data.viewNotificationGoal);
     } else if (data.bitrixDeliveryStatus === 'ERROR') {
         processing.hidden = true;
         readyResult.hidden = false;
         deliveryStatus.textContent = '';
         readyMessage.textContent = data.bitrixDeliveryError
-            ? 'Видео готово, но ссылку не удалось добавить в карточку: ' + data.bitrixDeliveryError
-            : 'Видео готово, но ссылку не удалось добавить в карточку Bitrix24.';
+            ? 'Видео готово, но сообщение для отправки не удалось добавить в карточку: ' + data.bitrixDeliveryError
+            : 'Видео готово, но сообщение для отправки не удалось добавить в карточку Bitrix24.';
     } else {
         readyResult.hidden = true;
         deliveryStatus.textContent = '';
@@ -1669,12 +1685,60 @@ function fitWindow() {
 
 function viewGoalMessage(goal) {
     const messages = {
-        ONE_MINUTE: 'Уведомим, когда клиент посмотрит одну минуту видео.',
-        HALF: 'Уведомим, когда клиент досмотрит видео до середины.',
-        COMPLETED: 'Уведомим, когда клиент досмотрит видео целиком.',
-        NONE: 'Уведомление о просмотре отключено.'
+        ONE_MINUTE: 'После 1 минуты просмотра ответственному будет поставлено дело.',
+        HALF: 'После просмотра 50% ответственному будет поставлено дело.',
+        COMPLETED: 'После полного просмотра ответственному будет поставлено дело.',
+        NONE: 'Автоматическое дело по просмотру отключено.'
     };
     return messages[goal] || '';
+}
+
+if (clientMessageInput) {
+    clientMessageInput.addEventListener('input', () => {
+        clientMessageInput.dataset.userEdited = 'true';
+    });
+}
+
+async function loadClientMessageTemplate(token) {
+    if (!clientMessageInput || !token) return;
+    const generation = ++clientMessageGeneration;
+    clientMessageInput.disabled = true;
+    try {
+        const response = await fetchWithTimeout(
+            '/bitrix/client-message?contextToken=' + encodeURIComponent(token),
+            {cache: 'no-store'},
+            10000);
+        const data = await readJson(response);
+        if (generation !== clientMessageGeneration) return;
+        if (!response.ok) throw new Error(data.message || 'Не удалось сформировать сообщение клиенту');
+        if (clientMessageInput.dataset.userEdited !== 'true') {
+            clientMessageInput.value = displayClientMessageTemplate(data.message || defaultClientMessageTemplate());
+        }
+        if (data.warning) {
+            console.warn('[video-offer] client message contacts warning:', data.warning);
+            reportClientEvent('CLIENT_MESSAGE_CONTACTS_WARNING', data.warning);
+        } else {
+            reportClientEvent('CLIENT_MESSAGE_READY', 'responsibleId=' + (data.responsibleId || '') + ';name=' + (data.responsibleName || ''));
+        }
+    } catch (error) {
+        if (generation !== clientMessageGeneration) return;
+        if (clientMessageInput.dataset.userEdited !== 'true') {
+            clientMessageInput.value = displayClientMessageTemplate(defaultClientMessageTemplate());
+        }
+        console.warn('[video-offer] client message template fallback:', error?.message || error);
+    } finally {
+        if (generation === clientMessageGeneration) clientMessageInput.disabled = false;
+    }
+}
+
+function displayClientMessageTemplate(value) {
+    return String(value || '').replaceAll('{{VIDEO_URL}}', '〔ссылка на видео〕');
+}
+
+function defaultClientMessageTemplate() {
+    return 'В продолжение нашего разговора подготовил для вас короткую видеопрезентацию.\n\n'
+        + 'Посмотреть можно по ссылке:\n{{VIDEO_URL}}\n\n'
+        + 'Связаться со мной можно:';
 }
 
 function formatBytes(bytes) {

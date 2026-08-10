@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="color-scheme" content="light dark">
     <title>Видео-оффер</title>
-    <link rel="stylesheet" href="/assets/bitrix-mobile.css?v=024">
+    <link rel="stylesheet" href="/assets/bitrix-mobile.css?v=029">
     <script src="//api.bitrix24.com/api/v1/"></script>
 </head>
 <body>
@@ -15,7 +15,7 @@
         <div>
             <div class="eyebrow">BITRIX24 · ВИДЕООФФЕР</div>
             <h1>Создать видеооффер</h1>
-            <p>Выберите карточку клиента и добавьте видео удобным способом. Ссылка автоматически появится в таймлайне.</p>
+            <p>Выберите карточку клиента и добавьте видео удобным способом. Готовое сообщение для отправки автоматически появится в таймлайне.</p>
         </div>
     </header>
 
@@ -155,8 +155,15 @@
                           placeholder="Например: направляю короткую презентацию по итогам разговора."></textarea>
             </label>
 
+            <label class="field">
+                <span>Сообщение для отправки</span>
+                <textarea id="client-message" rows="9"
+                          placeholder="Формируем сообщение по контактам ответственного менеджера…"></textarea>
+                <small>Текст можно отредактировать. Вместо «〔ссылка на видео〕» после создания автоматически подставится публичная ссылка.</small>
+            </label>
+
             <div class="field">
-                <span>Когда уведомить о просмотре</span>
+                <span>Когда поставить дело после просмотра</span>
                 <input id="view-notification-goal" type="hidden" value="ONE_MINUTE">
                 <div id="goal-picker" class="goal-picker" role="radiogroup" aria-label="Цель просмотра">
                     <button type="button" class="goal-option is-active" data-goal="ONE_MINUTE" role="radio" aria-checked="true">
@@ -169,7 +176,7 @@
                         <b>До конца</b><small>клиент досмотрел видео целиком</small>
                     </button>
                     <button type="button" class="goal-option" data-goal="NONE" role="radio" aria-checked="false">
-                        <b>Не уведомлять</b><small>не отправлять уведомление о просмотре</small>
+                        <b>Не создавать</b><small>не ставить дело после просмотра</small>
                     </button>
                 </div>
             </div>
@@ -195,7 +202,7 @@
         <div class="ready-icon">✓</div>
         <div class="ready-copy">
             <strong>Видеооффер готов</strong>
-            <p id="ready-message">Ссылка добавлена в карточку Bitrix24.</p>
+            <p id="ready-message">Готовое сообщение для отправки добавлено в карточку Bitrix24.</p>
             
         </div>
     </section>
@@ -214,6 +221,6 @@
         <small id="permission-fallback" hidden>Если настройки не открылись автоматически: Android → Настройки → Приложения → Bitrix24 → Разрешения → разрешите Камеру и Микрофон.</small>
     </div>
 </div>
-<script src="/assets/bitrix-mobile.js?v=024"></script>
+<script src="/assets/bitrix-mobile.js?v=029"></script>
 </body>
 </html>
