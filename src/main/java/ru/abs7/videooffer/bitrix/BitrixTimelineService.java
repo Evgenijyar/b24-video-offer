@@ -152,10 +152,10 @@ public class BitrixTimelineService {
         if (message == null || message.isBlank()) {
             message = "В продолжение нашего разговора подготовил для вас короткую видеопрезентацию.\n\n"
                     + "Посмотреть можно по ссылке:\n"
-                    + BitrixResponsibleEmployeeService.VIDEO_URL_PLACEHOLDER;
+                    + ru.abs7.videooffer.tenant.TenantAccessService.VIDEO_URL_PLACEHOLDER;
         }
         String rendered = message
-                .replace(BitrixResponsibleEmployeeService.VIDEO_URL_PLACEHOLDER, publicUrl)
+                .replace(ru.abs7.videooffer.tenant.TenantAccessService.VIDEO_URL_PLACEHOLDER, publicUrl)
                 .replace("[ссылка на видео]", publicUrl)
                 .replace("〔ссылка на видео〕", publicUrl)
                 .trim();

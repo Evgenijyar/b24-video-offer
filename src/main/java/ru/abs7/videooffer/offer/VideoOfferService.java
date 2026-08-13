@@ -49,12 +49,13 @@ public class VideoOfferService {
 
     public VideoOffer create(CreateVideoOfferRequest request) {
         long startedAt = System.nanoTime();
-        log.info("Creating video offer: entityType={}, entityId={}, bitrixMemberId={}, bitrixUserId={}, "
+        log.info("Creating video offer: entityType={}, entityId={}, bitrixMemberId={}, bitrixUserId={}, tenantId={}, "
                         + "recordingUrlPresent={}, accompanyingTextLength={}, clientMessageLength={}, viewNotificationGoal={}",
                 request.entityType(),
                 request.entityId(),
                 normalize(request.bitrixMemberId()),
                 request.bitrixUserId(),
+                request.tenantId(),
                 request.recordingUrl() != null && !request.recordingUrl().isBlank(),
                 request.accompanyingText() == null ? 0 : request.accompanyingText().length(),
                 request.clientMessage() == null ? 0 : request.clientMessage().length(),
@@ -69,6 +70,7 @@ public class VideoOfferService {
                 request.entityId(),
                 normalize(request.bitrixMemberId()),
                 request.bitrixUserId(),
+                request.tenantId(),
                 sourceUrl,
                 recordingKey,
                 normalize(request.accompanyingText()),
@@ -104,6 +106,8 @@ public class VideoOfferService {
             CrmEntityType entityType,
             long entityId,
             String memberId,
+            Long bitrixUserId,
+            Long tenantId,
             Path normalizedSource,
             String accompanyingText,
             String clientMessage,
@@ -117,7 +121,8 @@ public class VideoOfferService {
                 entityType,
                 entityId,
                 normalize(memberId),
-                null,
+                bitrixUserId,
+                tenantId,
                 "mobile-upload://" + normalizedSource.getFileName(),
                 "mobile-" + UUID.randomUUID(),
                 normalize(accompanyingText),

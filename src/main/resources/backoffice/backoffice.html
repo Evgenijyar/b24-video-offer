@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ru" data-bs-theme="dark">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="backoffice-csrf" content="{{BACKOFFICE_CSRF}}">
+    <title>VIDEO OFFER | Control Center</title>
+    <link rel="stylesheet" href="/assets/backoffice.css?v=031">
+</head>
+<body>
+<div class="app-shell">
+    <header class="top-brand-header">
+        <div class="brand-header-inner">
+            <div class="brand-mark">▶</div>
+            <div class="brand-info"><span class="brand-title">VIDEO OFFER</span><div class="brand-divider"></div><div class="brand-subtitle"><span>Control</span><span>Center</span></div></div>
+        </div>
+        <div class="top-actions"><span id="global-status" class="sync-indicator">Готово</span><button id="logout" class="btn btn-flat btn-sm">Выйти</button></div>
+    </header>
+    <main class="app-layout">
+        <aside class="projects-panel">
+            <div class="panel-section-title">Клиенты</div>
+            <button id="btn-add-client" class="history-header" type="button"><span class="plus">＋</span><span>Добавить клиента</span></button>
+            <div class="history-divider"></div>
+            <div id="tenant-list" class="history-list"></div>
+        </aside>
+        <section class="workspace-panel"><div class="dashboard-zone"><div id="workspace" class="project-workspace wide-workspace"></div></div></section>
+    </main>
+</div>
+
+<div id="client-modal" class="modal-backdrop-custom d-none" aria-hidden="true">
+  <div class="modal-card modal-custom wizard-card">
+    <div class="modal-header-custom"><div><div id="wizard-step-label" class="modal-step-label">Шаг 1 из 3</div><h2 id="wizard-title">Добавить клиента</h2></div><button class="btn-close-custom" data-close-modal>✕</button></div>
+    <div class="modal-form">
+      <div id="wizard-error" class="form-error" hidden></div>
+      <section id="wizard-step-1" class="wizard-step">
+        <div class="setup-note"><b>Подготовка Bitrix24</b><p>1. Создайте на портале клиента серверное локальное приложение с интерфейсом. <b>Путь к обработчику:</b> <code>https://offer.abs7.ru/bitrix/mobile</code>. <b>Путь для первоначальной установки:</b> <code>https://offer.abs7.ru/bitrix/install</code>. Выдайте права <code>crm, placement, mobile, user_basic, im</code> и сохраните приложение — desktop-размещения привяжутся автоматически во время установки.</p><p>2. Создайте входящий webhook с доступом к CRM и сотрудникам и вставьте его REST URL ниже. Он нужен back-office для проверки подключения, синхронизации сотрудников и независимых серверных проверок доступа.</p><p>3. Если это отдельное локальное приложение клиента, после сохранения Bitrix24 покажет Client ID и Client Secret — сохраните их ниже, чтобы сервер мог обновлять OAuth-токены клиента.</p></div>
+        <div class="two-col-form">
+          <label>Название клиента<input id="w-name" class="custom-input" placeholder="ООО «Компания»"></label>
+          <label>Портал Bitrix24<input id="w-domain" class="custom-input" placeholder="company.bitrix24.ru"></label>
+        </div>
+        <label>Incoming webhook / REST URL<input id="w-webhook" class="custom-input" placeholder="https://company.bitrix24.ru/rest/1/xxxxxxxx/"><small>Используется back-office для проверки подключения, синхронизации сотрудников и независимых серверных проверок.</small></label>
+        <details class="advanced"><summary>Отдельное локальное приложение клиента</summary><div class="two-col-form mt"><label>Client ID<input id="w-client-id" class="custom-input" placeholder="local.xxxxx"></label><label>Client Secret<input id="w-client-secret" class="custom-input" type="password"></label></div><small>Оставьте пустым, если используется основной OAuth/Marketplace app. Нужны только если у клиента собственное локальное приложение и его refresh token должен обновляться нашими серверами.</small></details>
+      </section>
+      <section id="wizard-step-2" class="wizard-step d-none">
+        <div id="connection-banner" class="wizard-banner is-loading">Проверяем подключение…</div>
+        <div class="setup-checklist">
+          <div id="check-webhook" class="setup-check is-pending"><span>•</span><div><b>REST webhook</b><small>Ожидание проверки</small></div></div>
+          <div id="check-crm" class="setup-check is-pending"><span>•</span><div><b>CRM</b><small>Проверка crm.item.fields</small></div></div>
+          <div id="check-users" class="setup-check is-pending"><span>•</span><div><b>Сотрудники</b><small>Проверка user.get</small></div></div>
+        </div>
+        <button id="retry-test" class="btn btn-flat" type="button">Проверить ещё раз</button>
+      </section>
+      <section id="wizard-step-3" class="wizard-step d-none">
+        <div class="two-col-form">
+          <label>Пакет<input id="w-package" class="custom-input" value="Beta"></label>
+          <label>Лимит сотрудников<input id="w-seats" type="number" min="1" class="custom-input" value="3"></label>
+          <label>Лимит видеоофферов<input id="w-offers" type="number" min="1" class="custom-input" value="50"></label>
+          <label>Диск, ГБ<input id="w-disk" type="number" min="0.1" step="0.1" class="custom-input" value="10"></label>
+        </div>
+        <label class="toggle-card"><input id="w-any-entity" type="checkbox"><span><b>Разрешить создавать офферы в любых документах CRM</b><small>Если выключено, пользователь может создавать оффер только там, где он назначен ответственным.</small></span></label>
+        <div class="wizard-section-head"><div><h3>Главный администратор клиента</h3><p>Сотрудники загружаются из Bitrix24. Главный администратор всегда получает доступ к Video Offer и настройкам.</p></div><button id="wizard-sync-users" class="btn btn-flat btn-sm">Обновить</button></div>
+        <div id="w-users" class="wizard-users-list"></div>
+      </section>
+      <div class="modal-actions"><button class="btn btn-flat" data-close-modal>Отмена</button><button id="wizard-back" class="btn btn-flat d-none">Назад</button><button id="wizard-next" class="btn btn-save">Далее</button><button id="wizard-finish" class="btn btn-save d-none">Готово</button></div>
+    </div>
+  </div>
+</div>
+
+<div id="employee-modal" class="modal-backdrop-custom d-none" aria-hidden="true">
+ <div class="modal-card modal-custom employee-modal-card">
+  <div class="modal-header-custom"><div><div class="modal-step-label">Настройки сотрудника</div><h2 id="employee-modal-title">Сотрудник</h2></div><button class="btn-close-custom" data-close-employee>✕</button></div>
+  <div class="modal-form">
+    <input id="employee-id" type="hidden">
+    <label class="toggle-card"><input id="employee-access" type="checkbox"><span><b>Доступ к Video Offer</b><small>Учитывается в лимите сотрудников.</small></span></label>
+    <label class="toggle-card"><input id="employee-admin" type="checkbox"><span><b>Администратор клиента</b><small>В desktop Bitrix24 получит раздел «Настройки».</small></span></label>
+    <label>Сопроводительный текст по умолчанию<textarea id="employee-accompanying" class="custom-input" rows="4"></textarea><small>Менеджер сможет изменить его при создании конкретного оффера.</small></label>
+    <label>Сообщение для отправки по умолчанию<textarea id="employee-message" class="custom-input" rows="9"></textarea><small>Используйте <code>{{VIDEO_URL}}</code> там, где должна появиться публичная ссылка.</small></label>
+    <div class="modal-actions"><button class="btn btn-flat" data-close-employee>Отмена</button><button id="employee-save" class="btn btn-save">Сохранить</button></div>
+  </div>
+ </div>
+</div>
+
+<script src="/assets/backoffice.js?v=031"></script>
+</body>
+</html>

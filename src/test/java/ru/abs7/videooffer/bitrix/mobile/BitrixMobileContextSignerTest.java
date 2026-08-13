@@ -5,6 +5,7 @@ import ru.abs7.videooffer.bitrix.BitrixProperties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BitrixMobileContextSignerTest {
 
@@ -19,14 +20,18 @@ class BitrixMobileContextSignerTest {
                     new BitrixProperties.ProxySettings(false, null, null, null, null)));
 
     @Test
-    void signsAndVerifiesMemberId() {
-        String token = signer.create("member-123");
-        assertEquals("member-123", signer.verify(token));
+    void signsAndVerifiesActorContext() {
+        String token = signer.create(7L, "member-123", 216L, true);
+        var actor = signer.verify(token);
+        assertEquals(7L, actor.tenantId());
+        assertEquals("member-123", actor.memberId());
+        assertEquals(216L, actor.bitrixUserId());
+        assertTrue(actor.admin());
     }
 
     @Test
     void rejectsModifiedToken() {
-        String token = signer.create("member-123");
+        String token = signer.create(7L, "member-123", 216L, false);
         assertThrows(IllegalArgumentException.class,
                 () -> signer.verify(token.substring(0, token.length() - 1) + "A"));
     }

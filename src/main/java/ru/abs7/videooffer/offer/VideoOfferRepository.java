@@ -30,6 +30,12 @@ public interface VideoOfferRepository extends JpaRepository<VideoOffer, UUID> {
 
     List<VideoOffer> findAllByExpiresAtBefore(OffsetDateTime moment);
 
+    @Query("select coalesce(sum(offer.videoFileSize), 0) from VideoOffer offer where offer.tenantId = :tenantId and offer.status = :status")
+    Long sumReadyStorageByTenantId(@Param("tenantId") Long tenantId, @Param("status") VideoOfferStatus status);
+
+    @Query("select coalesce(sum(offer.videoFileSize), 0) from VideoOffer offer where offer.tenantId is null and offer.bitrixMemberId = :memberId and offer.status = :status")
+    Long sumLegacyReadyStorageByMemberId(@Param("memberId") String memberId, @Param("status") VideoOfferStatus status);
+
     @Query("""
             select offer from VideoOffer offer
             where offer.status = :readyStatus

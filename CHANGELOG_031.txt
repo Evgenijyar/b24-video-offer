@@ -1,0 +1,220 @@
+UPDATE 031 — MULTI-TENANT BACK-OFFICE / CLIENT ADMIN / ACCESS & QUOTAS
+=====================================================================
+
+BASE
+----
+Update 030. Existing video recording, upload/download, screen-capture helper,
+public playback, timeline delivery, view-goal CRM todo and Bitrix bell
+notification flows are preserved unless explicitly described below.
+
+1. MULTI-TENANT DATA MODEL
+--------------------------
+Flyway V9 adds:
+- video_offer_tenant — one registered company / Bitrix24 portal;
+- video_offer_tenant_user — synchronized Bitrix employees and their Video Offer roles/settings;
+- video_offer.tenant_id — ownership of new offers.
+
+Tenant settings include:
+- company name and Bitrix portal domain;
+- member_id binding;
+- incoming webhook / REST URL;
+- optional per-client local OAuth client id/secret;
+- ACTIVE / DISABLED / PENDING status;
+- package name;
+- employee (seat) limit;
+- offer limit and used counter;
+- disk quota;
+- allow-any-document policy;
+- primary client administrator;
+- reserved page-settings JSON field.
+
+Old READY offers from the same Bitrix member_id are included in disk usage even
+if they predate V9 and have tenant_id=NULL.
+
+2. MASTER BACK-OFFICE
+---------------------
+New UI: /backoffice
+
+Visual language is based only on the supplied reference UI: dark Control Center
+layout, left client list, cards, modal wizard, typography and spacing. Reference
+business functionality was not copied.
+
+Master capabilities:
+- add/delete clients;
+- edit company/portal/package/status;
+- set seat, offer and disk limits;
+- enable/disable "allow offers in any CRM document";
+- store/update incoming webhook and optional local OAuth credentials;
+- test Bitrix connection;
+- synchronize Bitrix employees;
+- select/change primary client administrator;
+- grant/revoke employee access;
+- grant/revoke additional client-admin role;
+- edit per-employee default accompanying text and client message template;
+- see per-employee offer usage;
+- see total seats/offers/disk usage and remaining capacity;
+- reset package offer counters manually;
+- see reserved client-page customization section.
+
+Add-client wizard:
+1) company/portal/connectivity fields + exact Bitrix setup instructions;
+2) server-side test of webhook, CRM and users;
+3) package limits, disk quota, responsible-policy option, employee sync and
+   primary-admin selection.
+Cancelling an already-started wizard removes the unfinished tenant instead of
+leaving a partial record.
+
+3. MASTER BACK-OFFICE SECURITY
+------------------------------
+No Spring Security dependency was introduced.
+
+The master back-office has its own server-side HttpSession authentication:
+- credentials from application.properties (app.backoffice.*);
+- random production password generated for this build; change it deliberately;
+- password comparison via SHA-256 + constant-time MessageDigest.isEqual;
+- 5 failed attempts => 5 minute IP lock;
+- session id rotation after successful login;
+- 8 hour inactive session;
+- HttpOnly + Secure + SameSite=Strict session cookie;
+- per-session 256-bit CSRF token required by every mutating back-office API;
+- X-Frame-Options DENY / no-store / no-referrer / nosniff for the UI.
+
+4. BITRIX PORTAL + USER ACCESS MODEL
+------------------------------------
+The Bitrix callback is the identity source; our DB is the authorization source.
+
+Desktop flow:
+1) identify Bitrix portal by DOMAIN/member_id;
+2) call user.current with the callback AUTH_ID to identify the actual user;
+3) require registered ACTIVE tenant;
+4) require synchronized ACTIVE employee with offer_access;
+5) read current CRM assignedById;
+6) if allow-any-document is OFF, require current user == responsible;
+7) issue signed v3 context containing tenant + user + CRM document.
+
+Server-side offer creation repeats the access/responsible check, so changing a
+frontend flag or reusing a stale signed context cannot bypass the rule.
+
+No-access screens distinguish:
+- portal not registered;
+- portal disabled;
+- employee not granted access (message names the primary client admin);
+- employee not responsible for the selected CRM document.
+
+5. MOBILE ACCESS MODEL
+----------------------
+Mobile application startup validates portal and current employee.
+
+CRM search results carry:
+- responsible user id;
+- canCreateOffer;
+- accessMessage;
+- a signed desktop-compatible v3 CRM context only for allowed results.
+
+When allow-any-document is OFF, selecting another employee's lead/deal/contact
+does not open the recorder; the user sees:
+"Вы не являетесь ответственным по данному документу. Выберите другой документ."
+
+The final upload/offer endpoint verifies the selected signed CRM context again.
+
+Mobile client administrators see "Настройки", but the current version shows:
+"Для настройки приложения используйте desktop-версию Bitrix24."
+
+6. CLIENT ADMIN SETTINGS INSIDE DESKTOP BITRIX24
+------------------------------------------------
+Employees marked admin see a new "Настройки" action in Video Offer.
+
+Client admin can:
+- see package / seat / offer / disk usage;
+- synchronize employees from Bitrix24;
+- allocate available seats among employees;
+- grant/revoke additional admin role;
+- edit every employee's default accompanying text;
+- edit every employee's default client-message template;
+- see per-employee offer count.
+
+Primary administrator:
+- is selected/changeable only in master back-office;
+- always keeps Video Offer access and admin role;
+- transferring primary admin at a full seat limit transfers the seat from the
+  previous primary rather than failing unnecessarily.
+
+Client admins cannot change package limits, disk quota, the global
+allow-any-document policy, or the primary administrator.
+
+7. DEFAULT TEXT / SIGNATURE MODEL CHANGED
+-----------------------------------------
+Automatic employee phone/e-mail/WhatsApp/MAX/Telegram extraction has been
+removed from the active message-building flow.
+
+There are now two administrator-managed per-employee defaults:
+- accompanying text under the video;
+- message for sending to the client / timeline.
+
+Both fields remain editable by the manager while creating each offer.
+
+Use {{VIDEO_URL}} in a message template where the public URL should appear.
+If it is removed manually, the existing timeline renderer still guarantees that
+an offer URL is appended to the final message.
+
+Default template selection is tied to the responsible employee of the CRM
+document. In allow-any-document mode another licensed employee may create the
+offer, but the responsible employee's configured template is used. Usage is
+counted against the employee who actually creates the offer.
+
+8. QUOTAS
+---------
+Offer creation is counted atomically with pessimistic tenant/user locking.
+- package offer limit is enforced server-side;
+- employee offer usage is counted separately;
+- failed async link processing releases a consumed offer;
+- synchronous/mobile create failures release the consumed offer;
+- disk quota is checked server-side before READY storage is accepted;
+- manual file declared size is checked before upload when possible.
+
+The offer limit is a usage counter for the current manually managed package
+period. Master back-office "Сбросить счётчик офферов" starts a new manual period.
+
+9. CLIENT PAGE CUSTOMIZATION
+----------------------------
+Not implemented intentionally in 031.
+The DB and both administration UIs reserve this section for the later stage:
+logo, content blocks, CTA, colors/branding and other per-company page settings.
+The existing public offer page remains unchanged.
+
+10. SCREEN CAPTURE
+------------------
+Intentionally unchanged from Update 030. The current helper/window architecture
+remains in place for this stage.
+
+11. INITIAL DEPLOYMENT / FIRST TENANT
+------------------------------------
+After deploying 031, the existing ABS7 portal is NOT implicitly whitelisted.
+Register it through /backoffice first:
+1) open https://offer.abs7.ru/backoffice;
+2) use/change app.backoffice.* credentials from application.properties;
+3) add the company and Bitrix24 portal;
+4) configure the local app / incoming webhook as shown in the wizard;
+5) test connection;
+6) sync employees;
+7) choose the primary client admin;
+8) set package, seats, offer limit and disk quota;
+9) finish the wizard and open Video Offer in Bitrix24.
+The first authorized Bitrix callback binds the registered portal to member_id.
+
+12. VALIDATION
+-------------
+Because Maven/Docker are unavailable in the build workspace, a full mvn package
+was not executed here.
+
+Performed instead:
+- all src/main Java sources compiled with Java 21 against strict external
+  dependency stubs;
+- all active JavaScript assets passed node --check;
+- desktop/mobile/back-office HTML ID ↔ JS reference checks;
+- desktop v3 signer and mobile m2 signer round-trip smoke tests;
+- domain-normalization smoke test;
+- back-office rate-limit smoke test;
+- back-office CSRF smoke test;
+- patch-application equality and ZIP integrity checks are performed at package
+  time.

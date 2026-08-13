@@ -8,5 +8,8 @@ public record BitrixCrmSearchResult(
         String title,
         String subtitle,
         String phone,
-        String contextToken) {
+        String contextToken,
+        boolean canCreateOffer,
+        String accessMessage,
+        Long responsibleId) {
 }

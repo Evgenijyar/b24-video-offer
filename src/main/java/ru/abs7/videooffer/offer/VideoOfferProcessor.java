@@ -6,6 +6,9 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService;
 import ru.abs7.videooffer.source.UniversalVideoDownloader;
+import ru.abs7.videooffer.tenant.TenantAccessService;
+
+import java.nio.file.Files;
 
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -17,14 +20,17 @@ public class VideoOfferProcessor {
     private final VideoOfferRepository repository;
     private final UniversalVideoDownloader downloader;
     private final BitrixReadyLinkDeliveryService bitrixReadyLinkDeliveryService;
+    private final TenantAccessService accessService;
 
     public VideoOfferProcessor(
             VideoOfferRepository repository,
             UniversalVideoDownloader downloader,
-            BitrixReadyLinkDeliveryService bitrixReadyLinkDeliveryService) {
+            BitrixReadyLinkDeliveryService bitrixReadyLinkDeliveryService,
+            TenantAccessService accessService) {
         this.repository = repository;
         this.downloader = downloader;
         this.bitrixReadyLinkDeliveryService = bitrixReadyLinkDeliveryService;
+        this.accessService = accessService;
     }
 
     @Async
@@ -72,12 +78,17 @@ public class VideoOfferProcessor {
                     });
 
             log.info("Universal downloader returned successfully: offerId={}, sourceType={}, path={}, bytes={}, quality={}, durationMs={}",
-                    id,
-                    result.sourceType(),
-                    result.path(),
-                    result.size(),
-                    result.quality(),
-                    elapsedMillis(startedAt));
+                    id, result.sourceType(), result.path(), result.size(), result.quality(), elapsedMillis(startedAt));
+
+            try {
+                accessService.ensureStorageAvailable(offer.getTenantId(), result.size());
+            } catch (RuntimeException quotaError) {
+                try { Files.deleteIfExists(result.path()); } catch (Exception cleanupError) {
+                    log.warn("Cannot delete downloaded video rejected by tenant quota: offerId={}, path={}, error={}",
+                            id, result.path(), cleanupError.getMessage());
+                }
+                throw quotaError;
+            }
 
             VideoOffer current = repository.findById(id).orElseThrow(() ->
                     new IllegalStateException("Видеооффер исчез из базы после скачивания: " + id));
@@ -121,6 +132,7 @@ public class VideoOfferProcessor {
                 repository.saveAndFlush(current);
                 log.info("ERROR state persisted: offerId={}, status={}, errorMessage={}",
                         id, current.getStatus(), current.getErrorMessage());
+                accessService.releaseConsumedOffer(current.getTenantId(), current.getBitrixUserId());
             }, () -> log.error("Could not persist ERROR state because offer was not found: offerId={}", id));
         }
     }

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Сформировать видеооффер</title>
-    <link rel="stylesheet" href="/assets/bitrix-widget.css?v=030">
+    <link rel="stylesheet" href="/assets/bitrix-widget.css?v=031">
     <script src="//api.bitrix24.com/api/v1/"></script>
 </head>
 <body>
@@ -14,7 +14,10 @@
             <div class="eyebrow">ПЕРСОНАЛЬНЫЙ ВИДЕООФФЕР</div>
             <h1>Сформировать видеооффер</h1>
         </div>
-        <div class="entity-badge">{{ENTITY_LABEL}} №{{ENTITY_ID}}</div>
+        <div class="widget-header-actions">
+            <button id="open-client-settings" class="settings-link" type="button" hidden>Настройки</button>
+            <div class="entity-badge">{{ENTITY_LABEL}} №{{ENTITY_ID}}</div>
+        </div>
     </header>
 
     <p class="lead">После подготовки готовое сообщение для отправки автоматически появится в таймлайне этой карточки Bitrix24.</p>
@@ -37,6 +40,10 @@
     <form id="bitrix-offer-form">
         <input id="context-token" type="hidden" value="{{CONTEXT_TOKEN}}">
         <input id="entity-type" type="hidden" value="{{ENTITY_TYPE}}">
+        <input id="current-user-id" type="hidden" value="{{CURRENT_USER_ID}}">
+        <input id="current-user-name" type="hidden" value="{{CURRENT_USER_NAME}}">
+        <input id="current-user-admin" type="hidden" value="{{IS_ADMIN}}">
+        <input id="tenant-name" type="hidden" value="{{TENANT_NAME}}">
         <input id="source-mode" type="hidden" value="LINK">
 
         <section id="link-source-section">
@@ -127,7 +134,7 @@
 
             <label class="field">
                 <span>Сообщение для отправки</span>
-                <textarea id="client-message" rows="9" placeholder="Формируем сообщение по контактам ответственного менеджера…"></textarea>
+                <textarea id="client-message" rows="9" placeholder="Сообщение по умолчанию задаётся администратором компании…"></textarea>
                 <small>Текст можно отредактировать. Вместо «〔ссылка на видео〕» после создания автоматически подставится публичная ссылка.</small>
             </label>
 
@@ -158,6 +165,28 @@
         <div><strong>Видеооффер готов</strong><p id="ready-message">Готовое сообщение для отправки добавлено в карточку Bitrix24.</p></div>
     </section>
 </main>
-<script src="/assets/bitrix-widget.js?v=030"></script>
+
+<div id="client-settings-modal" class="client-settings-backdrop" hidden aria-hidden="true">
+    <section class="client-settings-card" role="dialog" aria-modal="true" aria-labelledby="client-settings-title">
+        <header class="client-settings-head">
+            <div><div class="eyebrow">VIDEO OFFER · НАСТРОЙКИ КОМПАНИИ</div><h2 id="client-settings-title">Настройки</h2><p id="client-settings-subtitle"></p></div>
+            <button id="close-client-settings" class="client-settings-close" type="button" aria-label="Закрыть">✕</button>
+        </header>
+        <div id="client-settings-error" class="message message--error" hidden></div>
+        <div id="client-settings-loading" class="client-settings-loading">Загрузка настроек…</div>
+        <div id="client-settings-content" hidden>
+            <div id="client-settings-metrics" class="client-settings-metrics"></div>
+            <article class="client-settings-section">
+                <div class="client-settings-section-head"><div><h3>Сотрудники</h3><p>Выберите, кому доступен Video Offer. Администраторы также видят этот раздел настроек.</p></div><button id="sync-client-users" class="secondary-action" type="button">Обновить из Bitrix24</button></div>
+                <div id="client-users-list" class="client-users-list"></div>
+                <div class="client-settings-actions"><span id="client-seat-hint"></span><button id="save-client-users" class="primary-button compact-primary" type="button">Сохранить настройки</button></div>
+            </article>
+            <article class="client-settings-section page-template-placeholder">
+                <div><div class="eyebrow">СЛЕДУЮЩИЙ ЭТАП</div><h3>Шаблон клиентской страницы</h3><p>Раздел уже зарезервирован. Здесь будут логотип, блоки, CTA-кнопки и оформление компании. Публичную страницу в этой версии не меняем.</p></div>
+            </article>
+        </div>
+    </section>
+</div>
+<script src="/assets/bitrix-widget.js?v=031"></script>
 </body>
 </html>

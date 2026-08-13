@@ -1047,3 +1047,6 @@ input:focus, textarea:focus, select:focus {
     .mobile-source-icon { flex-basis: 22px; width: 22px; height: 22px; }
     .mobile-source-option small { display: none; }
 }
+
+/* 031 · tenant access */
+.mobile-title-row{display:flex;align-items:center;gap:10px;justify-content:space-between}.mobile-title-row h1{margin-right:auto}.mobile-settings-link{border:1px solid rgba(127,145,157,.35);background:transparent;color:inherit;border-radius:999px;padding:7px 11px;font:inherit;font-size:12px;white-space:nowrap}.search-result.is-forbidden{opacity:.72}.search-result.is-forbidden .result-arrow{color:#e57373}.search-access-message{margin-top:10px;padding:11px 12px;border-radius:10px;background:rgba(211,47,47,.08);color:#b13a3a;font-size:13px;line-height:1.4}

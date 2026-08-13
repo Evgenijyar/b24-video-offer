@@ -17,6 +17,11 @@ const deliveryStatus = document.getElementById('delivery-status');
 const readyResult = document.getElementById('ready-result');
 const readyMessage = document.getElementById('ready-message');
 const clientMessageInput = document.getElementById('client-message');
+const accompanyingTextInput = document.getElementById('accompanying-text');
+const currentUserAdmin = document.getElementById('current-user-admin')?.value === 'true';
+const tenantName = document.getElementById('tenant-name')?.value || '';
+const openClientSettingsButton = document.getElementById('open-client-settings');
+const clientSettingsModal = document.getElementById('client-settings-modal');
 
 const cameraPreview = document.getElementById('camera-preview');
 const cameraPlaceholder = document.getElementById('camera-placeholder');
@@ -123,6 +128,7 @@ reportDesktopEvent('CAPABILITIES', JSON.stringify({
 }));
 
 initializeClientMessage();
+initializeClientSettings();
 
 form.addEventListener('submit', handleOfferSubmit);
 
@@ -165,6 +171,7 @@ async function handleOfferSubmit(event) {
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
                     uploadToken: finalUploadSession.uploadToken,
+                    contextToken,
                     accompanyingText: document.getElementById('accompanying-text').value.trim() || null,
                     clientMessage: clientMessageInput.value.trim() || null,
                     viewNotificationGoal: document.getElementById('view-notification-goal').value
@@ -1912,12 +1919,10 @@ async function loadClientMessageTemplate(token) {
         if (clientMessageInput.dataset.userEdited !== 'true') {
             clientMessageInput.value = displayClientMessageTemplate(data.message || defaultClientMessageTemplate());
         }
-        if (data.warning) {
-            console.warn('[video-offer] client message contacts warning:', data.warning);
-            reportDesktopEvent('CLIENT_MESSAGE_CONTACTS_WARNING', data.warning);
-        } else {
-            reportDesktopEvent('CLIENT_MESSAGE_READY', 'responsibleId=' + (data.responsibleId || '') + ';name=' + (data.responsibleName || ''));
+        if (accompanyingTextInput && !accompanyingTextInput.value.trim() && data.accompanyingText) {
+            accompanyingTextInput.value = data.accompanyingText;
         }
+        reportDesktopEvent('CLIENT_MESSAGE_READY', 'employeeId=' + (data.employeeId || '') + ';name=' + (data.employeeName || ''));
     } catch (error) {
         if (clientMessageInput.dataset.userEdited !== 'true') {
             clientMessageInput.value = displayClientMessageTemplate(defaultClientMessageTemplate());
@@ -1934,6 +1939,94 @@ function displayClientMessageTemplate(value) {
 
 function defaultClientMessageTemplate() {
     return 'В продолжение нашего разговора подготовил для вас короткую видеопрезентацию.\n\n'
-        + 'Посмотреть можно по ссылке:\n{{VIDEO_URL}}\n\n'
-        + 'Связаться со мной можно:';
+        + 'Посмотреть можно по ссылке:\n{{VIDEO_URL}}';
 }
+
+
+// 031 · tenant/client administration inside desktop Bitrix24
+let clientSettingsState = null;
+function initializeClientSettings() {
+    if (!openClientSettingsButton || !clientSettingsModal) return;
+    openClientSettingsButton.hidden = !currentUserAdmin;
+    if (!currentUserAdmin) return;
+    openClientSettingsButton.addEventListener('click', openClientSettings);
+    document.getElementById('close-client-settings')?.addEventListener('click', closeClientSettings);
+    clientSettingsModal.addEventListener('click', (event) => { if (event.target === clientSettingsModal) closeClientSettings(); });
+    document.getElementById('sync-client-users')?.addEventListener('click', syncClientUsers);
+    document.getElementById('save-client-users')?.addEventListener('click', saveClientUsers);
+    document.addEventListener('keydown', event => { if (event.key === 'Escape' && !clientSettingsModal.hidden) closeClientSettings(); });
+}
+
+async function openClientSettings() {
+    clientSettingsModal.hidden = false;
+    clientSettingsModal.setAttribute('aria-hidden', 'false');
+    document.getElementById('client-settings-subtitle').textContent = tenantName || 'Компания Bitrix24';
+    await loadClientSettings();
+    fitWindow();
+}
+function closeClientSettings() {
+    if (!clientSettingsModal) return;
+    clientSettingsModal.hidden = true;
+    clientSettingsModal.setAttribute('aria-hidden', 'true');
+}
+async function loadClientSettings() {
+    const loading = document.getElementById('client-settings-loading');
+    const content = document.getElementById('client-settings-content');
+    const error = document.getElementById('client-settings-error');
+    loading.hidden = false; content.hidden = true; error.hidden = true;
+    try {
+        const response = await fetch('/bitrix/settings?contextToken=' + encodeURIComponent(contextToken), {cache:'no-store'});
+        const data = await readJson(response);
+        if (!response.ok) throw new Error(data.message || 'Не удалось загрузить настройки');
+        clientSettingsState = data;
+        renderClientSettings();
+        loading.hidden = true; content.hidden = false;
+    } catch (e) {
+        loading.hidden = true; error.textContent = e.message || 'Не удалось загрузить настройки'; error.hidden = false;
+    }
+}
+function renderClientSettings() {
+    const d = clientSettingsState;
+    if (!d) return;
+    const human = value => { const n=Number(value||0); return n >= 1024**3 ? (n/1024**3).toFixed(2)+' ГБ' : (n/1024**2).toFixed(1)+' МБ'; };
+    document.getElementById('client-settings-metrics').innerHTML = `
+        <div class="client-settings-metric"><span>Пакет</span><b>${escapeClientSettingsHtml(d.packageName||'—')}</b><small>${d.seatsUsed} из ${d.seatLimit} сотрудников</small></div>
+        <div class="client-settings-metric"><span>Видеоофферы</span><b>${d.offersRemaining}</b><small>осталось из ${d.offerLimit} · использовано ${d.offersUsed}</small></div>
+        <div class="client-settings-metric"><span>Диск</span><b>${human(d.diskRemainingBytes)}</b><small>свободно из ${human(d.diskQuotaBytes)}</small></div>`;
+    document.getElementById('client-seat-hint').textContent = `Подключено ${d.seatsUsed} из ${d.seatLimit}. ${d.allowAnyEntity ? 'Разрешено создавать офферы в любых документах.' : 'Создание доступно только ответственному за документ.'}`;
+    const list = document.getElementById('client-users-list');
+    list.innerHTML = (d.users||[]).map(u => `
+      <div class="client-user-settings ${u.active?'':'is-disabled'}" data-client-user="${u.bitrixUserId}">
+        <div class="client-user-identity"><b>${escapeClientSettingsHtml(u.displayName)}</b><small>${escapeClientSettingsHtml(u.email || 'Bitrix ID '+u.bitrixUserId)}${u.primaryAdmin?' · главный администратор':''}</small></div>
+        <label class="client-user-toggle"><input data-field="offerAccess" type="checkbox" ${u.offerAccess?'checked':''} ${u.primaryAdmin||!u.active?'disabled':''}> Доступ</label>
+        <label class="client-user-toggle"><input data-field="admin" type="checkbox" ${u.admin?'checked':''} ${u.primaryAdmin||!u.active?'disabled':''}> Администратор</label>
+        <div class="client-user-usage"><b>${u.offersUsed}</b><small>офферов</small></div>
+        <div class="client-user-templates">
+          <label>Сопроводительный текст<textarea data-field="defaultAccompanyingText" ${!u.active?'disabled':''}>${escapeClientSettingsHtml(u.defaultAccompanyingText||'')}</textarea></label>
+          <label>Сообщение для отправки<textarea data-field="defaultClientMessage" ${!u.active?'disabled':''}>${escapeClientSettingsHtml(u.defaultClientMessage||'')}</textarea></label>
+        </div>
+      </div>`).join('') || '<div class="client-settings-loading">Сотрудники ещё не синхронизированы.</div>';
+}
+async function syncClientUsers() {
+    setClientSettingsBusy(true);
+    try {
+        const response = await fetch('/bitrix/settings/sync-users?contextToken='+encodeURIComponent(contextToken), {method:'POST'});
+        const data = await readJson(response); if(!response.ok) throw new Error(data.message||'Не удалось обновить сотрудников');
+        clientSettingsState=data; renderClientSettings();
+    } catch(e){showClientSettingsError(e.message);} finally {setClientSettingsBusy(false);}
+}
+async function saveClientUsers() {
+    const rows=[...document.querySelectorAll('[data-client-user]')];
+    const users=rows.map(row=>{
+      const get=f=>row.querySelector(`[data-field="${f}"]`);
+      return {bitrixUserId:Number(row.dataset.clientUser),offerAccess:get('offerAccess')?.checked||false,admin:get('admin')?.checked||false,defaultAccompanyingText:get('defaultAccompanyingText')?.value||null,defaultClientMessage:get('defaultClientMessage')?.value||null};
+    });
+    setClientSettingsBusy(true);
+    try{
+      const response=await fetch('/bitrix/settings/users?contextToken='+encodeURIComponent(contextToken),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({users})});
+      const data=await readJson(response);if(!response.ok)throw new Error(data.message||'Не удалось сохранить настройки');clientSettingsState=data;renderClientSettings();
+    }catch(e){showClientSettingsError(e.message);}finally{setClientSettingsBusy(false);}
+}
+function setClientSettingsBusy(busy){const s=document.getElementById('save-client-users'),u=document.getElementById('sync-client-users');if(s)s.disabled=busy;if(u)u.disabled=busy;}
+function showClientSettingsError(message){const e=document.getElementById('client-settings-error');if(!e)return;e.textContent=message||'Ошибка';e.hidden=false;}
+function escapeClientSettingsHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}

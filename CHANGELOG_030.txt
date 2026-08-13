@@ -1,9 +1,0 @@
-Update 030 - Bitrix bell notification for reached view goal
-
-- After crm.activity.todo.add succeeds, sends a native Bitrix24 system notification to the responsible employee via im.notify.system.add.
-- Notification appears in the Bitrix24 notifications list (bell); actual sound/pop-up presentation remains controlled by the employee's Bitrix24/desktop notification settings.
-- Uses a stable TAG per video offer to prevent duplicate bell notifications during retries.
-- Makes the two-stage delivery retry-safe: the CRM activity ID and responsible user ID are persisted before sending the IM notification, so a failed IM call is retried without creating a duplicate CRM activity.
-- Adds V8 migration fields view_notification_responsible_id and view_notification_im_id.
-- Requires Bitrix24 application scope: im. Existing crm scope remains sufficient for the CRM activity itself.
-- Screen capture pipeline is unchanged from Update 028/029.

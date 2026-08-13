@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="color-scheme" content="light dark">
     <title>Видео-оффер</title>
-    <link rel="stylesheet" href="/assets/bitrix-mobile.css?v=030">
+    <link rel="stylesheet" href="/assets/bitrix-mobile.css?v=031">
     <script src="//api.bitrix24.com/api/v1/"></script>
 </head>
 <body>
@@ -14,18 +14,21 @@
         <div class="logo-mark">▶</div>
         <div>
             <div class="eyebrow">BITRIX24 · ВИДЕООФФЕР</div>
-            <h1>Создать видеооффер</h1>
-            <p>Выберите карточку клиента и добавьте видео удобным способом. Готовое сообщение для отправки автоматически появится в таймлайне.</p>
+            <div class="mobile-title-row"><h1>Создать видеооффер</h1><button id="mobile-settings-link" class="mobile-settings-link" type="button" hidden>Настройки</button></div>
+            <p>Выберите документ клиента и добавьте видео удобным способом. Готовое сообщение для отправки автоматически появится в таймлайне.</p>
         </div>
     </header>
 
     <input id="mobile-context-token" type="hidden" value="{{MOBILE_CONTEXT_TOKEN}}">
+    <input id="mobile-is-admin" type="hidden" value="{{MOBILE_IS_ADMIN}}">
+    <input id="mobile-user-name" type="hidden" value="{{MOBILE_USER_NAME}}">
+    <input id="mobile-tenant-name" type="hidden" value="{{MOBILE_TENANT_NAME}}">
     <input id="entity-type" type="hidden" value="LEAD">
 
     <section class="panel search-panel">
         <div class="field">
             <span>Что ищем</span>
-            <div id="entity-picker" class="segmented-control" role="group" aria-label="Тип CRM-сущности">
+            <div id="entity-picker" class="segmented-control" role="group" aria-label="Тип CRM-документа">
                 <button type="button" class="segment is-active" data-entity-type="LEAD" aria-pressed="true">Лид</button>
                 <button type="button" class="segment" data-entity-type="CONTACT" aria-pressed="false">Контакт</button>
                 <button type="button" class="segment" data-entity-type="DEAL" aria-pressed="false">Сделка</button>
@@ -158,7 +161,7 @@
             <label class="field">
                 <span>Сообщение для отправки</span>
                 <textarea id="client-message" rows="9"
-                          placeholder="Формируем сообщение по контактам ответственного менеджера…"></textarea>
+                          placeholder="Сообщение по умолчанию задаётся администратором компании…"></textarea>
                 <small>Текст можно отредактировать. Вместо «〔ссылка на видео〕» после создания автоматически подставится публичная ссылка.</small>
             </label>
 
@@ -221,6 +224,6 @@
         <small id="permission-fallback" hidden>Если настройки не открылись автоматически: Android → Настройки → Приложения → Bitrix24 → Разрешения → разрешите Камеру и Микрофон.</small>
     </div>
 </div>
-<script src="/assets/bitrix-mobile.js?v=030"></script>
+<script src="/assets/bitrix-mobile.js?v=031"></script>
 </body>
 </html>

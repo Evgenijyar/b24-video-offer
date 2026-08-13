@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 import ru.abs7.videooffer.kontur.KonturTalkProperties;
+import ru.abs7.videooffer.tenant.VideoOfferTenantRepository;
 
 import java.net.Authenticator;
 import java.net.InetSocketAddress;
@@ -34,6 +35,7 @@ public class BitrixRestClient {
 
     private final BitrixInstallationRepository repository;
     private final BitrixProperties properties;
+    private final VideoOfferTenantRepository tenantRepository;
     private final RestClient restClient;
     private final Duration connectTimeout;
     private final Duration readTimeout;
@@ -41,9 +43,11 @@ public class BitrixRestClient {
     public BitrixRestClient(
             BitrixInstallationRepository repository,
             BitrixProperties properties,
-            KonturTalkProperties talkProperties) {
+            KonturTalkProperties talkProperties,
+            VideoOfferTenantRepository tenantRepository) {
         this.repository = repository;
         this.properties = properties;
+        this.tenantRepository = tenantRepository;
         this.connectTimeout = Duration.ofSeconds(properties.connectTimeoutSecondsOrDefault());
         this.readTimeout = Duration.ofSeconds(properties.readTimeoutSecondsOrDefault());
 
@@ -204,6 +208,56 @@ public class BitrixRestClient {
         }
     }
 
+    public Map<String, Object> callWithAccessToken(
+            String portalDomain,
+            String accessToken,
+            String method,
+            Map<String, Object> parameters) {
+        if (portalDomain == null || portalDomain.isBlank()) {
+            throw new IllegalArgumentException("Домен Bitrix24 не передан");
+        }
+        if (accessToken == null || accessToken.isBlank()) {
+            throw new IllegalArgumentException("AUTH_ID Bitrix24 не передан");
+        }
+        String domain = portalDomain.trim()
+                .replaceFirst("^https?://", "")
+                .replaceAll("/+$", "");
+        Map<String, Object> body = new LinkedHashMap<>(parameters == null ? Map.of() : parameters);
+        body.put("auth", accessToken.trim());
+        String endpoint = "https://" + domain + "/rest/" + method + ".json";
+        long startedAt = System.nanoTime();
+        log.info("Bitrix current-user REST call started: domain={}, method={}, parameterNames={}",
+                domain, method, body.keySet());
+        Map<String, Object> response;
+        try {
+            response = restClient.post()
+                    .uri(endpoint)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .body(body)
+                    .retrieve()
+                    .body(MAP_TYPE);
+        } catch (RestClientResponseException error) {
+            String responseBody = abbreviate(error.getResponseBodyAsString(), 2_000);
+            throw new BitrixRestException(
+                    "HTTP_" + error.getStatusCode().value(),
+                    responseBody.isBlank() ? error.getMessage() : responseBody);
+        }
+        if (response == null) {
+            throw new BitrixRestException("EMPTY_RESPONSE", "Bitrix24 вернул пустой ответ");
+        }
+        Object error = response.get("error");
+        if (error != null) {
+            String code = String.valueOf(error);
+            String description = String.valueOf(
+                    response.getOrDefault("error_description", "Ошибка Bitrix24: " + code));
+            throw new BitrixRestException(code, description);
+        }
+        log.info("Bitrix current-user REST call completed: domain={}, method={}, durationMs={}",
+                domain, method, elapsedMillis(startedAt));
+        return response;
+    }
+
     private Map<String, Object> execute(
             BitrixInstallation installation,
             String method,
@@ -302,6 +356,19 @@ public class BitrixRestClient {
             throw new IllegalStateException("У Bitrix24 отсутствует refresh_token");
         }
 
+        String clientId = properties.clientId();
+        String clientSecret = properties.clientSecret();
+        var tenant = tenantRepository.findByMemberId(memberId)
+                .or(() -> tenantRepository.findByPortalDomainIgnoreCase(installation.getPortalDomain()))
+                .orElse(null);
+        if (tenant != null && tenant.getLocalClientId() != null && !tenant.getLocalClientId().isBlank()
+                && tenant.getLocalClientSecret() != null && !tenant.getLocalClientSecret().isBlank()) {
+            clientId = tenant.getLocalClientId();
+            clientSecret = tenant.getLocalClientSecret();
+        }
+        final String resolvedClientId = clientId;
+        final String resolvedClientSecret = clientSecret;
+
         Map<String, Object> response;
         try {
             response = restClient.get()
@@ -310,8 +377,8 @@ public class BitrixRestClient {
                             .host("oauth.bitrix.info")
                             .path("/oauth/token/")
                             .queryParam("grant_type", "refresh_token")
-                            .queryParam("client_id", properties.clientId())
-                            .queryParam("client_secret", properties.clientSecret())
+                            .queryParam("client_id", resolvedClientId)
+                            .queryParam("client_secret", resolvedClientSecret)
                             .queryParam("refresh_token", installation.getRefreshToken())
                             .build())
                     .accept(MediaType.APPLICATION_JSON)

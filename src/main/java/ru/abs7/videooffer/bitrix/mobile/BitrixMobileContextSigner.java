@@ -11,9 +11,8 @@ import java.util.Base64;
 
 @Service
 public class BitrixMobileContextSigner {
-    private static final String VERSION = "m1";
+    private static final String VERSION = "m2";
     private static final String HMAC_ALGORITHM = "HmacSHA256";
-
     private final byte[] secret;
 
     public BitrixMobileContextSigner(BitrixProperties properties) {
@@ -23,25 +22,20 @@ public class BitrixMobileContextSigner {
         this.secret = properties.clientSecret().getBytes(StandardCharsets.UTF_8);
     }
 
-    public String create(String memberId) {
-        if (memberId == null || memberId.isBlank()) {
-            throw new IllegalArgumentException("member_id Bitrix24 не передан");
+    public String create(Long tenantId, String memberId, Long bitrixUserId, boolean admin) {
+        if (tenantId == null || tenantId <= 0 || memberId == null || memberId.isBlank()
+                || bitrixUserId == null || bitrixUserId <= 0) {
+            throw new IllegalArgumentException("Не удалось сформировать мобильный контекст Bitrix24");
         }
-        String payload = VERSION + "|" + memberId.trim();
+        String payload = VERSION + "|" + tenantId + "|" + memberId.trim() + "|" + bitrixUserId + "|" + (admin ? "1" : "0");
         byte[] payloadBytes = payload.getBytes(StandardCharsets.UTF_8);
         return encode(payloadBytes) + "." + encode(sign(payloadBytes));
     }
 
-    public String verify(String token) {
-        if (token == null || token.isBlank()) {
-            throw new IllegalArgumentException("Мобильный контекст Bitrix24 не передан");
-        }
-
+    public MobileActorContext verify(String token) {
+        if (token == null || token.isBlank()) throw new IllegalArgumentException("Мобильный контекст Bitrix24 не передан");
         String[] parts = token.split("\\.", -1);
-        if (parts.length != 2) {
-            throw new IllegalArgumentException("Некорректный мобильный контекст Bitrix24");
-        }
-
+        if (parts.length != 2) throw new IllegalArgumentException("Некорректный мобильный контекст Bitrix24");
         byte[] payloadBytes;
         byte[] suppliedSignature;
         try {
@@ -50,16 +44,18 @@ public class BitrixMobileContextSigner {
         } catch (IllegalArgumentException error) {
             throw new IllegalArgumentException("Некорректный мобильный контекст Bitrix24", error);
         }
-
         if (!MessageDigest.isEqual(sign(payloadBytes), suppliedSignature)) {
             throw new IllegalArgumentException("Подпись мобильного контекста Bitrix24 недействительна");
         }
-
         String[] payload = new String(payloadBytes, StandardCharsets.UTF_8).split("\\|", -1);
-        if (payload.length != 2 || !VERSION.equals(payload[0]) || payload[1].isBlank()) {
-            throw new IllegalArgumentException("Некорректный мобильный контекст Bitrix24");
+        if (payload.length != 5 || !VERSION.equals(payload[0])) {
+            throw new IllegalArgumentException("Открыта устаревшая мобильная форма. Закройте и заново откройте Видео-оффер");
         }
-        return payload[1];
+        try {
+            return new MobileActorContext(Long.parseLong(payload[1]), payload[2], Long.parseLong(payload[3]), "1".equals(payload[4]));
+        } catch (RuntimeException error) {
+            throw new IllegalArgumentException("Некорректный мобильный контекст Bitrix24", error);
+        }
     }
 
     private byte[] sign(byte[] payload) {
@@ -72,7 +68,7 @@ public class BitrixMobileContextSigner {
         }
     }
 
-    private String encode(byte[] value) {
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(value);
-    }
+    private String encode(byte[] value) { return Base64.getUrlEncoder().withoutPadding().encodeToString(value); }
+
+    public record MobileActorContext(Long tenantId, String memberId, Long bitrixUserId, boolean admin) {}
 }

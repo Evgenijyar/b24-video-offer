@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.NoSuchElementException;
+import ru.abs7.videooffer.tenant.BackofficeAuthService;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
@@ -28,6 +29,16 @@ public class ApiExceptionHandler {
     public ResponseEntity<ApiError> badRequest(IllegalArgumentException error) {
         log.warn("Bad request: error={}", error.getMessage(), error);
         return ResponseEntity.badRequest().body(ApiError.of(error.getMessage()));
+    }
+
+    @ExceptionHandler(BackofficeAuthService.BackofficeUnauthorizedException.class)
+    public ResponseEntity<ApiError> backofficeUnauthorized() {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiError.of("Требуется вход в back-office"));
+    }
+
+    @ExceptionHandler(BackofficeAuthService.BackofficeCsrfException.class)
+    public ResponseEntity<ApiError> backofficeCsrf() {
+        return ResponseEntity.status(403).body(ApiError.of("Сессия back-office устарела. Обновите страницу"));
     }
 
     @ExceptionHandler(NoSuchElementException.class)

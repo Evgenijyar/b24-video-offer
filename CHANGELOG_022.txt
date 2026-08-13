@@ -1,5 +1,0 @@
-Update 022
-- Fix compilation of UniversalVideoDownloader.
-- Align checked exception contract with KonturVideoDownloader.download(...).
-- Remove now-unused java.io.IOException import.
-- No database, frontend, Docker, Bitrix, OAuth, yt-dlp, recording, or configuration changes.

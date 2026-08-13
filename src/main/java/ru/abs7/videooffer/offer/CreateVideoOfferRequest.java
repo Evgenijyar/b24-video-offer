@@ -9,6 +9,7 @@ public record CreateVideoOfferRequest(
         @NotNull @Positive Long entityId,
         String bitrixMemberId,
         Long bitrixUserId,
+        Long tenantId,
         @NotBlank String recordingUrl,
         String accompanyingText,
         String clientMessage,

@@ -14,6 +14,7 @@ public class VideoOffer {
     @Column(name="crm_entity_id", nullable=false) private Long crmEntityId;
     @Column(name="bitrix_member_id", length=100) private String bitrixMemberId;
     @Column(name="bitrix_user_id") private Long bitrixUserId;
+    @Column(name="tenant_id") private Long tenantId;
     @Column(name="source_recording_url", nullable=false, columnDefinition="text") private String sourceRecordingUrl;
     @Column(name="recording_key", nullable=false, length=255) private String recordingKey;
     @Column(name="accompanying_text", columnDefinition="text") private String accompanyingText;
@@ -59,6 +60,7 @@ public class VideoOffer {
             long entityId,
             String memberId,
             Long userId,
+            Long tenantId,
             String url,
             String key,
             String text,
@@ -67,7 +69,7 @@ public class VideoOffer {
             int retentionDays) {
         VideoOffer v = new VideoOffer();
         v.id=UUID.randomUUID(); v.publicToken=UUID.randomUUID().toString().replace("-", "");
-        v.crmEntityType=type; v.crmEntityId=entityId; v.bitrixMemberId=memberId; v.bitrixUserId=userId;
+        v.crmEntityType=type; v.crmEntityId=entityId; v.bitrixMemberId=memberId; v.bitrixUserId=userId; v.tenantId=tenantId;
         v.sourceRecordingUrl=url; v.recordingKey=key; v.accompanyingText=text; v.clientMessage=clientMessage;
         v.status=VideoOfferStatus.QUEUED; v.progressPercent=0; v.createdAt=OffsetDateTime.now(); v.updatedAt=v.createdAt;
         v.expiresAt=v.createdAt.plusDays(retentionDays);
@@ -170,6 +172,6 @@ public class VideoOffer {
         }
     }
 
-    public UUID getId(){return id;} public String getPublicToken(){return publicToken;} public CrmEntityType getCrmEntityType(){return crmEntityType;} public Long getCrmEntityId(){return crmEntityId;} public String getBitrixMemberId(){return bitrixMemberId;} public Long getBitrixUserId(){return bitrixUserId;} public String getSourceRecordingUrl(){return sourceRecordingUrl;} public String getRecordingKey(){return recordingKey;} public String getAccompanyingText(){return accompanyingText;} public String getClientMessage(){return clientMessage;} public VideoOfferStatus getStatus(){return status;} public Integer getProgressPercent(){return progressPercent;} public String getVideoFilePath(){return videoFilePath;} public Long getVideoFileSize(){return videoFileSize;} public String getVideoQuality(){return videoQuality;} public String getErrorMessage(){return errorMessage;} public OffsetDateTime getCreatedAt(){return createdAt;} public OffsetDateTime getUpdatedAt(){return updatedAt;} public OffsetDateTime getReadyAt(){return readyAt;} public OffsetDateTime getExpiresAt(){return expiresAt;} public String getBitrixDeliveryStatus(){return bitrixDeliveryStatus;} public Long getBitrixTimelineCommentId(){return bitrixTimelineCommentId;} public String getBitrixDeliveryError(){return bitrixDeliveryError;} public OffsetDateTime getBitrixDeliveredAt(){return bitrixDeliveredAt;}
+    public UUID getId(){return id;} public String getPublicToken(){return publicToken;} public CrmEntityType getCrmEntityType(){return crmEntityType;} public Long getCrmEntityId(){return crmEntityId;} public String getBitrixMemberId(){return bitrixMemberId;} public Long getBitrixUserId(){return bitrixUserId;} public Long getTenantId(){return tenantId;} public String getSourceRecordingUrl(){return sourceRecordingUrl;} public String getRecordingKey(){return recordingKey;} public String getAccompanyingText(){return accompanyingText;} public String getClientMessage(){return clientMessage;} public VideoOfferStatus getStatus(){return status;} public Integer getProgressPercent(){return progressPercent;} public String getVideoFilePath(){return videoFilePath;} public Long getVideoFileSize(){return videoFileSize;} public String getVideoQuality(){return videoQuality;} public String getErrorMessage(){return errorMessage;} public OffsetDateTime getCreatedAt(){return createdAt;} public OffsetDateTime getUpdatedAt(){return updatedAt;} public OffsetDateTime getReadyAt(){return readyAt;} public OffsetDateTime getExpiresAt(){return expiresAt;} public String getBitrixDeliveryStatus(){return bitrixDeliveryStatus;} public Long getBitrixTimelineCommentId(){return bitrixTimelineCommentId;} public String getBitrixDeliveryError(){return bitrixDeliveryError;} public OffsetDateTime getBitrixDeliveredAt(){return bitrixDeliveredAt;}
     public ViewNotificationGoal getViewNotificationGoal(){return viewNotificationGoal;} public ViewNotificationStatus getViewNotificationStatus(){return viewNotificationStatus;} public OffsetDateTime getViewGoalReachedAt(){return viewGoalReachedAt;} public String getViewGoalSessionId(){return viewGoalSessionId;} public BigDecimal getViewGoalPositionSeconds(){return viewGoalPositionSeconds;} public BigDecimal getViewGoalDurationSeconds(){return viewGoalDurationSeconds;} public Long getViewNotificationCommentId(){return viewNotificationCommentId;} public Long getViewNotificationActivityId(){return viewNotificationActivityId;} public Long getViewNotificationResponsibleId(){return viewNotificationResponsibleId;} public Long getViewNotificationImId(){return viewNotificationImId;} public String getViewNotificationError(){return viewNotificationError;} public OffsetDateTime getViewNotificationSentAt(){return viewNotificationSentAt;}
 }

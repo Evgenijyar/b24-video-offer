@@ -8,6 +8,7 @@ import ru.abs7.videooffer.bitrix.BitrixPlacementContext;
 import ru.abs7.videooffer.bitrix.BitrixRestClient;
 import ru.abs7.videooffer.bitrix.BitrixRestException;
 import ru.abs7.videooffer.offer.CrmEntityType;
+import ru.abs7.videooffer.tenant.TenantAccessService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -26,18 +27,22 @@ public class BitrixCrmSearchService {
 
     private final BitrixRestClient restClient;
     private final BitrixContextSigner contextSigner;
+    private final TenantAccessService accessService;
 
     public BitrixCrmSearchService(
             BitrixRestClient restClient,
-            BitrixContextSigner contextSigner) {
+            BitrixContextSigner contextSigner,
+            TenantAccessService accessService) {
         this.restClient = restClient;
         this.contextSigner = contextSigner;
+        this.accessService = accessService;
     }
 
     public List<BitrixCrmSearchResult> search(
-            String memberId,
+            BitrixMobileContextSigner.MobileActorContext actor,
             CrmEntityType entityType,
             String rawQuery) {
+        String memberId = actor.memberId();
         String query = normalizeQuery(rawQuery);
         if (query.length() < 2) {
             throw new IllegalArgumentException("Введите минимум 2 символа для поиска");
@@ -59,7 +64,7 @@ public class BitrixCrmSearchService {
 
         List<BitrixCrmSearchResult> results = merged.values().stream()
                 .limit(RESULT_LIMIT)
-                .map(item -> toResult(memberId, entityType, item))
+                .map(item -> toResult(actor, entityType, item))
                 .toList();
 
         log.info("Mobile CRM search completed: memberId={}, entityType={}, queryLength={}, resultCount={}",
@@ -264,7 +269,7 @@ public class BitrixCrmSearchService {
                     "crm.deal.list",
                     Map.of(
                             "filter", Map.of("CONTACT_ID", contactIds.stream().limit(50).toList()),
-                            "select", List.of("ID", "TITLE", "CONTACT_ID", "COMPANY_ID"),
+                            "select", List.of("ID", "TITLE", "CONTACT_ID", "COMPANY_ID", "ASSIGNED_BY_ID"),
                             "order", Map.of("DATE_MODIFY", "DESC"))), matchedPhone));
         }
         if (!companyIds.isEmpty()) {
@@ -273,7 +278,7 @@ public class BitrixCrmSearchService {
                     "crm.deal.list",
                     Map.of(
                             "filter", Map.of("COMPANY_ID", companyIds.stream().limit(50).toList()),
-                            "select", List.of("ID", "TITLE", "CONTACT_ID", "COMPANY_ID"),
+                            "select", List.of("ID", "TITLE", "CONTACT_ID", "COMPANY_ID", "ASSIGNED_BY_ID"),
                             "order", Map.of("DATE_MODIFY", "DESC"))), matchedPhone));
         }
         return new ArrayList<>(merged.values());
@@ -322,7 +327,7 @@ public class BitrixCrmSearchService {
     }
 
     private BitrixCrmSearchResult toResult(
-            String memberId,
+            BitrixMobileContextSigner.MobileActorContext actor,
             CrmEntityType entityType,
             SearchItem searchItem) {
         Map<String, Object> item = searchItem.fields();
@@ -332,15 +337,22 @@ public class BitrixCrmSearchService {
         }
         String title = itemTitle(entityType, searchItem.id(), item);
         String subtitle = itemSubtitle(entityType, item, phone);
-        String contextToken = contextSigner.create(
-                new BitrixPlacementContext(memberId, entityType, searchItem.id()));
+        Long responsibleId = nullablePositiveLong(first(item, "assignedById", "ASSIGNED_BY_ID"));
+        TenantAccessService.EntityAccess access = responsibleId == null
+                ? accessService.checkSelectedEntity(actor.tenantId(), actor.memberId(), actor.bitrixUserId(), entityType, searchItem.id())
+                : accessService.checkKnownResponsible(actor.tenantId(), actor.memberId(), actor.bitrixUserId(), responsibleId);
+        String contextToken = contextSigner.create(new BitrixPlacementContext(
+                actor.tenantId(), actor.memberId(), actor.bitrixUserId(), entityType, searchItem.id()));
         return new BitrixCrmSearchResult(
                 entityType,
                 searchItem.id(),
                 title,
                 subtitle,
                 phone,
-                contextToken);
+                contextToken,
+                access.allowed(),
+                access.message(),
+                access.responsibleId());
     }
 
     private String itemTitle(
@@ -518,6 +530,11 @@ public class BitrixCrmSearchService {
             }
         }
         return null;
+    }
+
+    private Long nullablePositiveLong(Object value) {
+        long parsed = positiveLong(value);
+        return parsed > 0 ? parsed : null;
     }
 
     private long positiveLong(Object value) {

@@ -12,6 +12,7 @@ import ru.abs7.videooffer.offer.VideoOffer;
 import ru.abs7.videooffer.offer.VideoOfferResponse;
 import ru.abs7.videooffer.offer.VideoOfferService;
 import ru.abs7.videooffer.offer.ViewNotificationGoal;
+import ru.abs7.videooffer.tenant.TenantAccessService;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,6 +44,7 @@ public class MobileVideoUploadService {
     private final MobileVideoUploadProcessor processor;
     private final MobileVideoMerger merger;
     private final VideoOfferService videoOfferService;
+    private final TenantAccessService accessService;
     private final TransactionTemplate transactionTemplate;
     private final Path uploadDirectory;
     private final long maxUploadBytes;
@@ -57,6 +59,7 @@ public class MobileVideoUploadService {
             MobileVideoUploadProcessor processor,
             MobileVideoMerger merger,
             VideoOfferService videoOfferService,
+            TenantAccessService accessService,
             PlatformTransactionManager transactionManager,
             @Value("${app.video.storage-dir:./data/videos}") String videoStorageDir,
             @Value("${app.mobile-video.max-upload-bytes:536870912}") long maxUploadBytes,
@@ -68,6 +71,7 @@ public class MobileVideoUploadService {
         this.processor = processor;
         this.merger = merger;
         this.videoOfferService = videoOfferService;
+        this.accessService = accessService;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         Path videos = Path.of(videoStorageDir).toAbsolutePath().normalize();
         Path dataDir = videos.getParent() == null ? videos : videos.getParent();
@@ -83,6 +87,7 @@ public class MobileVideoUploadService {
 
     public MobileVideoUploadResponse create(CreateMobileVideoUploadRequest request) {
         BitrixPlacementContext context = contextSigner.verify(request.contextToken());
+        accessService.assertContextCanCreate(context);
         MobileVideoSourceKind sourceKind = MobileVideoSourceKind.orDefault(request.sourceKind());
         String mimeType = normalizeMimeType(request.mimeType(), sourceKind);
         Long declaredSizeBytes = request.declaredSizeBytes();
@@ -94,6 +99,7 @@ public class MobileVideoUploadService {
                 throw new IllegalArgumentException("Видео слишком большое. Для загрузки файла максимальный размер — "
                         + Math.round(maxManualFileBytes / 1024.0 / 1024.0) + " МБ");
             }
+            accessService.ensureStorageAvailable(context.tenantId(), declaredSizeBytes);
         }
 
         MobileVideoUpload upload = MobileVideoUpload.create(
@@ -304,6 +310,7 @@ public class MobileVideoUploadService {
     public MobileVideoUploadResponse mergeSegments(MergeMobileVideoUploadsRequest request)
             throws IOException, InterruptedException {
         BitrixPlacementContext context = contextSigner.verify(request.contextToken());
+        accessService.assertContextCanCreate(context);
         if (request.segments() == null || request.segments().isEmpty()) {
             throw new IllegalArgumentException("Нет частей записи для объединения");
         }
@@ -405,7 +412,13 @@ public class MobileVideoUploadService {
     public VideoOfferResponse createOffer(
             UUID uploadId,
             CreateMobileVideoOfferRequest request) throws IOException {
+        BitrixPlacementContext context = contextSigner.verify(request.contextToken());
         MobileVideoUpload upload = requireAuthorized(uploadId, request.uploadToken());
+        if (!context.memberId().equals(upload.getBitrixMemberId())
+                || context.entityType() != upload.getCrmEntityType()
+                || context.entityId() != upload.getCrmEntityId()) {
+            throw new IllegalArgumentException("Видео относится к другому документу Bitrix24");
+        }
         if (upload.getStatus() == MobileVideoUploadStatus.CONSUMED && upload.getVideoOfferId() != null) {
             return videoOfferService.response(videoOfferService.get(upload.getVideoOfferId()));
         }
@@ -415,20 +428,32 @@ public class MobileVideoUploadService {
         if (upload.getStatus() != MobileVideoUploadStatus.READY || upload.getNormalizedFilePath() == null) {
             throw new IllegalArgumentException("Видео ещё не готово. Дождитесь окончания обработки");
         }
+        Path normalized = Path.of(upload.getNormalizedFilePath());
+        long finalBytes = Files.size(normalized);
+        accessService.ensureStorageAvailable(context.tenantId(), finalBytes);
+        accessService.consumeOffer(context);
 
-        VideoOffer offer = videoOfferService.createReadyFromMobile(
-                upload.getCrmEntityType(),
-                upload.getCrmEntityId(),
-                upload.getBitrixMemberId(),
-                Path.of(upload.getNormalizedFilePath()),
-                request.accompanyingText(),
-                request.clientMessage(),
-                ViewNotificationGoal.orDefault(request.viewNotificationGoal()),
-                switch (upload.getSourceKind()) {
-                    case FILE -> "uploaded-file-h264";
-                    case MERGED -> "mixed-recording-h264";
-                    case RECORDING -> "recorded-h264";
-                });
+        VideoOffer offer;
+        try {
+            offer = videoOfferService.createReadyFromMobile(
+                    upload.getCrmEntityType(),
+                    upload.getCrmEntityId(),
+                    upload.getBitrixMemberId(),
+                    context.bitrixUserId(),
+                    context.tenantId(),
+                    normalized,
+                    request.accompanyingText(),
+                    request.clientMessage(),
+                    ViewNotificationGoal.orDefault(request.viewNotificationGoal()),
+                    switch (upload.getSourceKind()) {
+                        case FILE -> "uploaded-file-h264";
+                        case MERGED -> "mixed-recording-h264";
+                        case RECORDING -> "recorded-h264";
+                    });
+        } catch (IOException | RuntimeException error) {
+            accessService.releaseConsumedOffer(context);
+            throw error;
+        }
 
         MobileVideoUpload consumed = transactionTemplate.execute(status -> {
             MobileVideoUpload current = repository.findByIdForUpdate(uploadId)

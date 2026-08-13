@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ru" data-bs-theme="dark">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>VIDEO OFFER | Back-office</title>
+    <link rel="stylesheet" href="/assets/backoffice.css?v=031">
+</head>
+<body class="login-body">
+<div class="login-shell">
+    <div class="brand-mark">▶</div>
+    <div class="eyebrow">VIDEO OFFER · CONTROL CENTER</div>
+    <h1>Back-office</h1>
+    <p>Управление клиентами, сотрудниками, лимитами и настройками Video Offer.</p>
+    <form id="login-form" class="login-form">
+        <label>Логин<input id="login-user" autocomplete="username" required></label>
+        <label>Пароль<input id="login-password" type="password" autocomplete="current-password" required></label>
+        <div id="login-error" class="form-error" hidden></div>
+        <button type="submit" class="btn btn-save">Войти</button>
+    </form>
+</div>
+<script>
+const form=document.getElementById('login-form');
+form.addEventListener('submit',async e=>{e.preventDefault();const err=document.getElementById('login-error');err.hidden=true;try{const r=await fetch('/api/backoffice/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:document.getElementById('login-user').value,password:document.getElementById('login-password').value})});const d=await r.json();if(!r.ok)throw new Error(d.message||'Ошибка входа');location.reload();}catch(x){err.textContent=x.message;err.hidden=false;}});
+</script>
+</body>
+</html>

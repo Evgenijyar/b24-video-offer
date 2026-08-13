@@ -1,4 +1,6 @@
 const mobileContextToken = document.getElementById('mobile-context-token').value;
+const mobileIsAdmin = document.getElementById('mobile-is-admin')?.value === 'true';
+const mobileSettingsLink = document.getElementById('mobile-settings-link');
 const entityTypeInput = document.getElementById('entity-type');
 const entityPicker = document.getElementById('entity-picker');
 const searchInput = document.getElementById('search-query');
@@ -54,6 +56,7 @@ const deliveryStatus = document.getElementById('delivery-status');
 const readyResult = document.getElementById('ready-result');
 const readyMessage = document.getElementById('ready-message');
 const clientMessageInput = document.getElementById('client-message');
+const accompanyingTextInput = document.getElementById('accompanying-text');
 
 const permissionDialog = document.getElementById('permission-dialog');
 const permissionMessage = document.getElementById('permission-message');
@@ -111,6 +114,7 @@ initializeEntityPicker();
 initializeGoalPicker();
 initializeMobileSourcePicker();
 initializeRecorder();
+initializeMobileAdminLink();
 reportClientEvent('CAPABILITIES', JSON.stringify({
     mediaDevices: !!navigator.mediaDevices,
     getUserMedia: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
@@ -195,6 +199,7 @@ form.addEventListener('submit', async (event) => {
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
                     uploadToken: uploadSession.uploadToken,
+                    contextToken: selectedEntity.contextToken,
                     accompanyingText: document.getElementById('accompanying-text').value.trim() || null,
                     clientMessage: clientMessageInput.value.trim() || null,
                     viewNotificationGoal: goalInput.value
@@ -377,7 +382,7 @@ async function runSearch() {
 function renderSearchResults(results) {
     searchResults.replaceChildren();
     if (!results.length) {
-        setSearchState('Ничего не найдено. Проверьте запрос или выберите другой тип сущности.', false);
+        setSearchState('Ничего не найдено. Проверьте запрос или выберите другой тип документа.', false);
         searchResults.hidden = true;
         return;
     }
@@ -388,7 +393,7 @@ function renderSearchResults(results) {
     for (const item of results) {
         const button = document.createElement('button');
         button.type = 'button';
-        button.className = 'search-result';
+        button.className = 'search-result' + (item.canCreateOffer === false ? ' is-forbidden' : '');
 
         const badge = document.createElement('span');
         badge.className = 'result-type';
@@ -411,7 +416,13 @@ function renderSearchResults(results) {
 
         copy.append(title, meta);
         button.append(badge, copy, arrow);
-        button.addEventListener('click', () => selectEntity(item));
+        button.addEventListener('click', () => {
+            if (item.canCreateOffer === false) {
+                showDocumentAccessDenied(item.accessMessage || 'Вы не являетесь ответственным по данному документу. Выберите другой документ.');
+                return;
+            }
+            selectEntity(item);
+        });
         searchResults.append(button);
     }
     fitWindow();
@@ -1714,12 +1725,10 @@ async function loadClientMessageTemplate(token) {
         if (clientMessageInput.dataset.userEdited !== 'true') {
             clientMessageInput.value = displayClientMessageTemplate(data.message || defaultClientMessageTemplate());
         }
-        if (data.warning) {
-            console.warn('[video-offer] client message contacts warning:', data.warning);
-            reportClientEvent('CLIENT_MESSAGE_CONTACTS_WARNING', data.warning);
-        } else {
-            reportClientEvent('CLIENT_MESSAGE_READY', 'responsibleId=' + (data.responsibleId || '') + ';name=' + (data.responsibleName || ''));
+        if (accompanyingTextInput && !accompanyingTextInput.value.trim() && data.accompanyingText) {
+            accompanyingTextInput.value = data.accompanyingText;
         }
+        reportClientEvent('CLIENT_MESSAGE_READY', 'employeeId=' + (data.employeeId || '') + ';name=' + (data.employeeName || ''));
     } catch (error) {
         if (generation !== clientMessageGeneration) return;
         if (clientMessageInput.dataset.userEdited !== 'true') {
@@ -1737,8 +1746,7 @@ function displayClientMessageTemplate(value) {
 
 function defaultClientMessageTemplate() {
     return 'В продолжение нашего разговора подготовил для вас короткую видеопрезентацию.\n\n'
-        + 'Посмотреть можно по ссылке:\n{{VIDEO_URL}}\n\n'
-        + 'Связаться со мной можно:';
+        + 'Посмотреть можно по ссылке:\n{{VIDEO_URL}}';
 }
 
 function formatBytes(bytes) {
@@ -1763,4 +1771,25 @@ function reportClientEvent(event, details) {
 
 function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+
+function initializeMobileAdminLink() {
+    if (!mobileSettingsLink) return;
+    mobileSettingsLink.hidden = !mobileIsAdmin;
+    if (mobileIsAdmin) {
+        mobileSettingsLink.addEventListener('click', () => {
+            alert('Для настройки приложения используйте desktop-версию Bitrix24.');
+        });
+    }
+}
+function showDocumentAccessDenied(message) {
+    searchResults.hidden = true;
+    searchState.hidden = false;
+    searchState.innerHTML = '';
+    const box = document.createElement('div');
+    box.className = 'search-access-message';
+    box.textContent = message || 'Вы не являетесь ответственным по данному документу. Выберите другой документ.';
+    searchState.append(box);
+    fitWindow();
 }

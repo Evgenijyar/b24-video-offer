@@ -20,7 +20,7 @@ class BitrixContextSignerTest {
     @Test
     void signsAndVerifiesPlacementContext() {
         BitrixPlacementContext source = new BitrixPlacementContext(
-                "member-1", CrmEntityType.DEAL, 3473L);
+                7L, "member-1", 216L, CrmEntityType.DEAL, 3473L);
 
         BitrixPlacementContext restored = signer.verify(signer.create(source));
 
@@ -30,7 +30,7 @@ class BitrixContextSignerTest {
     @Test
     void rejectsModifiedToken() {
         String token = signer.create(new BitrixPlacementContext(
-                "member-1", CrmEntityType.CONTACT, 13037L));
+                7L, "member-1", 216L, CrmEntityType.CONTACT, 13037L));
 
         assertThrows(IllegalArgumentException.class,
                 () -> signer.verify(token + "x"));
