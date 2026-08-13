@@ -1,0 +1,33 @@
+Update 033 — back-office onboarding fixes
+
+1. Fixed add-client wizard navigation.
+   - Back -> Next now updates the same PENDING client instead of POSTing a duplicate.
+   - An unfinished PENDING client can be resumed after a page/browser interruption.
+   - A duplicate error is returned only for an already completed/non-PENDING client.
+   - Cancel removes the unfinished draft.
+
+2. Fixed intermittent connection-check hangs.
+   - Back-office Bitrix webhook calls now have explicit connect/read timeouts.
+   - They use the same Bitrix/Kontur proxy policy as the main Bitrix REST client.
+   - Only one connection test is active in the browser at a time; it can be aborted on Back/Cancel.
+   - The quick test uses user.current, crm.item.fields and one user.get request; full employee sync remains a separate step.
+
+3. Cleaned Bitrix installation logs.
+   - Existing placements are read with placement.get before placement.bind.
+   - Already registered handlers are not rebound, avoiding benign "Handler already binded" HTTP 400 noise.
+   - Existing non-destructive fallback remains for races/API failures.
+
+4. Simplified onboarding UI.
+   - Replaced the setup text with a short numbered instruction.
+   - Canonical application handler: /bitrix/app.
+   - Initial installation handler: /bitrix/install.
+   - Explicit instruction to create an incoming webhook and paste its REST URL.
+   - Removed the unused OAuth accordion and related explanatory UI.
+   - Removed development/commentary placeholders from back-office screens.
+
+5. Wizard completion safety.
+   - Client remains PENDING until the primary administrator is assigned successfully.
+   - Only then is the client switched to ACTIVE.
+
+No database migration is required.
+Screen/camera capture code is unchanged.

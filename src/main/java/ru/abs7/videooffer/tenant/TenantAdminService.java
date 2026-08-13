@@ -2,6 +2,7 @@ package ru.abs7.videooffer.tenant;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.abs7.videooffer.bitrix.BitrixRestException;
 
 import java.util.*;
 
@@ -42,11 +43,27 @@ public class TenantAdminService {
     @Transactional
     public TenantDetails create(CreateTenantRequest request) {
         String normalizedDomain = VideoOfferTenant.normalizeDomain(request.portalDomain());
-        if (tenantRepository.findByPortalDomainIgnoreCase(normalizedDomain).isPresent()) {
-            throw new IllegalArgumentException("Клиент с порталом " + normalizedDomain + " уже зарегистрирован");
-        }
         String webhook = request.webhookUrl() == null || request.webhookUrl().isBlank()
                 ? null : webhookClient.normalizeWebhookUrl(request.webhookUrl());
+        Optional<VideoOfferTenant> existing = tenantRepository.findByPortalDomainIgnoreCase(normalizedDomain);
+        if (existing.isPresent()) {
+            VideoOfferTenant draft = existing.get();
+            if (draft.getStatus() != TenantStatus.PENDING) {
+                throw new IllegalArgumentException("Клиент с порталом " + normalizedDomain + " уже зарегистрирован");
+            }
+            int seats = positive(request.seatLimit(), draft.getSeatLimit());
+            long alreadyEnabled = userRepository.countByTenantIdAndOfferAccessTrueAndActiveTrue(draft.getId());
+            seats = Math.max(seats, (int) Math.min(Integer.MAX_VALUE, alreadyEnabled));
+            draft.updateMasterSettings(
+                    request.name(), normalizedDomain, webhook,
+                    request.localClientId() == null ? draft.getLocalClientId() : request.localClientId(),
+                    request.localClientSecret() == null ? draft.getLocalClientSecret() : request.localClientSecret(),
+                    TenantStatus.PENDING,
+                    request.packageName(), seats, positive(request.offerLimit(), draft.getOfferLimit()),
+                    quotaBytes(request.diskQuotaGb()), Boolean.TRUE.equals(request.allowAnyEntity()));
+            tenantRepository.saveAndFlush(draft);
+            return details(draft.getId());
+        }
         VideoOfferTenant tenant = VideoOfferTenant.create(
                 request.name(), normalizedDomain, webhook,
                 request.localClientId(), request.localClientSecret(),
@@ -72,7 +89,9 @@ public class TenantAdminService {
         }
         tenant.updateMasterSettings(
                 request.name(), normalizedDomain, webhook,
-                request.localClientId(), request.localClientSecret(), request.status(),
+                request.localClientId() == null ? tenant.getLocalClientId() : request.localClientId(),
+                request.localClientSecret() == null ? tenant.getLocalClientSecret() : request.localClientSecret(),
+                request.status(),
                 request.packageName(), requestedSeats, positive(request.offerLimit(), tenant.getOfferLimit()),
                 quotaBytes(request.diskQuotaGb()), Boolean.TRUE.equals(request.allowAnyEntity()));
         tenantRepository.saveAndFlush(tenant);
@@ -82,13 +101,25 @@ public class TenantAdminService {
     public ConnectionTest testConnection(long tenantId) {
         VideoOfferTenant tenant = requiredTenant(tenantId);
         if (tenant.getWebhookUrl() == null || tenant.getWebhookUrl().isBlank()) {
-            return new ConnectionTest(false, "Webhook не настроен", null, 0);
+            return new ConnectionTest(false, "Входящий вебхук не настроен", null, 0);
         }
-        Map<String, Object> current = webhookClient.call(tenant.getWebhookUrl(), "user.current", Map.of());
-        Map<String, Object> user = map(current.get("result"));
-        webhookClient.call(tenant.getWebhookUrl(), "crm.item.fields", Map.of("entityTypeId", 1));
-        int count = loadBitrixUsers(tenant).size();
-        return new ConnectionTest(true, "Подключение работает", joinName(user), count);
+        try {
+            Map<String, Object> current = webhookClient.call(tenant.getWebhookUrl(), "user.current", Map.of());
+            Map<String, Object> user = map(current.get("result"));
+            webhookClient.call(tenant.getWebhookUrl(), "crm.item.fields", Map.of("entityTypeId", 1));
+            Map<String, Object> usersResponse = webhookClient.call(tenant.getWebhookUrl(), "user.get", Map.of(
+                    "FILTER", Map.of("USER_TYPE", "employee"),
+                    "start", 0));
+            int count = collectionSize(usersResponse.get("result"));
+            long total = positiveLong(usersResponse.get("total"));
+            if (total > count) count = (int) Math.min(Integer.MAX_VALUE, total);
+            return new ConnectionTest(true, "Подключение работает", joinName(user), count);
+        } catch (BitrixRestException error) {
+            String message = "TRANSPORT_ERROR".equalsIgnoreCase(error.getErrorCode())
+                    ? "Bitrix24 не ответил. Проверьте подключение и повторите проверку"
+                    : "Bitrix24 отклонил запрос: " + safeBitrixMessage(error.getMessage());
+            return new ConnectionTest(false, message, null, 0);
+        }
     }
 
     @Transactional
@@ -237,6 +268,13 @@ public class TenantAdminService {
                 tenant.getAllowAnyEntity(), tenant.getPrimaryAdminUserId());
     }
 
+
+    private String safeBitrixMessage(String value) {
+        if (value == null || value.isBlank()) return "неизвестная ошибка";
+        String compact = value.replace('\n', ' ').replace('\r', ' ').trim();
+        return compact.length() > 240 ? compact.substring(0, 240) + "…" : compact;
+    }
+
     private long quotaBytes(Double gb) {
         double value = gb == null || gb <= 0 ? 10.0 : gb;
         return Math.max(100L * 1024 * 1024, Math.round(value * 1024 * 1024 * 1024));
@@ -246,6 +284,7 @@ public class TenantAdminService {
     private Map<String, Object> map(Object value) { if (!(value instanceof Map<?, ?> raw)) return Map.of(); Map<String,Object> out=new LinkedHashMap<>(); raw.forEach((k,v)->out.put(String.valueOf(k),v)); return out; }
     private Object first(Map<String, Object> map, String... keys) { for (String key: keys) if (map.containsKey(key)) return map.get(key); return null; }
     private long positiveLong(Object value) { try { return value == null ? 0 : Math.max(0, Long.parseLong(String.valueOf(value))); } catch (Exception e) { return 0; } }
+    private int collectionSize(Object value) { return value instanceof Collection<?> collection ? collection.size() : 0; }
     private boolean booleanValue(Object value, boolean fallback) { if (value == null) return fallback; if (value instanceof Boolean b) return b; String s=String.valueOf(value); return "Y".equalsIgnoreCase(s)||"true".equalsIgnoreCase(s)||"1".equals(s); }
     private String stringOrNull(Object value) { if (value == null) return null; String s=String.valueOf(value).trim(); return s.isEmpty()?null:s; }
     private String joinName(Map<String, Object> user) { StringBuilder b=new StringBuilder(); for (String key: List.of("NAME","SECOND_NAME","LAST_NAME")) { String s=stringOrNull(first(user,key,key.toLowerCase())); if(s!=null){if(!b.isEmpty())b.append(' '); b.append(s);}} long id=positiveLong(first(user,"ID","id")); return b.isEmpty()?"Сотрудник Bitrix24 #"+id:b.toString(); }

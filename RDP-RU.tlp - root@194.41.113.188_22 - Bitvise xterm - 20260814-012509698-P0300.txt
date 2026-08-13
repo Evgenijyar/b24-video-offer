@@ -1,0 +1,2542 @@
+﻿Last login: Thu Aug 13 21:27:06 2026 from 216.57.105.22
+root@VM-988676:~# cd /opt/b24-video-offer
+root@VM-988676:/opt/b24-video-offer# python3 deploy.py
++ git fetch origin
+remote: Enumerating objects: 28, done.
+remote: Counting objects: 100% (28/28), done.
+remote: Compressing objects: 100% (4/4), done.
+remote: Total 15 (delta 8), reused 15 (delta 8), pack-reused 0 (from 0)
+Unpacking objects: 100% (15/15), 1.54 KiB | 75.00 KiB/s, done.
+From https://github.com/Evgenijyar/b24-video-offer
+   81d9719..c39d38f  main       -> origin/main
++ git reset --hard origin/main
+HEAD is now at c39d38f backoffice 1-st try
++ docker compose build --pull
+[+] Building 26.9s (19/19) FINISHED
+ => [internal] load local bake definitions                                                     0.0s
+ => => reading from stdin 516B                                                                 0.0s
+ => [internal] load build definition from Dockerfile                                           0.0s
+ => => transferring dockerfile: 1.78kB                                                         0.0s
+ => [internal] load metadata for docker.io/library/maven:3.9.16-eclipse-temurin-21             0.8s
+ => [internal] load metadata for docker.io/library/eclipse-temurin:21-jre                      0.8s
+ => [internal] load .dockerignore                                                              0.0s
+ => => transferring context: 2B                                                                0.0s
+ => [build 1/6] FROM docker.io/library/maven:3.9.16-eclipse-temurin-21@sha256:c07f7ccfb8ca6c9  0.1s
+ => => resolve docker.io/library/maven:3.9.16-eclipse-temurin-21@sha256:c07f7ccfb8ca6c9fa29ee  0.1s
+ => [stage-1 1/5] FROM docker.io/library/eclipse-temurin:21-jre@sha256:371da296b8cb74c7e53fbe  0.1s
+ => => resolve docker.io/library/eclipse-temurin:21-jre@sha256:371da296b8cb74c7e53fbe7083d537  0.1s
+ => [internal] load build context                                                              0.0s
+ => => transferring context: 30.48kB                                                           0.0s
+ => CACHED [build 2/6] WORKDIR /workspace                                                      0.0s
+ => CACHED [build 3/6] COPY pom.xml pom.xml                                                    0.0s
+ => CACHED [build 4/6] RUN mvn -q -DskipTests dependency:go-offline                            0.0s
+ => [build 5/6] COPY src src                                                                   0.2s
+ => [build 6/6] RUN mvn -q -DskipTests package                                                15.2s
+ => CACHED [stage-1 2/5] WORKDIR /app                                                          0.0s
+ => CACHED [stage-1 3/5] RUN apt-get update     && apt-get install -y --no-install-recommends  0.0s
+ => [stage-1 4/5] COPY --from=build /workspace/target/b24-video-offer-*.jar app.jar            0.3s
+ => [stage-1 5/5] RUN mkdir -p /app/data/videos /app/data/mobile-uploads /app/data/external-i  0.5s
+ => exporting to image                                                                         4.9s
+ => => exporting layers                                                                        4.0s
+ => => exporting manifest sha256:f6a719c939dcb0fc970a240a4df0b93b0b65eb3742c002a6627a1b8f0863  0.0s
+ => => exporting config sha256:3d2e06157a94bb579ecfeb4a3396c17c33bd8169c9d024a3052ac9b0bd4324  0.0s
+ => => exporting attestation manifest sha256:b083c9e091a58898681d67d6403ad73b5a0b7cf51d9abc39  0.0s
+ => => exporting manifest list sha256:5bd3004e2c6885a35426a7bf7ec4a7f84b46c8a3e162a9bbbe5b5df  0.0s
+ => => naming to docker.io/library/b24-video-offer-app:latest                                  0.0s
+ => => unpacking to docker.io/library/b24-video-offer-app:latest                               0.8s
+ => resolving provenance for metadata file                                                     0.0s
+[+] build 1/1
+ ✔ Image b24-video-offer-app Built                                                             27.1s
++ docker compose up -d --remove-orphans
+WARN[0000] volume "b24-video-offer_video_offer_data" already exists but was not created by Docker Co
+mpose. Use `external: true` to use an existing volume
+[+] up 1/1
+ ✔ Container b24-video-offer Started                                                            2.3s
++ docker compose exec -T app sh -lc test -x /usr/bin/ffmpeg && test -x /usr/bin/ffprobe && /usr/bin/
+ffmpeg -version | head -n 1 && /usr/bin/ffprobe -version | head -n 1
+ffmpeg version 8.0.1-3ubuntu2 Copyright (c) 2000-2025 the FFmpeg developers
+ffprobe version 8.0.1-3ubuntu2 Copyright (c) 2007-2025 the FFmpeg developers
+Deployment completed successfully.
++ docker compose ps
+NAME              IMAGE                 COMMAND                  SERVICE   CREATED          STATUS
+        PORTS
+b24-video-offer   b24-video-offer-app   "java -jar /app/app.…"   app       24 seconds ago   Up 21 se
+conds   127.0.0.1:8080->8080/tcp
+root@VM-988676:/opt/b24-video-offer# docker logs -f --tail=10000 b24-video-offer
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.0.5)
+
+2026-08-13T22:02:37.517Z INFO  [main] [requestId=] ru.abs7.videooffer.B24VideoOfferApplication - Sta
+rting B24VideoOfferApplication v0.1.0-SNAPSHOT using Java 21.0.11 with PID 1 (/app/app.jar started b
+y root in /app)
+2026-08-13T22:02:37.523Z INFO  [main] [requestId=] ru.abs7.videooffer.B24VideoOfferApplication - No
+active profile set, falling back to 1 default profile: "default"
+2026-08-13T22:02:39.206Z INFO  [main] [requestId=] o.s.d.r.config.RepositoryConfigurationDelegate -
+Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-08-13T22:02:39.324Z INFO  [main] [requestId=] o.s.d.r.config.RepositoryConfigurationDelegate -
+Finished Spring Data repository scanning in 94 ms. Found 7 JPA repository interfaces.
+2026-08-13T22:02:40.322Z INFO  [main] [requestId=] org.springframework.boot.tomcat.TomcatWebServer -
+ Tomcat initialized with port 8080 (http)
+2026-08-13T22:02:40.345Z INFO  [main] [requestId=] org.apache.catalina.core.StandardService - Starti
+ng service [Tomcat]
+2026-08-13T22:02:40.346Z INFO  [main] [requestId=] org.apache.catalina.core.StandardEngine - Startin
+g Servlet engine: [Apache Tomcat/11.0.20]
+2026-08-13T22:02:40.381Z INFO  [main] [requestId=] o.s.b.w.c.s.WebApplicationContextInitializer - Ro
+ot WebApplicationContext: initialization completed in 2736 ms
+2026-08-13T22:02:41.231Z INFO  [main] [requestId=] com.zaxxer.hikari.HikariDataSource - HikariPool-1
+ - Starting...
+2026-08-13T22:02:42.555Z INFO  [main] [requestId=] com.zaxxer.hikari.pool.HikariPool - HikariPool-1
+- Added connection org.postgresql.jdbc.PgConnection@13cc31ae
+2026-08-13T22:02:42.557Z INFO  [main] [requestId=] com.zaxxer.hikari.HikariDataSource - HikariPool-1
+ - Start completed.
+2026-08-13T22:02:42.681Z INFO  [main] [requestId=] org.flywaydb.core.FlywayExecutor - Database: jdbc
+:postgresql://45.11.92.142:5433/b24_video_offer (PostgreSQL 16.14)
+2026-08-13T22:02:43.622Z INFO  [main] [requestId=] org.flywaydb.core.internal.command.DbValidate - S
+uccessfully validated 9 migrations (execution time 00:00.300s)
+2026-08-13T22:02:44.407Z INFO  [main] [requestId=] org.flywaydb.core.internal.command.DbMigrate - Cu
+rrent version of schema "public": 9
+2026-08-13T22:02:44.475Z INFO  [main] [requestId=] org.flywaydb.core.internal.command.DbMigrate - Sc
+hema "public" is up to date. No migration necessary.
+2026-08-13T22:02:45.018Z INFO  [main] [requestId=] org.hibernate.orm.jpa - HHH008540: Processing Per
+sistenceUnitInfo [name: default]
+2026-08-13T22:02:45.143Z INFO  [main] [requestId=] org.hibernate.orm.core - HHH000001: Hibernate ORM
+ core version 7.2.7.Final
+2026-08-13T22:02:46.159Z INFO  [main] [requestId=] o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTime
+Weaver setup: ignoring JPA class transformer
+2026-08-13T22:02:46.682Z INFO  [main] [requestId=] org.hibernate.orm.connections.pooling - HHH100010
+05: Database info:
+        Database JDBC URL [jdbc:postgresql://45.11.92.142:5433/b24_video_offer]
+        Database driver: PostgreSQL JDBC Driver
+        Database dialect: PostgreSQLDialect
+        Database version: 16.14
+        Default catalog/schema: b24_video_offer/public
+        Autocommit mode: undefined/unknown
+        Isolation level: READ_COMMITTED [default READ_COMMITTED]
+        JDBC fetch size: none
+        Pool: DataSourceConnectionProvider
+        Minimum pool size: undefined/unknown
+        Maximum pool size: undefined/unknown
+2026-08-13T22:02:48.390Z INFO  [main] [requestId=] org.hibernate.orm.core - HHH000489: No JTA platfo
+rm available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-08-13T22:02:48.744Z INFO  [main] [requestId=] o.s.o.jpa.LocalContainerEntityManagerFactoryBean
+- Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-08-13T22:02:48.879Z INFO  [main] [requestId=] o.s.d.j.repository.query.QueryEnhancerFactories -
+ Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-08-13T22:02:50.908Z INFO  [main] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader -
+ Kontur HTTP transport configured: mode=HTTP_PROXY, proxyHost=216.57.105.22, proxyPort=31289, authen
+ticationConfigured=true, connectTimeoutSeconds=15, readTimeoutSeconds=120
+2026-08-13T22:02:50.939Z INFO  [main] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader -
+ Kontur downloader initialized: baseUrl=https://rko7.ktalk.ru/, storageDir=./data/videos, connectTim
+eoutSeconds=15, readTimeoutSeconds=120, stallWarningSeconds=30, maxParallelParts=8, parallelThreshol
+dBytes=33554432, proxyEnabled=true, proxyHost=216.57.105.22, proxyPort=31289, proxyAuthenticationCon
+figured=true
+2026-08-13T22:02:51.616Z INFO  [main] [requestId=] r.a.v.bitrix.mobile.upload.MobileVideoTranscoder
+- Mobile media tools ready: ffmpeg=/usr/bin/ffmpeg, ffprobe=/usr/bin/ffprobe, ffmpegVersion=ffmpeg v
+ersion 8.0.1-3ubuntu2 Copyright (c) 2000-2025 the FFmpeg developers, ffprobeVersion=ffprobe version
+8.0.1-3ubuntu2 Copyright (c) 2007-2025 the FFmpeg developers
+2026-08-13T22:02:53.632Z INFO  [main] [requestId=] ru.abs7.videooffer.source.YtDlpVideoDownloader -
+External video tools ready: ytDlp=/usr/local/bin/yt-dlp, ytDlpVersion=2026.06.09, deno=/usr/local/bi
+n/deno, denoVersion=deno 2.8.1 (stable, release, x86_64-unknown-linux-gnu), maxDownloadBytes=1073741
+824
+2026-08-13T22:02:53.713Z INFO  [main] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitr
+ix HTTP transport configured: mode=HTTP_PROXY, proxySource=TALK_PROXY, proxyHost=216.57.105.22, prox
+yPort=31289, proxyAuthenticationConfigured=true, connectTimeoutSeconds=15, readTimeoutSeconds=45, pr
+oactiveRefreshAheadSeconds=120
+2026-08-13T22:02:53.829Z INFO  [main] [requestId=] ru.abs7.videooffer.offer.VideoOfferService - Vide
+oOfferService initialized: publicBaseUrl=https://offer.abs7.ru, retentionDays=7, videoStorageDir=/ap
+p/data/videos
+2026-08-13T22:02:53.971Z INFO  [main] [requestId=] r.a.v.b.mobile.upload.MobileVideoUploadService -
+MobileVideoUploadService initialized: uploadDirectory=/app/data/mobile-uploads, maxUploadBytes=53687
+0912, maxChunkBytes=16777216, maxManualFileBytes=104857600, retentionHours=24
+2026-08-13T22:02:54.139Z INFO  [main] [requestId=] o.s.b.w.autoconfigure.WelcomePageHandlerMapping -
+ Adding welcome page: class path resource [static/index.html]
+2026-08-13T22:02:54.914Z INFO  [main] [requestId=] org.springframework.boot.tomcat.TomcatWebServer -
+ Tomcat started on port 8080 (http) with context path '/'
+2026-08-13T22:02:54.932Z INFO  [main] [requestId=] ru.abs7.videooffer.B24VideoOfferApplication - Sta
+rted B24VideoOfferApplication in 18.643 seconds (process running for 19.814)
+2026-08-13T22:02:54.943Z INFO  [main] [requestId=] r.a.videooffer.offer.VideoOfferLifecycleService -
+ Checking interrupted video offers after application startup
+2026-08-13T22:02:55.365Z INFO  [main] [requestId=] ru.abs7.videooffer.offer.VideoOfferService - Pend
+ing video offers selected for recovery: count=0
+2026-08-13T22:02:55.393Z INFO  [http-nio-8080-exec-1] [requestId=] o.a.c.c.ContainerBase.[Tomcat].[l
+ocalhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-08-13T22:02:55.395Z INFO  [http-nio-8080-exec-1] [requestId=] o.springframework.web.servlet.Dis
+patcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-08-13T22:02:55.398Z INFO  [http-nio-8080-exec-1] [requestId=] o.springframework.web.servlet.Dis
+patcherServlet - Completed initialization in 3 ms
+2026-08-13T22:02:55.404Z INFO  [http-nio-8080-exec-1] [requestId=fff101b7-5299-470a-84f0-1f4026b7d1b
+4] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/heal
+th, remoteAddress=172.18.0.1, userAgent=Python-urllib/3.12
+2026-08-13T22:02:55.443Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Ensuring Bitrix desktop placements after startup: count=1
+2026-08-13T22:02:55.446Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Binding Bitrix placement: memberId=419222a0c1725a38175958981810edd7, placement=CRM_DEAL_DE
+TAIL_ACTIVITY, handler=https://offer.abs7.ru/bitrix/widget
+2026-08-13T22:02:55.446Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call started: memberId=419222a0c1725a38175958981810edd7, method=placement.bind, par
+ameterNames=[PLACEMENT, HANDLER, TITLE, LANG_ALL]
+2026-08-13T22:02:55.492Z INFO  [http-nio-8080-exec-1] [requestId=fff101b7-5299-470a-84f0-1f4026b7d1b
+4] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/he
+alth, status=200, durationMs=88
+2026-08-13T22:02:55.530Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Executing Bitrix REST request: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.
+ru, method=placement.bind, endpoint=https://abs7.bitrix24.ru/rest/placement.bind.json, tokenExpiresA
+t=2026-08-13T22:52:24.816341Z
+2026-08-13T22:02:56.312Z ERROR [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix HTTP error response: memberId=419222a0c1725a38175958981810edd7, method=placement.bind, e
+ndpoint=https://abs7.bitrix24.ru/rest/placement.bind.json, status=400 BAD_REQUEST, durationMs=781, r
+esponseBody={"error":"ERROR_CORE","error_description":"Unable to set placement handler: Handler alre
+ady binded"}
+
+org.springframework.web.client.HttpClientErrorException$BadRequest: 400 Bad Request: "{"error":"ERRO
+R_CORE","error_description":"Unable to set placement handler: Handler already binded"}"
+        at org.springframework.web.client.HttpClientErrorException.create(HttpClientErrorException.j
+ava:106) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.createException(StatusHandler.java:132) ~[sp
+ring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.lambda$createDefaultStatusHandler$1(StatusHa
+ndler.java:107) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.handle(StatusHandler.java:75) ~[spring-web-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.applyStatusHandlers(
+DefaultRestClient.java:940) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$readBody$0(De
+faultRestClient.java:929) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient.readWithMessageConverters(DefaultRestCli
+ent.java:224) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.readBody(DefaultRest
+Client.java:928) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$body$1(Defaul
+tRestClient.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeIntern
+al(DefaultRestClient.java:617) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(Defau
+ltRestClient.java:572) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747
+) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(De
+faultRestClient.java:921) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClie
+nt.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:288) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:184) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:97) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.ensureDesktopPlacementsAfterStartup(B
+itrixInstallationService.java:140) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMe
+thodInvocation.java:190) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvo
+cation.java:158) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecut
+ionInterceptor.java:112) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.FutureTask.run(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-13T22:02:56.322Z ERROR [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call failed: memberId=419222a0c1725a38175958981810edd7, method=placement.bind, erro
+rCode=HTTP_400, durationMs=875, error={"error":"ERROR_CORE","error_description":"Unable to set place
+ment handler: Handler already binded"}
+
+ru.abs7.videooffer.bitrix.BitrixRestException: {"error":"ERROR_CORE","error_description":"Unable to
+set placement handler: Handler already binded"}
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:302) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:184) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:97) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.ensureDesktopPlacementsAfterStartup(B
+itrixInstallationService.java:140) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMe
+thodInvocation.java:190) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvo
+cation.java:158) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecut
+ionInterceptor.java:112) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.FutureTask.run(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-13T22:02:56.322Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Bitrix placement already bound: memberId=419222a0c1725a38175958981810edd7, placement=CRM_D
+EAL_DETAIL_ACTIVITY
+2026-08-13T22:02:56.322Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Binding Bitrix placement: memberId=419222a0c1725a38175958981810edd7, placement=CRM_LEAD_DE
+TAIL_ACTIVITY, handler=https://offer.abs7.ru/bitrix/widget
+2026-08-13T22:02:56.322Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call started: memberId=419222a0c1725a38175958981810edd7, method=placement.bind, par
+ameterNames=[PLACEMENT, HANDLER, TITLE, LANG_ALL]
+2026-08-13T22:02:56.447Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Executing Bitrix REST request: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.
+ru, method=placement.bind, endpoint=https://abs7.bitrix24.ru/rest/placement.bind.json, tokenExpiresA
+t=2026-08-13T22:52:24.816341Z
+2026-08-13T22:02:56.583Z ERROR [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix HTTP error response: memberId=419222a0c1725a38175958981810edd7, method=placement.bind, e
+ndpoint=https://abs7.bitrix24.ru/rest/placement.bind.json, status=400 BAD_REQUEST, durationMs=136, r
+esponseBody={"error":"ERROR_CORE","error_description":"Unable to set placement handler: Handler alre
+ady binded"}
+
+org.springframework.web.client.HttpClientErrorException$BadRequest: 400 Bad Request: "{"error":"ERRO
+R_CORE","error_description":"Unable to set placement handler: Handler already binded"}"
+        at org.springframework.web.client.HttpClientErrorException.create(HttpClientErrorException.j
+ava:106) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.createException(StatusHandler.java:132) ~[sp
+ring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.lambda$createDefaultStatusHandler$1(StatusHa
+ndler.java:107) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.handle(StatusHandler.java:75) ~[spring-web-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.applyStatusHandlers(
+DefaultRestClient.java:940) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$readBody$0(De
+faultRestClient.java:929) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient.readWithMessageConverters(DefaultRestCli
+ent.java:224) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.readBody(DefaultRest
+Client.java:928) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$body$1(Defaul
+tRestClient.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeIntern
+al(DefaultRestClient.java:617) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(Defau
+ltRestClient.java:572) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747
+) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(De
+faultRestClient.java:921) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClie
+nt.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:288) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:184) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:97) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.ensureDesktopPlacementsAfterStartup(B
+itrixInstallationService.java:140) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMe
+thodInvocation.java:190) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvo
+cation.java:158) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecut
+ionInterceptor.java:112) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.FutureTask.run(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-13T22:02:56.585Z ERROR [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call failed: memberId=419222a0c1725a38175958981810edd7, method=placement.bind, erro
+rCode=HTTP_400, durationMs=262, error={"error":"ERROR_CORE","error_description":"Unable to set place
+ment handler: Handler already binded"}
+
+ru.abs7.videooffer.bitrix.BitrixRestException: {"error":"ERROR_CORE","error_description":"Unable to
+set placement handler: Handler already binded"}
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:302) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:184) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:97) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.ensureDesktopPlacementsAfterStartup(B
+itrixInstallationService.java:140) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMe
+thodInvocation.java:190) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvo
+cation.java:158) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecut
+ionInterceptor.java:112) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.FutureTask.run(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-13T22:02:56.585Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Bitrix placement already bound: memberId=419222a0c1725a38175958981810edd7, placement=CRM_L
+EAD_DETAIL_ACTIVITY
+2026-08-13T22:02:56.585Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Binding Bitrix placement: memberId=419222a0c1725a38175958981810edd7, placement=CRM_CONTACT
+_DETAIL_ACTIVITY, handler=https://offer.abs7.ru/bitrix/widget
+2026-08-13T22:02:56.586Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call started: memberId=419222a0c1725a38175958981810edd7, method=placement.bind, par
+ameterNames=[PLACEMENT, HANDLER, TITLE, LANG_ALL]
+2026-08-13T22:02:56.647Z INFO  [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Executing Bitrix REST request: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24.
+ru, method=placement.bind, endpoint=https://abs7.bitrix24.ru/rest/placement.bind.json, tokenExpiresA
+t=2026-08-13T22:52:24.816341Z
+2026-08-13T22:02:56.790Z ERROR [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix HTTP error response: memberId=419222a0c1725a38175958981810edd7, method=placement.bind, e
+ndpoint=https://abs7.bitrix24.ru/rest/placement.bind.json, status=400 BAD_REQUEST, durationMs=143, r
+esponseBody={"error":"ERROR_CORE","error_description":"Unable to set placement handler: Handler alre
+ady binded"}
+
+org.springframework.web.client.HttpClientErrorException$BadRequest: 400 Bad Request: "{"error":"ERRO
+R_CORE","error_description":"Unable to set placement handler: Handler already binded"}"
+        at org.springframework.web.client.HttpClientErrorException.create(HttpClientErrorException.j
+ava:106) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.createException(StatusHandler.java:132) ~[sp
+ring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.lambda$createDefaultStatusHandler$1(StatusHa
+ndler.java:107) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.handle(StatusHandler.java:75) ~[spring-web-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.applyStatusHandlers(
+DefaultRestClient.java:940) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$readBody$0(De
+faultRestClient.java:929) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient.readWithMessageConverters(DefaultRestCli
+ent.java:224) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.readBody(DefaultRest
+Client.java:928) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$body$1(Defaul
+tRestClient.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeIntern
+al(DefaultRestClient.java:617) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(Defau
+ltRestClient.java:572) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747
+) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(De
+faultRestClient.java:921) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClie
+nt.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:288) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:184) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:97) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.ensureDesktopPlacementsAfterStartup(B
+itrixInstallationService.java:140) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMe
+thodInvocation.java:190) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvo
+cation.java:158) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecut
+ionInterceptor.java:112) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.FutureTask.run(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-13T22:02:56.793Z ERROR [video-offer-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClie
+nt - Bitrix REST call failed: memberId=419222a0c1725a38175958981810edd7, method=placement.bind, erro
+rCode=HTTP_400, durationMs=207, error={"error":"ERROR_CORE","error_description":"Unable to set place
+ment handler: Handler already binded"}
+
+ru.abs7.videooffer.bitrix.BitrixRestException: {"error":"ERROR_CORE","error_description":"Unable to
+set placement handler: Handler already binded"}
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:302) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:184) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:97) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.ensureDesktopPlacementsAfterStartup(B
+itrixInstallationService.java:140) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMe
+thodInvocation.java:190) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvo
+cation.java:158) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecut
+ionInterceptor.java:112) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at java.base/java.util.concurrent.FutureTask.run(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source) ~[na:na]
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source) ~[na:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-13T22:02:56.795Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Bitrix placement already bound: memberId=419222a0c1725a38175958981810edd7, placement=CRM_C
+ONTACT_DETAIL_ACTIVITY
+2026-08-13T22:02:56.795Z INFO  [video-offer-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallation
+Service - Bitrix desktop placement startup check completed: domain=abs7.bitrix24.ru, memberId=419222
+a0c1725a38175958981810edd7, placements={CRM_DEAL_DETAIL_ACTIVITY=ALREADY_BOUND, CRM_LEAD_DETAIL_ACTI
+VITY=ALREADY_BOUND, CRM_CONTACT_DETAIL_ACTIVITY=ALREADY_BOUND}
+2026-08-13T22:07:44.899Z INFO  [http-nio-8080-exec-3] [requestId=7800da29-d1df-4788-9c10-bfee2e4ed94
+7] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/, remote
+Address=185.100.87.136, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:104.71.6212.24) Gecko
+/25.2.4212.671 Firefox/2.0
+2026-08-13T22:07:44.967Z INFO  [http-nio-8080-exec-3] [requestId=7800da29-d1df-4788-9c10-bfee2e4ed94
+7] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/, stat
+us=200, durationMs=67
+2026-08-13T22:15:00.001Z INFO  [scheduling-1] [requestId=] r.a.videooffer.offer.VideoOfferLifecycleS
+ervice - Scheduled expired video offer cleanup started
+2026-08-13T22:15:00.154Z INFO  [scheduling-1] [requestId=] ru.abs7.videooffer.offer.VideoOfferServic
+e - Expired video offers selected for cleanup: count=0
+2026-08-13T22:15:00.157Z INFO  [scheduling-1] [requestId=] r.a.videooffer.offer.VideoOfferLifecycleS
+ervice - Scheduled expired video offer cleanup completed
+2026-08-13T22:17:19.799Z WARN  [scheduling-1] [requestId=] com.zaxxer.hikari.pool.PoolBase - HikariP
+ool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@13cc31ae (This connection has
+ been closed.). Possibly consider using a shorter maxLifetime value.
+2026-08-13T22:18:21.054Z INFO  [http-nio-8080-exec-4] [requestId=b626ccb0-345d-412a-8455-f50c487702f
+e] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/backoffi
+ce, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537
+.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-13T22:18:21.120Z INFO  [http-nio-8080-exec-4] [requestId=b626ccb0-345d-412a-8455-f50c487702f
+e] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/backof
+fice, status=200, durationMs=67
+2026-08-13T22:18:21.197Z INFO  [http-nio-8080-exec-5] [requestId=4b5dd57a-0593-4f21-bd44-ddf14c8584e
+1] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/assets/b
+ackoffice.css, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) Appl
+eWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-13T22:18:21.208Z INFO  [http-nio-8080-exec-5] [requestId=4b5dd57a-0593-4f21-bd44-ddf14c8584e
+1] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/assets
+/backoffice.css, status=200, durationMs=10
+2026-08-13T22:18:22.778Z INFO  [http-nio-8080-exec-6] [requestId=5cff2a39-8e32-4a0d-a23b-805ff397d59
+7] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/api/bac
+koffice/login, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) Appl
+eWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-13T22:18:22.913Z INFO  [http-nio-8080-exec-6] [requestId=5cff2a39-8e32-4a0d-a23b-805ff397d59
+7] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/api/b
+ackoffice/login, status=200, durationMs=135
+2026-08-13T22:18:22.989Z INFO  [http-nio-8080-exec-2] [requestId=0ba8e15f-a176-4739-92ca-e57ba3895d8
+9] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/assets/b
+ackoffice.js, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) Apple
+WebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-13T22:18:22.993Z INFO  [http-nio-8080-exec-7] [requestId=ca1ac172-f4e4-4616-bbdd-158f0ad1a93
+7] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/backoffi
+ce, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537
+.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-13T22:18:23.000Z INFO  [http-nio-8080-exec-2] [requestId=0ba8e15f-a176-4739-92ca-e57ba3895d8
+9] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/assets
+/backoffice.js, status=200, durationMs=10
+2026-08-13T22:18:23.004Z INFO  [http-nio-8080-exec-7] [requestId=ca1ac172-f4e4-4616-bbdd-158f0ad1a93
+7] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/backof
+fice, status=200, durationMs=13
+2026-08-13T22:18:23.137Z INFO  [http-nio-8080-exec-8] [requestId=730ed543-e77d-4377-911d-26f714a05af
+6] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/assets/b
+ackoffice.js, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) Apple
+WebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-13T22:18:23.146Z INFO  [http-nio-8080-exec-8] [requestId=730ed543-e77d-4377-911d-26f714a05af
+6] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/assets
+/backoffice.js, status=200, durationMs=9
+2026-08-13T22:18:23.224Z INFO  [http-nio-8080-exec-9] [requestId=46efddcc-98a5-4f10-b60d-f9c307543e8
+8] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/back
+office/tenants, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) App
+leWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-13T22:18:23.461Z INFO  [http-nio-8080-exec-9] [requestId=46efddcc-98a5-4f10-b60d-f9c307543e8
+8] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/ba
+ckoffice/tenants, status=200, durationMs=236
+2026-08-13T22:20:30.428Z INFO  [http-nio-8080-exec-10] [requestId=645c1ec4-a45a-4ada-a44f-dd8f7b3517
+2f] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/bitrix
+/install, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebK
+it/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-13T22:20:30.445Z INFO  [http-nio-8080-exec-10] [requestId=645c1ec4-a45a-4ada-a44f-dd8f7b3517
+2f] ru.abs7.videooffer.bitrix.BitrixController - Bitrix installation callback received: parameterNam
+es=[DOMAIN, PROTOCOL, LANG, APP_SID, AUTH_ID, AUTH_EXPIRES, REFRESH_ID, SERVER_ENDPOINT, APPLICATION
+_TOKEN, APPLICATION_SCOPE, member_id, status, PLACEMENT, PLACEMENT_OPTIONS]
+2026-08-13T22:20:30.446Z INFO  [http-nio-8080-exec-10] [requestId=645c1ec4-a45a-4ada-a44f-dd8f7b3517
+2f] r.a.videooffer.bitrix.BitrixInstallationService - Starting Bitrix installation: parameterNames=[
+DOMAIN, PROTOCOL, LANG, APP_SID, AUTH_ID, AUTH_EXPIRES, REFRESH_ID, SERVER_ENDPOINT, APPLICATION_TOK
+EN, APPLICATION_SCOPE, member_id, status, PLACEMENT, PLACEMENT_OPTIONS]
+2026-08-13T22:20:30.448Z INFO  [http-nio-8080-exec-10] [requestId=645c1ec4-a45a-4ada-a44f-dd8f7b3517
+2f] r.a.videooffer.bitrix.BitrixInstallationService - Bitrix auth data parsed: domain=abs7.bitrix24.
+ru, memberId=419222a0c1725a38175958981810edd7, expiresAt=2026-08-13T23:20:30.448292238Z, application
+Scopes=crm,placement,mobile,user_basic,im, accessTokenPresent=true, refreshTokenPresent=true
+2026-08-13T22:20:30.892Z INFO  [http-nio-8080-exec-10] [requestId=645c1ec4-a45a-4ada-a44f-dd8f7b3517
+2f] r.a.videooffer.bitrix.BitrixInstallationService - Bitrix installation authorization persisted: d
+omain=abs7.bitrix24.ru, memberId=419222a0c1725a38175958981810edd7
+2026-08-13T22:20:30.893Z INFO  [http-nio-8080-exec-10] [requestId=645c1ec4-a45a-4ada-a44f-dd8f7b3517
+2f] r.a.videooffer.bitrix.BitrixInstallationService - Binding Bitrix placement: memberId=419222a0c17
+25a38175958981810edd7, placement=CRM_DEAL_DETAIL_ACTIVITY, handler=https://offer.abs7.ru/bitrix/widg
+et
+2026-08-13T22:20:30.894Z INFO  [http-nio-8080-exec-10] [requestId=645c1ec4-a45a-4ada-a44f-dd8f7b3517
+2f] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a38
+175958981810edd7, method=placement.bind, parameterNames=[PLACEMENT, HANDLER, TITLE, LANG_ALL]
+2026-08-13T22:20:30.960Z INFO  [http-nio-8080-exec-10] [requestId=645c1ec4-a45a-4ada-a44f-dd8f7b3517
+2f] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c17
+25a38175958981810edd7, domain=abs7.bitrix24.ru, method=placement.bind, endpoint=https://abs7.bitrix2
+4.ru/rest/placement.bind.json, tokenExpiresAt=2026-08-13T23:20:30.448292Z
+2026-08-13T22:20:31.335Z ERROR [http-nio-8080-exec-10] [requestId=645c1ec4-a45a-4ada-a44f-dd8f7b3517
+2f] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix HTTP error response: memberId=419222a0c1725a
+38175958981810edd7, method=placement.bind, endpoint=https://abs7.bitrix24.ru/rest/placement.bind.jso
+n, status=400 BAD_REQUEST, durationMs=374, responseBody={"error":"ERROR_CORE","error_description":"U
+nable to set placement handler: Handler already binded"}
+
+org.springframework.web.client.HttpClientErrorException$BadRequest: 400 Bad Request: "{"error":"ERRO
+R_CORE","error_description":"Unable to set placement handler: Handler already binded"}"
+        at org.springframework.web.client.HttpClientErrorException.create(HttpClientErrorException.j
+ava:106) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.createException(StatusHandler.java:132) ~[sp
+ring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.lambda$createDefaultStatusHandler$1(StatusHa
+ndler.java:107) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.handle(StatusHandler.java:75) ~[spring-web-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.applyStatusHandlers(
+DefaultRestClient.java:940) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$readBody$0(De
+faultRestClient.java:929) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient.readWithMessageConverters(DefaultRestCli
+ent.java:224) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.readBody(DefaultRest
+Client.java:928) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$body$1(Defaul
+tRestClient.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeIntern
+al(DefaultRestClient.java:617) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(Defau
+ltRestClient.java:572) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747
+) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(De
+faultRestClient.java:921) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClie
+nt.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:288) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:184) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:97) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.install(BitrixInstallationService.jav
+a:78) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(Cglib
+AopProxy.java:715) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService$$SpringCGLIB$$0.install(<generated>)
+~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixController.install(BitrixController.java:55) ~[!/:0.1.0-S
+NAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMe
+thod.java:252) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableH
+andlerMethod.java:184) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invok
+eAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invoke
+HandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handle
+Internal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHa
+ndlerMethodAdapter.java:86) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963)
+~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~
+[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:100
+0) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:903) ~[spri
+ng-webmvc-7.0.6.jar!/:7.0.6]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649) ~[tomcat-embed-core-11.0.2
+0.jar!/:na]
+        at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spr
+ing-webmvc-7.0.6.jar!/:7.0.6]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.2
+0.jar!/:na]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53) ~[tomcat-embed-web
+socket-11.0.20.jar!/:na]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at ru.abs7.videooffer.common.RequestLoggingFilter.doFilterInternal(RequestLoggingFilter.java
+:40) ~[!/:0.1.0-SNAPSHOT]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter
+.java:100) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:
+93) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncoding
+Filter.java:199) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.ForwardedHeaderFilter.doFilterInternal(ForwardedHeaderFilt
+er.java:174) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tom
+cat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomc
+at-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:492) ~[
+tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113) ~[tomcat-em
+bed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83) ~[tomcat-emb
+ed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72) ~[tomcat
+-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341) ~[tomcat-embe
+d-core-11.0.20.jar!/:na]
+        at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed
+-core-11.0.20.jar!/:na]
+        at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat
+-embed-core-11.0.20.jar!/:na]
+        at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~
+[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1779) ~[tom
+cat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-
+embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:946)
+~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:480)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:57) ~[tomc
+at-embed-core-11.0.20.jar!/:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-13T22:20:31.344Z ERROR [http-nio-8080-exec-10] [requestId=645c1ec4-a45a-4ada-a44f-dd8f7b3517
+2f] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call failed: memberId=419222a0c1725a381
+75958981810edd7, method=placement.bind, errorCode=HTTP_400, durationMs=450, error={"error":"ERROR_CO
+RE","error_description":"Unable to set placement handler: Handler already binded"}
+
+ru.abs7.videooffer.bitrix.BitrixRestException: {"error":"ERROR_CORE","error_description":"Unable to
+set placement handler: Handler already binded"}
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:302) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:184) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:97) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.install(BitrixInstallationService.jav
+a:78) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(Cglib
+AopProxy.java:715) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService$$SpringCGLIB$$0.install(<generated>)
+~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixController.install(BitrixController.java:55) ~[!/:0.1.0-S
+NAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMe
+thod.java:252) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableH
+andlerMethod.java:184) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invok
+eAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invoke
+HandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handle
+Internal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHa
+ndlerMethodAdapter.java:86) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963)
+~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~
+[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:100
+0) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:903) ~[spri
+ng-webmvc-7.0.6.jar!/:7.0.6]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649) ~[tomcat-embed-core-11.0.2
+0.jar!/:na]
+        at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spr
+ing-webmvc-7.0.6.jar!/:7.0.6]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.2
+0.jar!/:na]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53) ~[tomcat-embed-web
+socket-11.0.20.jar!/:na]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at ru.abs7.videooffer.common.RequestLoggingFilter.doFilterInternal(RequestLoggingFilter.java
+:40) ~[!/:0.1.0-SNAPSHOT]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter
+.java:100) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:
+93) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncoding
+Filter.java:199) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.ForwardedHeaderFilter.doFilterInternal(ForwardedHeaderFilt
+er.java:174) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tom
+cat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomc
+at-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:492) ~[
+tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113) ~[tomcat-em
+bed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83) ~[tomcat-emb
+ed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72) ~[tomcat
+-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341) ~[tomcat-embe
+d-core-11.0.20.jar!/:na]
+        at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed
+-core-11.0.20.jar!/:na]
+        at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat
+-embed-core-11.0.20.jar!/:na]
+        at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~
+[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1779) ~[tom
+cat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-
+embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:946)
+~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:480)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:57) ~[tomc
+at-embed-core-11.0.20.jar!/:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-13T22:20:31.347Z INFO  [http-nio-8080-exec-10] [requestId=645c1ec4-a45a-4ada-a44f-dd8f7b3517
+2f] r.a.videooffer.bitrix.BitrixInstallationService - Bitrix placement already bound: memberId=41922
+2a0c1725a38175958981810edd7, placement=CRM_DEAL_DETAIL_ACTIVITY
+2026-08-13T22:20:31.348Z INFO  [http-nio-8080-exec-10] [requestId=645c1ec4-a45a-4ada-a44f-dd8f7b3517
+2f] r.a.videooffer.bitrix.BitrixInstallationService - Binding Bitrix placement: memberId=419222a0c17
+25a38175958981810edd7, placement=CRM_LEAD_DETAIL_ACTIVITY, handler=https://offer.abs7.ru/bitrix/widg
+et
+2026-08-13T22:20:31.348Z INFO  [http-nio-8080-exec-10] [requestId=645c1ec4-a45a-4ada-a44f-dd8f7b3517
+2f] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a38
+175958981810edd7, method=placement.bind, parameterNames=[PLACEMENT, HANDLER, TITLE, LANG_ALL]
+2026-08-13T22:20:31.411Z INFO  [http-nio-8080-exec-10] [requestId=645c1ec4-a45a-4ada-a44f-dd8f7b3517
+2f] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c17
+25a38175958981810edd7, domain=abs7.bitrix24.ru, method=placement.bind, endpoint=https://abs7.bitrix2
+4.ru/rest/placement.bind.json, tokenExpiresAt=2026-08-13T23:20:30.448292Z
+2026-08-13T22:20:31.544Z ERROR [http-nio-8080-exec-10] [requestId=645c1ec4-a45a-4ada-a44f-dd8f7b3517
+2f] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix HTTP error response: memberId=419222a0c1725a
+38175958981810edd7, method=placement.bind, endpoint=https://abs7.bitrix24.ru/rest/placement.bind.jso
+n, status=400 BAD_REQUEST, durationMs=132, responseBody={"error":"ERROR_CORE","error_description":"U
+nable to set placement handler: Handler already binded"}
+
+org.springframework.web.client.HttpClientErrorException$BadRequest: 400 Bad Request: "{"error":"ERRO
+R_CORE","error_description":"Unable to set placement handler: Handler already binded"}"
+        at org.springframework.web.client.HttpClientErrorException.create(HttpClientErrorException.j
+ava:106) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.createException(StatusHandler.java:132) ~[sp
+ring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.lambda$createDefaultStatusHandler$1(StatusHa
+ndler.java:107) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.handle(StatusHandler.java:75) ~[spring-web-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.applyStatusHandlers(
+DefaultRestClient.java:940) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$readBody$0(De
+faultRestClient.java:929) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient.readWithMessageConverters(DefaultRestCli
+ent.java:224) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.readBody(DefaultRest
+Client.java:928) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$body$1(Defaul
+tRestClient.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeIntern
+al(DefaultRestClient.java:617) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(Defau
+ltRestClient.java:572) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747
+) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(De
+faultRestClient.java:921) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClie
+nt.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:288) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:184) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:97) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.install(BitrixInstallationService.jav
+a:78) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(Cglib
+AopProxy.java:715) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService$$SpringCGLIB$$0.install(<generated>)
+~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixController.install(BitrixController.java:55) ~[!/:0.1.0-S
+NAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMe
+thod.java:252) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableH
+andlerMethod.java:184) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invok
+eAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invoke
+HandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handle
+Internal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHa
+ndlerMethodAdapter.java:86) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963)
+~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~
+[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:100
+0) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:903) ~[spri
+ng-webmvc-7.0.6.jar!/:7.0.6]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649) ~[tomcat-embed-core-11.0.2
+0.jar!/:na]
+        at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spr
+ing-webmvc-7.0.6.jar!/:7.0.6]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.2
+0.jar!/:na]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53) ~[tomcat-embed-web
+socket-11.0.20.jar!/:na]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at ru.abs7.videooffer.common.RequestLoggingFilter.doFilterInternal(RequestLoggingFilter.java
+:40) ~[!/:0.1.0-SNAPSHOT]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter
+.java:100) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:
+93) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncoding
+Filter.java:199) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.ForwardedHeaderFilter.doFilterInternal(ForwardedHeaderFilt
+er.java:174) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tom
+cat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomc
+at-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:492) ~[
+tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113) ~[tomcat-em
+bed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83) ~[tomcat-emb
+ed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72) ~[tomcat
+-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341) ~[tomcat-embe
+d-core-11.0.20.jar!/:na]
+        at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed
+-core-11.0.20.jar!/:na]
+        at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat
+-embed-core-11.0.20.jar!/:na]
+        at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~
+[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1779) ~[tom
+cat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-
+embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:946)
+~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:480)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:57) ~[tomc
+at-embed-core-11.0.20.jar!/:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-13T22:20:31.549Z ERROR [http-nio-8080-exec-10] [requestId=645c1ec4-a45a-4ada-a44f-dd8f7b3517
+2f] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call failed: memberId=419222a0c1725a381
+75958981810edd7, method=placement.bind, errorCode=HTTP_400, durationMs=200, error={"error":"ERROR_CO
+RE","error_description":"Unable to set placement handler: Handler already binded"}
+
+ru.abs7.videooffer.bitrix.BitrixRestException: {"error":"ERROR_CORE","error_description":"Unable to
+set placement handler: Handler already binded"}
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:302) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:184) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:97) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.install(BitrixInstallationService.jav
+a:78) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(Cglib
+AopProxy.java:715) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService$$SpringCGLIB$$0.install(<generated>)
+~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixController.install(BitrixController.java:55) ~[!/:0.1.0-S
+NAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMe
+thod.java:252) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableH
+andlerMethod.java:184) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invok
+eAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invoke
+HandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handle
+Internal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHa
+ndlerMethodAdapter.java:86) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963)
+~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~
+[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:100
+0) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:903) ~[spri
+ng-webmvc-7.0.6.jar!/:7.0.6]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649) ~[tomcat-embed-core-11.0.2
+0.jar!/:na]
+        at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spr
+ing-webmvc-7.0.6.jar!/:7.0.6]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.2
+0.jar!/:na]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53) ~[tomcat-embed-web
+socket-11.0.20.jar!/:na]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at ru.abs7.videooffer.common.RequestLoggingFilter.doFilterInternal(RequestLoggingFilter.java
+:40) ~[!/:0.1.0-SNAPSHOT]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter
+.java:100) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:
+93) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncoding
+Filter.java:199) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.ForwardedHeaderFilter.doFilterInternal(ForwardedHeaderFilt
+er.java:174) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tom
+cat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomc
+at-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:492) ~[
+tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113) ~[tomcat-em
+bed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83) ~[tomcat-emb
+ed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72) ~[tomcat
+-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341) ~[tomcat-embe
+d-core-11.0.20.jar!/:na]
+        at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed
+-core-11.0.20.jar!/:na]
+        at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat
+-embed-core-11.0.20.jar!/:na]
+        at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~
+[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1779) ~[tom
+cat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-
+embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:946)
+~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:480)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:57) ~[tomc
+at-embed-core-11.0.20.jar!/:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-13T22:20:31.552Z INFO  [http-nio-8080-exec-10] [requestId=645c1ec4-a45a-4ada-a44f-dd8f7b3517
+2f] r.a.videooffer.bitrix.BitrixInstallationService - Bitrix placement already bound: memberId=41922
+2a0c1725a38175958981810edd7, placement=CRM_LEAD_DETAIL_ACTIVITY
+2026-08-13T22:20:31.552Z INFO  [http-nio-8080-exec-10] [requestId=645c1ec4-a45a-4ada-a44f-dd8f7b3517
+2f] r.a.videooffer.bitrix.BitrixInstallationService - Binding Bitrix placement: memberId=419222a0c17
+25a38175958981810edd7, placement=CRM_CONTACT_DETAIL_ACTIVITY, handler=https://offer.abs7.ru/bitrix/w
+idget
+2026-08-13T22:20:31.555Z INFO  [http-nio-8080-exec-10] [requestId=645c1ec4-a45a-4ada-a44f-dd8f7b3517
+2f] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a38
+175958981810edd7, method=placement.bind, parameterNames=[PLACEMENT, HANDLER, TITLE, LANG_ALL]
+2026-08-13T22:20:31.620Z INFO  [http-nio-8080-exec-10] [requestId=645c1ec4-a45a-4ada-a44f-dd8f7b3517
+2f] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c17
+25a38175958981810edd7, domain=abs7.bitrix24.ru, method=placement.bind, endpoint=https://abs7.bitrix2
+4.ru/rest/placement.bind.json, tokenExpiresAt=2026-08-13T23:20:30.448292Z
+2026-08-13T22:20:31.758Z ERROR [http-nio-8080-exec-10] [requestId=645c1ec4-a45a-4ada-a44f-dd8f7b3517
+2f] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix HTTP error response: memberId=419222a0c1725a
+38175958981810edd7, method=placement.bind, endpoint=https://abs7.bitrix24.ru/rest/placement.bind.jso
+n, status=400 BAD_REQUEST, durationMs=137, responseBody={"error":"ERROR_CORE","error_description":"U
+nable to set placement handler: Handler already binded"}
+
+org.springframework.web.client.HttpClientErrorException$BadRequest: 400 Bad Request: "{"error":"ERRO
+R_CORE","error_description":"Unable to set placement handler: Handler already binded"}"
+        at org.springframework.web.client.HttpClientErrorException.create(HttpClientErrorException.j
+ava:106) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.createException(StatusHandler.java:132) ~[sp
+ring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.lambda$createDefaultStatusHandler$1(StatusHa
+ndler.java:107) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.handle(StatusHandler.java:75) ~[spring-web-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.applyStatusHandlers(
+DefaultRestClient.java:940) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$readBody$0(De
+faultRestClient.java:929) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient.readWithMessageConverters(DefaultRestCli
+ent.java:224) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.readBody(DefaultRest
+Client.java:928) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$body$1(Defaul
+tRestClient.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeIntern
+al(DefaultRestClient.java:617) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(Defau
+ltRestClient.java:572) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747
+) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(De
+faultRestClient.java:921) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClie
+nt.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:288) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:184) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:97) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.install(BitrixInstallationService.jav
+a:78) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(Cglib
+AopProxy.java:715) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService$$SpringCGLIB$$0.install(<generated>)
+~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixController.install(BitrixController.java:55) ~[!/:0.1.0-S
+NAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMe
+thod.java:252) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableH
+andlerMethod.java:184) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invok
+eAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invoke
+HandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handle
+Internal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHa
+ndlerMethodAdapter.java:86) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963)
+~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~
+[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:100
+0) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:903) ~[spri
+ng-webmvc-7.0.6.jar!/:7.0.6]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649) ~[tomcat-embed-core-11.0.2
+0.jar!/:na]
+        at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spr
+ing-webmvc-7.0.6.jar!/:7.0.6]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.2
+0.jar!/:na]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53) ~[tomcat-embed-web
+socket-11.0.20.jar!/:na]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at ru.abs7.videooffer.common.RequestLoggingFilter.doFilterInternal(RequestLoggingFilter.java
+:40) ~[!/:0.1.0-SNAPSHOT]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter
+.java:100) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:
+93) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncoding
+Filter.java:199) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.ForwardedHeaderFilter.doFilterInternal(ForwardedHeaderFilt
+er.java:174) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tom
+cat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomc
+at-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:492) ~[
+tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113) ~[tomcat-em
+bed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83) ~[tomcat-emb
+ed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72) ~[tomcat
+-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341) ~[tomcat-embe
+d-core-11.0.20.jar!/:na]
+        at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed
+-core-11.0.20.jar!/:na]
+        at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat
+-embed-core-11.0.20.jar!/:na]
+        at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~
+[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1779) ~[tom
+cat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-
+embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:946)
+~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:480)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:57) ~[tomc
+at-embed-core-11.0.20.jar!/:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-13T22:20:31.761Z ERROR [http-nio-8080-exec-10] [requestId=645c1ec4-a45a-4ada-a44f-dd8f7b3517
+2f] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call failed: memberId=419222a0c1725a381
+75958981810edd7, method=placement.bind, errorCode=HTTP_400, durationMs=206, error={"error":"ERROR_CO
+RE","error_description":"Unable to set placement handler: Handler already binded"}
+
+ru.abs7.videooffer.bitrix.BitrixRestException: {"error":"ERROR_CORE","error_description":"Unable to
+set placement handler: Handler already binded"}
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:302) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:184) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:97) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.install(BitrixInstallationService.jav
+a:78) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(Cglib
+AopProxy.java:715) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService$$SpringCGLIB$$0.install(<generated>)
+~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixController.install(BitrixController.java:55) ~[!/:0.1.0-S
+NAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMe
+thod.java:252) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableH
+andlerMethod.java:184) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invok
+eAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invoke
+HandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handle
+Internal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHa
+ndlerMethodAdapter.java:86) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963)
+~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~
+[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:100
+0) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:903) ~[spri
+ng-webmvc-7.0.6.jar!/:7.0.6]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649) ~[tomcat-embed-core-11.0.2
+0.jar!/:na]
+        at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spr
+ing-webmvc-7.0.6.jar!/:7.0.6]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.2
+0.jar!/:na]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53) ~[tomcat-embed-web
+socket-11.0.20.jar!/:na]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at ru.abs7.videooffer.common.RequestLoggingFilter.doFilterInternal(RequestLoggingFilter.java
+:40) ~[!/:0.1.0-SNAPSHOT]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter
+.java:100) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:
+93) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncoding
+Filter.java:199) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.ForwardedHeaderFilter.doFilterInternal(ForwardedHeaderFilt
+er.java:174) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tom
+cat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomc
+at-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:492) ~[
+tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113) ~[tomcat-em
+bed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83) ~[tomcat-emb
+ed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72) ~[tomcat
+-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341) ~[tomcat-embe
+d-core-11.0.20.jar!/:na]
+        at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed
+-core-11.0.20.jar!/:na]
+        at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat
+-embed-core-11.0.20.jar!/:na]
+        at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~
+[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1779) ~[tom
+cat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-
+embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:946)
+~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:480)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:57) ~[tomc
+at-embed-core-11.0.20.jar!/:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-13T22:20:31.767Z INFO  [http-nio-8080-exec-10] [requestId=645c1ec4-a45a-4ada-a44f-dd8f7b3517
+2f] r.a.videooffer.bitrix.BitrixInstallationService - Bitrix placement already bound: memberId=41922
+2a0c1725a38175958981810edd7, placement=CRM_CONTACT_DETAIL_ACTIVITY
+2026-08-13T22:20:31.767Z INFO  [http-nio-8080-exec-10] [requestId=645c1ec4-a45a-4ada-a44f-dd8f7b3517
+2f] r.a.videooffer.bitrix.BitrixInstallationService - Локальное приложение Bitrix24 подготовлено: do
+main=abs7.bitrix24.ru, memberId=419222a0c1725a38175958981810edd7, placements={CRM_DEAL_DETAIL_ACTIVI
+TY=ALREADY_BOUND, CRM_LEAD_DETAIL_ACTIVITY=ALREADY_BOUND, CRM_CONTACT_DETAIL_ACTIVITY=ALREADY_BOUND}
+. Browser must complete installation with BX24.installFinish().
+2026-08-13T22:20:31.772Z INFO  [http-nio-8080-exec-10] [requestId=645c1ec4-a45a-4ada-a44f-dd8f7b3517
+2f] ru.abs7.videooffer.bitrix.BitrixController - Bitrix installation callback completed: domain=abs7
+.bitrix24.ru, memberId=419222a0c1725a38175958981810edd7, applicationScopes=crm,placement,mobile,user
+_basic,im, placements={CRM_DEAL_DETAIL_ACTIVITY=ALREADY_BOUND, CRM_LEAD_DETAIL_ACTIVITY=ALREADY_BOUN
+D, CRM_CONTACT_DETAIL_ACTIVITY=ALREADY_BOUND}. Returning browser installer page which calls BX24.ins
+tallFinish().
+2026-08-13T22:20:31.776Z INFO  [http-nio-8080-exec-10] [requestId=645c1ec4-a45a-4ada-a44f-dd8f7b3517
+2f] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/bitr
+ix/install, status=200, durationMs=1349
+2026-08-13T22:20:32.483Z INFO  [http-nio-8080-exec-1] [requestId=2ccae9bc-e3cb-4ad6-a0ac-7ed4c952262
+e] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/bitrix/
+install, remoteAddress=89.208.228.219, userAgent=Bitrix24 Webhook Engine
+2026-08-13T22:20:32.484Z INFO  [http-nio-8080-exec-1] [requestId=2ccae9bc-e3cb-4ad6-a0ac-7ed4c952262
+e] ru.abs7.videooffer.bitrix.BitrixController - Bitrix installation callback received: parameterName
+s=[event, event_handler_id, data[VERSION], data[ACTIVE], data[INSTALLED], data[LANGUAGE_ID], ts, aut
+h[access_token], auth[expires], auth[expires_in], auth[scope], auth[domain], auth[server_endpoint],
+auth[status], auth[client_endpoint], auth[member_id], auth[user_id], auth[refresh_token], auth[appli
+cation_token]]
+2026-08-13T22:20:32.484Z INFO  [http-nio-8080-exec-1] [requestId=2ccae9bc-e3cb-4ad6-a0ac-7ed4c952262
+e] r.a.videooffer.bitrix.BitrixInstallationService - Starting Bitrix installation: parameterNames=[e
+vent, event_handler_id, data[VERSION], data[ACTIVE], data[INSTALLED], data[LANGUAGE_ID], ts, auth[ac
+cess_token], auth[expires], auth[expires_in], auth[scope], auth[domain], auth[server_endpoint], auth
+[status], auth[client_endpoint], auth[member_id], auth[user_id], auth[refresh_token], auth[applicati
+on_token]]
+2026-08-13T22:20:32.485Z INFO  [http-nio-8080-exec-1] [requestId=2ccae9bc-e3cb-4ad6-a0ac-7ed4c952262
+e] r.a.videooffer.bitrix.BitrixInstallationService - Bitrix auth data parsed: domain=abs7.bitrix24.r
+u, memberId=419222a0c1725a38175958981810edd7, expiresAt=2026-08-13T23:20:56Z, applicationScopes=crm,
+placement,mobile,user_basic,im, accessTokenPresent=true, refreshTokenPresent=true
+2026-08-13T22:20:32.793Z INFO  [http-nio-8080-exec-1] [requestId=2ccae9bc-e3cb-4ad6-a0ac-7ed4c952262
+e] r.a.videooffer.bitrix.BitrixInstallationService - Bitrix installation authorization persisted: do
+main=abs7.bitrix24.ru, memberId=419222a0c1725a38175958981810edd7
+2026-08-13T22:20:32.794Z INFO  [http-nio-8080-exec-1] [requestId=2ccae9bc-e3cb-4ad6-a0ac-7ed4c952262
+e] r.a.videooffer.bitrix.BitrixInstallationService - Binding Bitrix placement: memberId=419222a0c172
+5a38175958981810edd7, placement=CRM_DEAL_DETAIL_ACTIVITY, handler=https://offer.abs7.ru/bitrix/widge
+t
+2026-08-13T22:20:32.795Z INFO  [http-nio-8080-exec-1] [requestId=2ccae9bc-e3cb-4ad6-a0ac-7ed4c952262
+e] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a381
+75958981810edd7, method=placement.bind, parameterNames=[PLACEMENT, HANDLER, TITLE, LANG_ALL]
+2026-08-13T22:20:32.861Z INFO  [http-nio-8080-exec-1] [requestId=2ccae9bc-e3cb-4ad6-a0ac-7ed4c952262
+e] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c172
+5a38175958981810edd7, domain=abs7.bitrix24.ru, method=placement.bind, endpoint=https://abs7.bitrix24
+.ru/rest/placement.bind.json, tokenExpiresAt=2026-08-13T23:20:56Z
+2026-08-13T22:20:32.994Z ERROR [http-nio-8080-exec-1] [requestId=2ccae9bc-e3cb-4ad6-a0ac-7ed4c952262
+e] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix HTTP error response: memberId=419222a0c1725a3
+8175958981810edd7, method=placement.bind, endpoint=https://abs7.bitrix24.ru/rest/placement.bind.json
+, status=400 BAD_REQUEST, durationMs=133, responseBody={"error":"ERROR_CORE","error_description":"Un
+able to set placement handler: Handler already binded"}
+
+org.springframework.web.client.HttpClientErrorException$BadRequest: 400 Bad Request: "{"error":"ERRO
+R_CORE","error_description":"Unable to set placement handler: Handler already binded"}"
+        at org.springframework.web.client.HttpClientErrorException.create(HttpClientErrorException.j
+ava:106) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.createException(StatusHandler.java:132) ~[sp
+ring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.lambda$createDefaultStatusHandler$1(StatusHa
+ndler.java:107) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.handle(StatusHandler.java:75) ~[spring-web-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.applyStatusHandlers(
+DefaultRestClient.java:940) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$readBody$0(De
+faultRestClient.java:929) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient.readWithMessageConverters(DefaultRestCli
+ent.java:224) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.readBody(DefaultRest
+Client.java:928) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$body$1(Defaul
+tRestClient.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeIntern
+al(DefaultRestClient.java:617) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(Defau
+ltRestClient.java:572) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747
+) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(De
+faultRestClient.java:921) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClie
+nt.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:288) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:184) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:97) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.install(BitrixInstallationService.jav
+a:78) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(Cglib
+AopProxy.java:715) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService$$SpringCGLIB$$0.install(<generated>)
+~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixController.install(BitrixController.java:55) ~[!/:0.1.0-S
+NAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMe
+thod.java:252) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableH
+andlerMethod.java:184) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invok
+eAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invoke
+HandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handle
+Internal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHa
+ndlerMethodAdapter.java:86) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963)
+~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~
+[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:100
+0) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:903) ~[spri
+ng-webmvc-7.0.6.jar!/:7.0.6]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649) ~[tomcat-embed-core-11.0.2
+0.jar!/:na]
+        at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spr
+ing-webmvc-7.0.6.jar!/:7.0.6]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.2
+0.jar!/:na]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53) ~[tomcat-embed-web
+socket-11.0.20.jar!/:na]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at ru.abs7.videooffer.common.RequestLoggingFilter.doFilterInternal(RequestLoggingFilter.java
+:40) ~[!/:0.1.0-SNAPSHOT]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter
+.java:100) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:
+93) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncoding
+Filter.java:199) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.ForwardedHeaderFilter.doFilterInternal(ForwardedHeaderFilt
+er.java:174) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tom
+cat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomc
+at-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:492) ~[
+tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113) ~[tomcat-em
+bed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83) ~[tomcat-emb
+ed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72) ~[tomcat
+-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341) ~[tomcat-embe
+d-core-11.0.20.jar!/:na]
+        at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed
+-core-11.0.20.jar!/:na]
+        at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat
+-embed-core-11.0.20.jar!/:na]
+        at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~
+[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1779) ~[tom
+cat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-
+embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:946)
+~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:480)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:57) ~[tomc
+at-embed-core-11.0.20.jar!/:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-13T22:20:32.998Z ERROR [http-nio-8080-exec-1] [requestId=2ccae9bc-e3cb-4ad6-a0ac-7ed4c952262
+e] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call failed: memberId=419222a0c1725a3817
+5958981810edd7, method=placement.bind, errorCode=HTTP_400, durationMs=203, error={"error":"ERROR_COR
+E","error_description":"Unable to set placement handler: Handler already binded"}
+
+ru.abs7.videooffer.bitrix.BitrixRestException: {"error":"ERROR_CORE","error_description":"Unable to
+set placement handler: Handler already binded"}
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:302) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:184) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:97) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.install(BitrixInstallationService.jav
+a:78) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(Cglib
+AopProxy.java:715) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService$$SpringCGLIB$$0.install(<generated>)
+~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixController.install(BitrixController.java:55) ~[!/:0.1.0-S
+NAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMe
+thod.java:252) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableH
+andlerMethod.java:184) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invok
+eAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invoke
+HandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handle
+Internal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHa
+ndlerMethodAdapter.java:86) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963)
+~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~
+[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:100
+0) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:903) ~[spri
+ng-webmvc-7.0.6.jar!/:7.0.6]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649) ~[tomcat-embed-core-11.0.2
+0.jar!/:na]
+        at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spr
+ing-webmvc-7.0.6.jar!/:7.0.6]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.2
+0.jar!/:na]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53) ~[tomcat-embed-web
+socket-11.0.20.jar!/:na]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at ru.abs7.videooffer.common.RequestLoggingFilter.doFilterInternal(RequestLoggingFilter.java
+:40) ~[!/:0.1.0-SNAPSHOT]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter
+.java:100) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:
+93) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncoding
+Filter.java:199) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.ForwardedHeaderFilter.doFilterInternal(ForwardedHeaderFilt
+er.java:174) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tom
+cat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomc
+at-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:492) ~[
+tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113) ~[tomcat-em
+bed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83) ~[tomcat-emb
+ed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72) ~[tomcat
+-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341) ~[tomcat-embe
+d-core-11.0.20.jar!/:na]
+        at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed
+-core-11.0.20.jar!/:na]
+        at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat
+-embed-core-11.0.20.jar!/:na]
+        at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~
+[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1779) ~[tom
+cat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-
+embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:946)
+~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:480)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:57) ~[tomc
+at-embed-core-11.0.20.jar!/:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-13T22:20:33.001Z INFO  [http-nio-8080-exec-1] [requestId=2ccae9bc-e3cb-4ad6-a0ac-7ed4c952262
+e] r.a.videooffer.bitrix.BitrixInstallationService - Bitrix placement already bound: memberId=419222
+a0c1725a38175958981810edd7, placement=CRM_DEAL_DETAIL_ACTIVITY
+2026-08-13T22:20:33.001Z INFO  [http-nio-8080-exec-1] [requestId=2ccae9bc-e3cb-4ad6-a0ac-7ed4c952262
+e] r.a.videooffer.bitrix.BitrixInstallationService - Binding Bitrix placement: memberId=419222a0c172
+5a38175958981810edd7, placement=CRM_LEAD_DETAIL_ACTIVITY, handler=https://offer.abs7.ru/bitrix/widge
+t
+2026-08-13T22:20:33.001Z INFO  [http-nio-8080-exec-1] [requestId=2ccae9bc-e3cb-4ad6-a0ac-7ed4c952262
+e] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a381
+75958981810edd7, method=placement.bind, parameterNames=[PLACEMENT, HANDLER, TITLE, LANG_ALL]
+2026-08-13T22:20:33.064Z INFO  [http-nio-8080-exec-1] [requestId=2ccae9bc-e3cb-4ad6-a0ac-7ed4c952262
+e] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c172
+5a38175958981810edd7, domain=abs7.bitrix24.ru, method=placement.bind, endpoint=https://abs7.bitrix24
+.ru/rest/placement.bind.json, tokenExpiresAt=2026-08-13T23:20:56Z
+2026-08-13T22:20:33.185Z ERROR [http-nio-8080-exec-1] [requestId=2ccae9bc-e3cb-4ad6-a0ac-7ed4c952262
+e] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix HTTP error response: memberId=419222a0c1725a3
+8175958981810edd7, method=placement.bind, endpoint=https://abs7.bitrix24.ru/rest/placement.bind.json
+, status=400 BAD_REQUEST, durationMs=121, responseBody={"error":"ERROR_CORE","error_description":"Un
+able to set placement handler: Handler already binded"}
+
+org.springframework.web.client.HttpClientErrorException$BadRequest: 400 Bad Request: "{"error":"ERRO
+R_CORE","error_description":"Unable to set placement handler: Handler already binded"}"
+        at org.springframework.web.client.HttpClientErrorException.create(HttpClientErrorException.j
+ava:106) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.createException(StatusHandler.java:132) ~[sp
+ring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.lambda$createDefaultStatusHandler$1(StatusHa
+ndler.java:107) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.handle(StatusHandler.java:75) ~[spring-web-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.applyStatusHandlers(
+DefaultRestClient.java:940) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$readBody$0(De
+faultRestClient.java:929) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient.readWithMessageConverters(DefaultRestCli
+ent.java:224) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.readBody(DefaultRest
+Client.java:928) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$body$1(Defaul
+tRestClient.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeIntern
+al(DefaultRestClient.java:617) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(Defau
+ltRestClient.java:572) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747
+) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(De
+faultRestClient.java:921) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClie
+nt.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:288) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:184) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:97) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.install(BitrixInstallationService.jav
+a:78) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(Cglib
+AopProxy.java:715) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService$$SpringCGLIB$$0.install(<generated>)
+~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixController.install(BitrixController.java:55) ~[!/:0.1.0-S
+NAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMe
+thod.java:252) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableH
+andlerMethod.java:184) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invok
+eAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invoke
+HandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handle
+Internal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHa
+ndlerMethodAdapter.java:86) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963)
+~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~
+[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:100
+0) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:903) ~[spri
+ng-webmvc-7.0.6.jar!/:7.0.6]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649) ~[tomcat-embed-core-11.0.2
+0.jar!/:na]
+        at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spr
+ing-webmvc-7.0.6.jar!/:7.0.6]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.2
+0.jar!/:na]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53) ~[tomcat-embed-web
+socket-11.0.20.jar!/:na]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at ru.abs7.videooffer.common.RequestLoggingFilter.doFilterInternal(RequestLoggingFilter.java
+:40) ~[!/:0.1.0-SNAPSHOT]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter
+.java:100) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:
+93) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncoding
+Filter.java:199) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.ForwardedHeaderFilter.doFilterInternal(ForwardedHeaderFilt
+er.java:174) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tom
+cat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomc
+at-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:492) ~[
+tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113) ~[tomcat-em
+bed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83) ~[tomcat-emb
+ed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72) ~[tomcat
+-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341) ~[tomcat-embe
+d-core-11.0.20.jar!/:na]
+        at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed
+-core-11.0.20.jar!/:na]
+        at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat
+-embed-core-11.0.20.jar!/:na]
+        at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~
+[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1779) ~[tom
+cat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-
+embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:946)
+~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:480)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:57) ~[tomc
+at-embed-core-11.0.20.jar!/:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-13T22:20:33.188Z ERROR [http-nio-8080-exec-1] [requestId=2ccae9bc-e3cb-4ad6-a0ac-7ed4c952262
+e] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call failed: memberId=419222a0c1725a3817
+5958981810edd7, method=placement.bind, errorCode=HTTP_400, durationMs=187, error={"error":"ERROR_COR
+E","error_description":"Unable to set placement handler: Handler already binded"}
+
+ru.abs7.videooffer.bitrix.BitrixRestException: {"error":"ERROR_CORE","error_description":"Unable to
+set placement handler: Handler already binded"}
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:302) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:184) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:97) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.install(BitrixInstallationService.jav
+a:78) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(Cglib
+AopProxy.java:715) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService$$SpringCGLIB$$0.install(<generated>)
+~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixController.install(BitrixController.java:55) ~[!/:0.1.0-S
+NAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMe
+thod.java:252) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableH
+andlerMethod.java:184) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invok
+eAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invoke
+HandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handle
+Internal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHa
+ndlerMethodAdapter.java:86) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963)
+~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~
+[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:100
+0) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:903) ~[spri
+ng-webmvc-7.0.6.jar!/:7.0.6]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649) ~[tomcat-embed-core-11.0.2
+0.jar!/:na]
+        at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spr
+ing-webmvc-7.0.6.jar!/:7.0.6]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.2
+0.jar!/:na]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53) ~[tomcat-embed-web
+socket-11.0.20.jar!/:na]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at ru.abs7.videooffer.common.RequestLoggingFilter.doFilterInternal(RequestLoggingFilter.java
+:40) ~[!/:0.1.0-SNAPSHOT]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter
+.java:100) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:
+93) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncoding
+Filter.java:199) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.ForwardedHeaderFilter.doFilterInternal(ForwardedHeaderFilt
+er.java:174) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tom
+cat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomc
+at-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:492) ~[
+tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113) ~[tomcat-em
+bed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83) ~[tomcat-emb
+ed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72) ~[tomcat
+-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341) ~[tomcat-embe
+d-core-11.0.20.jar!/:na]
+        at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed
+-core-11.0.20.jar!/:na]
+        at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat
+-embed-core-11.0.20.jar!/:na]
+        at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~
+[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1779) ~[tom
+cat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-
+embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:946)
+~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:480)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:57) ~[tomc
+at-embed-core-11.0.20.jar!/:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-13T22:20:33.192Z INFO  [http-nio-8080-exec-1] [requestId=2ccae9bc-e3cb-4ad6-a0ac-7ed4c952262
+e] r.a.videooffer.bitrix.BitrixInstallationService - Bitrix placement already bound: memberId=419222
+a0c1725a38175958981810edd7, placement=CRM_LEAD_DETAIL_ACTIVITY
+2026-08-13T22:20:33.193Z INFO  [http-nio-8080-exec-1] [requestId=2ccae9bc-e3cb-4ad6-a0ac-7ed4c952262
+e] r.a.videooffer.bitrix.BitrixInstallationService - Binding Bitrix placement: memberId=419222a0c172
+5a38175958981810edd7, placement=CRM_CONTACT_DETAIL_ACTIVITY, handler=https://offer.abs7.ru/bitrix/wi
+dget
+2026-08-13T22:20:33.193Z INFO  [http-nio-8080-exec-1] [requestId=2ccae9bc-e3cb-4ad6-a0ac-7ed4c952262
+e] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call started: memberId=419222a0c1725a381
+75958981810edd7, method=placement.bind, parameterNames=[PLACEMENT, HANDLER, TITLE, LANG_ALL]
+2026-08-13T22:20:33.256Z INFO  [http-nio-8080-exec-1] [requestId=2ccae9bc-e3cb-4ad6-a0ac-7ed4c952262
+e] ru.abs7.videooffer.bitrix.BitrixRestClient - Executing Bitrix REST request: memberId=419222a0c172
+5a38175958981810edd7, domain=abs7.bitrix24.ru, method=placement.bind, endpoint=https://abs7.bitrix24
+.ru/rest/placement.bind.json, tokenExpiresAt=2026-08-13T23:20:56Z
+2026-08-13T22:20:33.384Z ERROR [http-nio-8080-exec-1] [requestId=2ccae9bc-e3cb-4ad6-a0ac-7ed4c952262
+e] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix HTTP error response: memberId=419222a0c1725a3
+8175958981810edd7, method=placement.bind, endpoint=https://abs7.bitrix24.ru/rest/placement.bind.json
+, status=400 BAD_REQUEST, durationMs=128, responseBody={"error":"ERROR_CORE","error_description":"Un
+able to set placement handler: Handler already binded"}
+
+org.springframework.web.client.HttpClientErrorException$BadRequest: 400 Bad Request: "{"error":"ERRO
+R_CORE","error_description":"Unable to set placement handler: Handler already binded"}"
+        at org.springframework.web.client.HttpClientErrorException.create(HttpClientErrorException.j
+ava:106) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.createException(StatusHandler.java:132) ~[sp
+ring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.lambda$createDefaultStatusHandler$1(StatusHa
+ndler.java:107) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.StatusHandler.handle(StatusHandler.java:75) ~[spring-web-7
+.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.applyStatusHandlers(
+DefaultRestClient.java:940) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$readBody$0(De
+faultRestClient.java:929) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient.readWithMessageConverters(DefaultRestCli
+ent.java:224) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.readBody(DefaultRest
+Client.java:928) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.lambda$body$1(Defaul
+tRestClient.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeIntern
+al(DefaultRestClient.java:617) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(Defau
+ltRestClient.java:572) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.RestClient$RequestHeadersSpec.exchange(RestClient.java:747
+) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.executeAndExtract(De
+faultRestClient.java:921) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.client.DefaultRestClient$DefaultResponseSpec.body(DefaultRestClie
+nt.java:844) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:288) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:184) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:97) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.install(BitrixInstallationService.jav
+a:78) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(Cglib
+AopProxy.java:715) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService$$SpringCGLIB$$0.install(<generated>)
+~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixController.install(BitrixController.java:55) ~[!/:0.1.0-S
+NAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMe
+thod.java:252) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableH
+andlerMethod.java:184) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invok
+eAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invoke
+HandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handle
+Internal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHa
+ndlerMethodAdapter.java:86) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963)
+~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~
+[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:100
+0) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:903) ~[spri
+ng-webmvc-7.0.6.jar!/:7.0.6]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649) ~[tomcat-embed-core-11.0.2
+0.jar!/:na]
+        at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spr
+ing-webmvc-7.0.6.jar!/:7.0.6]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.2
+0.jar!/:na]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53) ~[tomcat-embed-web
+socket-11.0.20.jar!/:na]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at ru.abs7.videooffer.common.RequestLoggingFilter.doFilterInternal(RequestLoggingFilter.java
+:40) ~[!/:0.1.0-SNAPSHOT]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter
+.java:100) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:
+93) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncoding
+Filter.java:199) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.ForwardedHeaderFilter.doFilterInternal(ForwardedHeaderFilt
+er.java:174) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tom
+cat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomc
+at-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:492) ~[
+tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113) ~[tomcat-em
+bed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83) ~[tomcat-emb
+ed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72) ~[tomcat
+-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341) ~[tomcat-embe
+d-core-11.0.20.jar!/:na]
+        at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed
+-core-11.0.20.jar!/:na]
+        at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat
+-embed-core-11.0.20.jar!/:na]
+        at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~
+[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1779) ~[tom
+cat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-
+embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:946)
+~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:480)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:57) ~[tomc
+at-embed-core-11.0.20.jar!/:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-13T22:20:33.388Z ERROR [http-nio-8080-exec-1] [requestId=2ccae9bc-e3cb-4ad6-a0ac-7ed4c952262
+e] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitrix REST call failed: memberId=419222a0c1725a3817
+5958981810edd7, method=placement.bind, errorCode=HTTP_400, durationMs=194, error={"error":"ERROR_COR
+E","error_description":"Unable to set placement handler: Handler already binded"}
+
+ru.abs7.videooffer.bitrix.BitrixRestException: {"error":"ERROR_CORE","error_description":"Unable to
+set placement handler: Handler already binded"}
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.execute(BitrixRestClient.java:302) ~[!/:0.1.0-
+SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixRestClient.call(BitrixRestClient.java:184) ~[!/:0.1.0-SNA
+PSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.bindPlacements(BitrixInstallationServ
+ice.java:97) ~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService.install(BitrixInstallationService.jav
+a:78) ~[!/:0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(Cglib
+AopProxy.java:715) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.bitrix.BitrixInstallationService$$SpringCGLIB$$0.install(<generated>)
+~[!/:0.1.0-SNAPSHOT]
+        at ru.abs7.videooffer.bitrix.BitrixController.install(BitrixController.java:55) ~[!/:0.1.0-S
+NAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMe
+thod.java:252) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableH
+andlerMethod.java:184) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invok
+eAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invoke
+HandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handle
+Internal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHa
+ndlerMethodAdapter.java:86) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963)
+~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~
+[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:100
+0) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:903) ~[spri
+ng-webmvc-7.0.6.jar!/:7.0.6]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649) ~[tomcat-embed-core-11.0.2
+0.jar!/:na]
+        at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spr
+ing-webmvc-7.0.6.jar!/:7.0.6]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.2
+0.jar!/:na]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53) ~[tomcat-embed-web
+socket-11.0.20.jar!/:na]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at ru.abs7.videooffer.common.RequestLoggingFilter.doFilterInternal(RequestLoggingFilter.java
+:40) ~[!/:0.1.0-SNAPSHOT]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter
+.java:100) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:
+93) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncoding
+Filter.java:199) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.ForwardedHeaderFilter.doFilterInternal(ForwardedHeaderFilt
+er.java:174) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tom
+cat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomc
+at-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:492) ~[
+tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113) ~[tomcat-em
+bed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83) ~[tomcat-emb
+ed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72) ~[tomcat
+-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341) ~[tomcat-embe
+d-core-11.0.20.jar!/:na]
+        at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed
+-core-11.0.20.jar!/:na]
+        at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat
+-embed-core-11.0.20.jar!/:na]
+        at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~
+[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1779) ~[tom
+cat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-
+embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:946)
+~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:480)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:57) ~[tomc
+at-embed-core-11.0.20.jar!/:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-13T22:20:33.389Z INFO  [http-nio-8080-exec-1] [requestId=2ccae9bc-e3cb-4ad6-a0ac-7ed4c952262
+e] r.a.videooffer.bitrix.BitrixInstallationService - Bitrix placement already bound: memberId=419222
+a0c1725a38175958981810edd7, placement=CRM_CONTACT_DETAIL_ACTIVITY
+2026-08-13T22:20:33.389Z INFO  [http-nio-8080-exec-1] [requestId=2ccae9bc-e3cb-4ad6-a0ac-7ed4c952262
+e] r.a.videooffer.bitrix.BitrixInstallationService - Локальное приложение Bitrix24 подготовлено: dom
+ain=abs7.bitrix24.ru, memberId=419222a0c1725a38175958981810edd7, placements={CRM_DEAL_DETAIL_ACTIVIT
+Y=ALREADY_BOUND, CRM_LEAD_DETAIL_ACTIVITY=ALREADY_BOUND, CRM_CONTACT_DETAIL_ACTIVITY=ALREADY_BOUND}.
+ Browser must complete installation with BX24.installFinish().
+2026-08-13T22:20:33.390Z INFO  [http-nio-8080-exec-1] [requestId=2ccae9bc-e3cb-4ad6-a0ac-7ed4c952262
+e] ru.abs7.videooffer.bitrix.BitrixController - Bitrix installation callback completed: domain=abs7.
+bitrix24.ru, memberId=419222a0c1725a38175958981810edd7, applicationScopes=crm,placement,mobile,user_
+basic,im, placements={CRM_DEAL_DETAIL_ACTIVITY=ALREADY_BOUND, CRM_LEAD_DETAIL_ACTIVITY=ALREADY_BOUND
+, CRM_CONTACT_DETAIL_ACTIVITY=ALREADY_BOUND}. Returning browser installer page which calls BX24.inst
+allFinish().
+2026-08-13T22:20:33.393Z INFO  [http-nio-8080-exec-1] [requestId=2ccae9bc-e3cb-4ad6-a0ac-7ed4c952262
+e] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/bitri
+x/install, status=200, durationMs=910
+2026-08-13T22:20:33.542Z INFO  [http-nio-8080-exec-3] [requestId=b5f0fad1-7c2f-4704-af5d-a38ed312a5b
+7] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/bitrix/
+app, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/53
+7.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDesktop/22.0.28.91 Safari/537.36
+2026-08-13T22:20:33.548Z INFO  [http-nio-8080-exec-3] [requestId=b5f0fad1-7c2f-4704-af5d-a38ed312a5b
+7] r.a.v.bitrix.mobile.BitrixMobileController - Bitrix standalone application opened: parameterNames
+=[DOMAIN, PROTOCOL, LANG, APP_SID, AUTH_ID, AUTH_EXPIRES, REFRESH_ID, SERVER_ENDPOINT, APPLICATION_T
+OKEN, APPLICATION_SCOPE, member_id, status, PLACEMENT, PLACEMENT_OPTIONS], userAgent=Mozilla/5.0 (Wi
+ndows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.114 BitrixDeskto
+p/22.0.28.91 Safari/537.36
+2026-08-13T22:20:33.903Z INFO  [http-nio-8080-exec-3] [requestId=b5f0fad1-7c2f-4704-af5d-a38ed312a5b
+7] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/bitri
+x/app, status=200, durationMs=361
+2026-08-13T22:22:55.140Z INFO  [http-nio-8080-exec-4] [requestId=f8915a35-4a49-4711-9d34-19f7f024d18
+b] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/api/bac
+koffice/tenants, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) Ap
+pleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-13T22:22:55.737Z INFO  [http-nio-8080-exec-4] [requestId=f8915a35-4a49-4711-9d34-19f7f024d18
+b] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/api/b
+ackoffice/tenants, status=200, durationMs=597
+2026-08-13T22:22:55.804Z INFO  [http-nio-8080-exec-5] [requestId=037f253a-8130-4f99-ac9e-f2113c4d2be
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/api/bac
+koffice/tenants/1/test, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64;
+x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-13T22:23:27.530Z WARN  [scheduling-1] [requestId=] com.zaxxer.hikari.pool.PoolBase - HikariP
+ool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@f974cf (This connection has b
+een closed.). Possibly consider using a shorter maxLifetime value.
+2026-08-13T22:23:40.007Z INFO  [http-nio-8080-exec-6] [requestId=094afae1-1236-4f73-8e8f-f05dc875552
+4] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/api/bac
+koffice/tenants/1/test, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64;
+x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-13T22:23:40.621Z INFO  [http-nio-8080-exec-6] [requestId=094afae1-1236-4f73-8e8f-f05dc875552
+4] ru.abs7.videooffer.tenant.BitrixWebhookClient - Bitrix webhook call completed: host=abs7.bitrix24
+.ru, method=user.current, durationMs=437
+2026-08-13T22:23:40.872Z INFO  [http-nio-8080-exec-6] [requestId=094afae1-1236-4f73-8e8f-f05dc875552
+4] ru.abs7.videooffer.tenant.BitrixWebhookClient - Bitrix webhook call completed: host=abs7.bitrix24
+.ru, method=crm.item.fields, durationMs=249
+2026-08-13T22:23:41.069Z INFO  [http-nio-8080-exec-6] [requestId=094afae1-1236-4f73-8e8f-f05dc875552
+4] ru.abs7.videooffer.tenant.BitrixWebhookClient - Bitrix webhook call completed: host=abs7.bitrix24
+.ru, method=user.get, durationMs=195
+2026-08-13T22:23:41.239Z INFO  [http-nio-8080-exec-6] [requestId=094afae1-1236-4f73-8e8f-f05dc875552
+4] ru.abs7.videooffer.tenant.BitrixWebhookClient - Bitrix webhook call completed: host=abs7.bitrix24
+.ru, method=user.get, durationMs=168
+2026-08-13T22:23:41.243Z INFO  [http-nio-8080-exec-6] [requestId=094afae1-1236-4f73-8e8f-f05dc875552
+4] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/api/b
+ackoffice/tenants/1/test, status=200, durationMs=1236
+2026-08-13T22:23:52.396Z INFO  [http-nio-8080-exec-2] [requestId=97d5a9a5-fd19-471f-9d8b-df0799f7410
+b] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/api/bac
+koffice/tenants, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) Ap
+pleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-13T22:23:52.605Z WARN  [http-nio-8080-exec-2] [requestId=97d5a9a5-fd19-471f-9d8b-df0799f7410
+b] ru.abs7.videooffer.common.ApiExceptionHandler - Bad request: error=Клиент с порталом abs7.bitrix2
+4.ru уже зарегистрирован
+
+java.lang.IllegalArgumentException: Клиент с порталом abs7.bitrix24.ru уже зарегистрирован
+        at ru.abs7.videooffer.tenant.TenantAdminService.create(TenantAdminService.java:46) ~[!/:0.1.
+0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359
+) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMe
+thodInvocation.java:190) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvo
+cation.java:158) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.transaction.interceptor.TransactionInterceptor$1.proceedWithInvocatio
+n(TransactionInterceptor.java:133) ~[spring-tx-7.0.6.jar!/:7.0.6]
+        at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransact
+ion(TransactionAspectSupport.java:371) ~[spring-tx-7.0.6.jar!/:7.0.6]
+        at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInte
+rceptor.java:130) ~[spring-tx-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvo
+cation.java:179) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(Cglib
+AopProxy.java:719) ~[spring-aop-7.0.6.jar!/:7.0.6]
+        at ru.abs7.videooffer.tenant.TenantAdminService$$SpringCGLIB$$0.create(<generated>) ~[!/:0.1
+.0-SNAPSHOT]
+        at ru.abs7.videooffer.tenant.BackofficeController.create(BackofficeController.java:79) ~[!/:
+0.1.0-SNAPSHOT]
+        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+        at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMe
+thod.java:252) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableH
+andlerMethod.java:184) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invok
+eAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invoke
+HandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handle
+Internal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHa
+ndlerMethodAdapter.java:86) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963)
+~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~
+[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:100
+0) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:903) ~[spri
+ng-webmvc-7.0.6.jar!/:7.0.6]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649) ~[tomcat-embed-core-11.0.2
+0.jar!/:na]
+        at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spr
+ing-webmvc-7.0.6.jar!/:7.0.6]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.2
+0.jar!/:na]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53) ~[tomcat-embed-web
+socket-11.0.20.jar!/:na]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at ru.abs7.videooffer.common.RequestLoggingFilter.doFilterInternal(RequestLoggingFilter.java
+:40) ~[!/:0.1.0-SNAPSHOT]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter
+.java:100) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:
+93) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncoding
+Filter.java:199) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.ForwardedHeaderFilter.doFilterInternal(ForwardedHeaderFilt
+er.java:174) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tom
+cat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomc
+at-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:492) ~[
+tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113) ~[tomcat-em
+bed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83) ~[tomcat-emb
+ed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72) ~[tomcat
+-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341) ~[tomcat-embe
+d-core-11.0.20.jar!/:na]
+        at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed
+-core-11.0.20.jar!/:na]
+        at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat
+-embed-core-11.0.20.jar!/:na]
+        at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~
+[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1779) ~[tom
+cat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-
+embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:946)
+~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:480)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:57) ~[tomc
+at-embed-core-11.0.20.jar!/:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-13T22:23:52.619Z INFO  [http-nio-8080-exec-2] [requestId=97d5a9a5-fd19-471f-9d8b-df0799f7410
+b] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/api/b
+ackoffice/tenants, status=400, durationMs=222
+2026-08-13T22:24:00.535Z INFO  [http-nio-8080-exec-7] [requestId=50bac957-e68a-4313-a863-f11f56873ef
+0] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=DELETE, path=/api/b
+ackoffice/tenants/1, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64
+) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-13T22:24:00.792Z INFO  [http-nio-8080-exec-7] [requestId=50bac957-e68a-4313-a863-f11f56873ef
+0] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=DELETE, path=/api
+/backoffice/tenants/1, status=204, durationMs=257
+2026-08-13T22:24:00.856Z INFO  [http-nio-8080-exec-8] [requestId=c6fe3ed8-b668-4373-9dd8-52ebcc62111
+f] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/back
+office/tenants, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) App
+leWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-13T22:24:00.982Z INFO  [http-nio-8080-exec-8] [requestId=c6fe3ed8-b668-4373-9dd8-52ebcc62111
+f] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/ba
+ckoffice/tenants, status=200, durationMs=125
+2026-08-13T22:24:22.770Z INFO  [http-nio-8080-exec-9] [requestId=d2065670-56ab-4d25-829c-08ec6644514
+7] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/api/bac
+koffice/tenants, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) Ap
+pleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-13T22:24:23.147Z INFO  [http-nio-8080-exec-9] [requestId=d2065670-56ab-4d25-829c-08ec6644514
+7] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/api/b
+ackoffice/tenants, status=200, durationMs=376
+2026-08-13T22:24:23.216Z INFO  [http-nio-8080-exec-10] [requestId=cbb8d2e6-6dcd-4819-a564-a2bff7d593
+2c] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/api/ba
+ckoffice/tenants/2/test, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64;
+ x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-13T22:24:33.811Z INFO  [http-nio-8080-exec-1] [requestId=fe05c670-ad76-4700-a6a2-b550c639473
+d] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/api/bac
+koffice/tenants/2/test, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64;
+x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36

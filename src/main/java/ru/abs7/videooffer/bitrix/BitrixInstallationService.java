@@ -12,10 +12,13 @@ import org.springframework.util.MultiValueMap;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 public class BitrixInstallationService {
@@ -73,8 +76,8 @@ public class BitrixInstallationService {
                 auth.domain(), auth.memberId());
 
         // Do not unbind working desktop placements during installation.
-        // placement.bind is idempotent for our case: existing handlers are kept,
-        // missing handlers are created. This avoids UI disappearing between unbind/bind.
+        // Read registered handlers first and bind only missing placements.
+        // This avoids both UI gaps and Bitrix duplicate-handler errors.
         Map<String, String> results = bindPlacements(auth.memberId());
 
         log.info("Локальное приложение Bitrix24 подготовлено: domain={}, memberId={}, placements={}. "
@@ -90,17 +93,25 @@ public class BitrixInstallationService {
 
     public Map<String, String> bindPlacements(String memberId) {
         Map<String, String> results = new LinkedHashMap<>();
+        Set<String> alreadyRegistered = registeredPlacementKeys(memberId);
         for (String placement : DESKTOP_PLACEMENTS) {
+            String key = placementKey(placement, handlerUrl);
+            if (alreadyRegistered.contains(key)) {
+                results.put(placement, "ALREADY_BOUND");
+                log.info("Bitrix placement already bound: memberId={}, placement={}", memberId, placement);
+                continue;
+            }
             try {
                 log.info("Binding Bitrix placement: memberId={}, placement={}, handler={}",
                         memberId, placement, handlerUrl);
                 restClient.call(memberId, "placement.bind", bindParameters(placement));
                 results.put(placement, "BOUND");
+                alreadyRegistered.add(key);
                 log.info("Bitrix placement bound: memberId={}, placement={}", memberId, placement);
             } catch (BitrixRestException error) {
                 if (isAlreadyBound(error)) {
                     results.put(placement, "ALREADY_BOUND");
-                    log.info("Bitrix placement already bound: memberId={}, placement={}",
+                    log.info("Bitrix placement already bound after bind attempt: memberId={}, placement={}",
                             memberId, placement);
                 } else {
                     String status = "ERROR:" + error.getErrorCode() + ":" + safeMessage(error);
@@ -120,6 +131,36 @@ public class BitrixInstallationService {
         return results;
     }
 
+
+    private Set<String> registeredPlacementKeys(String memberId) {
+        try {
+            Map<String, Object> response = restClient.call(memberId, "placement.get", Map.of());
+            Set<String> keys = new HashSet<>();
+            Object rawResult = response.get("result");
+            if (rawResult instanceof Collection<?> handlers) {
+                for (Object rawHandler : handlers) {
+                    if (!(rawHandler instanceof Map<?, ?> map)) continue;
+                    Object placement = map.get("placement");
+                    if (placement == null) placement = map.get("PLACEMENT");
+                    Object handler = map.get("handler");
+                    if (handler == null) handler = map.get("HANDLER");
+                    if (placement != null && handler != null) {
+                        keys.add(placementKey(String.valueOf(placement), String.valueOf(handler)));
+                    }
+                }
+            }
+            return keys;
+        } catch (RuntimeException error) {
+            log.warn("Unable to read existing Bitrix placements; falling back to bind checks: "
+                            + "memberId={}, error={}", memberId, rootMessage(error));
+            return new HashSet<>();
+        }
+    }
+
+    private String placementKey(String placement, String handler) {
+        String normalizedHandler = handler == null ? "" : handler.trim().replaceAll("/+$", "");
+        return placement.trim().toUpperCase(Locale.ROOT) + "|" + normalizedHandler;
+    }
 
     /**
      * Non-destructive startup self-healing: only creates missing production
