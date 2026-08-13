@@ -1,0 +1,8 @@
+Update 032
+
+- Corrected the master back-office Bitrix24 setup instruction.
+- Canonical local application handler remains https://offer.abs7.ru/bitrix/app.
+- Initial installation remains https://offer.abs7.ru/bitrix/install.
+- CRM desktop placements are registered separately on https://offer.abs7.ru/bitrix/widget.
+- /bitrix/mobile remains a compatibility alias and namespace for mobile API endpoints; no migration from /bitrix/app is required.
+- No functional video, auth, tenant, quota, or capture logic changed.

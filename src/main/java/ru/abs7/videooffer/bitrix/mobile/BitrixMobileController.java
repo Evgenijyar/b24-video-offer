@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping({"/bitrix/mobile", "/bitrix/app"})
+@RequestMapping({"/bitrix/app", "/bitrix/mobile"})
 public class BitrixMobileController {
     private static final Logger log = LoggerFactory.getLogger(BitrixMobileController.class);
 
