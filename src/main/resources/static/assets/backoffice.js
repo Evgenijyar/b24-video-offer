@@ -149,7 +149,7 @@ function renderWorkspace() {
             ${tabButton('settings', 'Настройки')}
             ${tabButton('employees', 'Сотрудники')}
             ${tabButton('offers', 'Офферы')}
-            ${tabButton('page', 'Страница')}
+            ${tabButton('page', 'Конструктор страницы')}
         </nav>
         <section class="workspace-tab-panel">${renderActiveTab(details)}</section>`;
     if (state.activeTab === 'employees') initBackofficeEmployeeDragDrop();
@@ -231,8 +231,8 @@ function employeeDragCard(user, selected) {
 }
 
 function renderPageTab() {
-    if (state.pageTemplateLoadedFor !== state.selectedId) return '<article class="settings-card"><div class="offers-loading">Загрузка шаблона…</div></article>';
-    if (!state.pageTemplate) return '<article class="settings-card"><div class="offers-loading">Шаблон страницы недоступен</div></article>';
+    if (state.pageTemplateLoadedFor !== state.selectedId) return '<article class="settings-card"><div class="offers-loading">Загрузка конструктора страницы…</div></article>';
+    if (!state.pageTemplate) return '<article class="settings-card"><div class="offers-loading">Конструктор страницы недоступен</div></article>';
     return '<div id="bo-page-builder"></div>';
 }
 

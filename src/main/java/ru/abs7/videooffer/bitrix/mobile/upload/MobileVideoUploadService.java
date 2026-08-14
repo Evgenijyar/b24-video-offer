@@ -466,7 +466,7 @@ public class MobileVideoUploadService {
                     ? Files.size(normalized)
                     : Math.max(0L, snapshot.getBytesReceived() == null ? 0L : snapshot.getBytesReceived());
             if (finalBytes <= 0) {
-                VideoOffer existing = videoOfferService.findOrNull(snapshot.getVideoOfferId());
+                VideoOffer existing = videoOfferService.findOrNull(offerIdentity(snapshot));
                 if (existing == null || existing.getStatus() != ru.abs7.videooffer.offer.VideoOfferStatus.READY) {
                     throw new IllegalArgumentException("Готовый видеофайл не найден");
                 }
@@ -542,7 +542,8 @@ public class MobileVideoUploadService {
                         current.getBitrixMemberId(), current.getCrmEntityType(), current.getCrmEntityId(), current.getSourceKind());
             }
             if (current.getStatus() == MobileVideoUploadStatus.CONSUMING) {
-                VideoOffer existing = videoOfferService.findOrNull(current.getVideoOfferId());
+                UUID claimedOfferId = requireOfferClaimId(current);
+                VideoOffer existing = videoOfferService.findOrNull(claimedOfferId);
                 if (existing != null && existing.getStatus() == ru.abs7.videooffer.offer.VideoOfferStatus.READY) {
                     current.markConsumed(existing.getId());
                     repository.saveAndFlush(current);
@@ -557,13 +558,13 @@ public class MobileVideoUploadService {
                 if (current.getUpdatedAt() != null
                         && current.getUpdatedAt().isAfter(OffsetDateTime.now().minusMinutes(2))) {
                     return new MobileOfferClaim(
-                            MobileOfferClaimState.IN_PROGRESS, current.getVideoOfferId(),
+                            MobileOfferClaimState.IN_PROGRESS, claimedOfferId,
                             current.getBitrixMemberId(), current.getCrmEntityType(), current.getCrmEntityId(), current.getSourceKind());
                 }
                 current.renewConsumingClaim();
                 repository.saveAndFlush(current);
                 return new MobileOfferClaim(
-                        MobileOfferClaimState.CLAIMED, current.getVideoOfferId(),
+                        MobileOfferClaimState.CLAIMED, claimedOfferId,
                         current.getBitrixMemberId(), current.getCrmEntityType(), current.getCrmEntityId(), current.getSourceKind());
             }
             if (current.getStatus() == MobileVideoUploadStatus.ERROR) {
@@ -599,8 +600,8 @@ public class MobileVideoUploadService {
             verifyToken(current, uploadToken);
             if (current.getStatus() == MobileVideoUploadStatus.CONSUMED) return current;
             if (current.getStatus() != MobileVideoUploadStatus.CONSUMING
-                    || current.getVideoOfferId() == null
-                    || !current.getVideoOfferId().equals(offerId)) {
+                    || current.getOfferClaimId() == null
+                    || !current.getOfferClaimId().equals(offerId)) {
                 throw new IllegalStateException("Состояние мобильной загрузки изменилось во время создания видеооффера");
             }
             current.markConsumed(offerId);
@@ -624,8 +625,8 @@ public class MobileVideoUploadService {
             if (current == null) return;
             verifyToken(current, uploadToken);
             if (current.getStatus() != MobileVideoUploadStatus.CONSUMING
-                    || current.getVideoOfferId() == null
-                    || !current.getVideoOfferId().equals(offerId)) return;
+                    || current.getOfferClaimId() == null
+                    || !current.getOfferClaimId().equals(offerId)) return;
 
             accessService.releaseConsumedOffer(current.getTenantId(), current.getBitrixUserId());
             String normalizedPath = current.getNormalizedFilePath();
@@ -636,6 +637,29 @@ public class MobileVideoUploadService {
             }
             repository.saveAndFlush(current);
         });
+    }
+
+    /**
+     * Returns the stable offer identity appropriate for the upload state. During
+     * CONSUMING this is a reservation UUID; after CONSUMED it is the FK-backed
+     * persisted VideoOffer id. Keeping the two concepts separate prevents us from
+     * writing a future UUID into mobile_video_upload.video_offer_id before the
+     * referenced row exists.
+     */
+    private UUID offerIdentity(MobileVideoUpload upload) {
+        if (upload == null) return null;
+        if (upload.getStatus() == MobileVideoUploadStatus.CONSUMING) {
+            return upload.getOfferClaimId();
+        }
+        return upload.getVideoOfferId();
+    }
+
+    private UUID requireOfferClaimId(MobileVideoUpload upload) {
+        UUID claimId = upload == null ? null : upload.getOfferClaimId();
+        if (claimId == null) {
+            throw new IllegalStateException("У мобильной загрузки отсутствует идентификатор создаваемого видеооффера");
+        }
+        return claimId;
     }
 
     private void verifyUploadContext(MobileVideoUpload upload, BitrixPlacementContext context) {
@@ -684,7 +708,8 @@ public class MobileVideoUploadService {
                     if (current == null || current.getStatus() != MobileVideoUploadStatus.CONSUMING
                             || current.getUpdatedAt() == null || current.getUpdatedAt().isAfter(staleBefore)) return;
 
-                    VideoOffer existing = videoOfferService.findOrNull(current.getVideoOfferId());
+                    UUID claimedOfferId = current.getOfferClaimId();
+                    VideoOffer existing = videoOfferService.findOrNull(claimedOfferId);
                     if (existing != null && existing.getStatus() == ru.abs7.videooffer.offer.VideoOfferStatus.READY) {
                         current.markConsumed(existing.getId());
                         repository.saveAndFlush(current);
@@ -693,7 +718,7 @@ public class MobileVideoUploadService {
                     }
 
                     accessService.releaseConsumedOffer(current.getTenantId(), current.getBitrixUserId());
-                    UUID staleOfferId = current.getVideoOfferId();
+                    UUID staleOfferId = current.getOfferClaimId();
                     String normalizedPath = current.getNormalizedFilePath();
                     if (normalizedPath != null && Files.isRegularFile(Path.of(normalizedPath))) {
                         current.releaseConsumingToReady();

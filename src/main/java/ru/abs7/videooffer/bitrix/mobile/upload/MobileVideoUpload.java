@@ -64,6 +64,14 @@ public class MobileVideoUpload {
     @Column(name = "error_message", columnDefinition = "text")
     private String errorMessage;
 
+    /**
+     * Stable UUID reserved while a READY upload is being converted into a VideoOffer.
+     * This is deliberately NOT a foreign key: during CONSUMING the VideoOffer row does
+     * not exist yet. videoOfferId remains the FK-backed reference to a persisted offer.
+     */
+    @Column(name = "offer_claim_id")
+    private UUID offerClaimId;
+
     @Column(name = "video_offer_id")
     private UUID videoOfferId;
 
@@ -194,7 +202,8 @@ public class MobileVideoUpload {
         }
         this.tenantId = tenantId;
         this.bitrixUserId = bitrixUserId;
-        this.videoOfferId = offerId;
+        this.offerClaimId = offerId;
+        this.videoOfferId = null;
         this.storageReservedBytes = Math.max(0L, reservedBytes);
         this.status = MobileVideoUploadStatus.CONSUMING;
         this.updatedAt = OffsetDateTime.now();
@@ -202,6 +211,7 @@ public class MobileVideoUpload {
 
     public void markConsumed(UUID offerId) {
         status = MobileVideoUploadStatus.CONSUMED;
+        offerClaimId = null;
         videoOfferId = offerId;
         storageReservedBytes = 0L;
         updatedAt = OffsetDateTime.now();
@@ -216,6 +226,7 @@ public class MobileVideoUpload {
     public void releaseConsumingToReady() {
         if (status != MobileVideoUploadStatus.CONSUMING) return;
         status = MobileVideoUploadStatus.READY;
+        offerClaimId = null;
         videoOfferId = null;
         storageReservedBytes = 0L;
         updatedAt = OffsetDateTime.now();
@@ -237,6 +248,7 @@ public class MobileVideoUpload {
 
     public void markError(String message) {
         status = MobileVideoUploadStatus.ERROR;
+        offerClaimId = null;
         storageReservedBytes = 0L;
         processingProgressPercent = 100;
         errorMessage = message;
@@ -260,6 +272,7 @@ public class MobileVideoUpload {
     public Integer getProcessingProgressPercent() { return processingProgressPercent; }
     public MobileVideoUploadStatus getStatus() { return status; }
     public String getErrorMessage() { return errorMessage; }
+    public UUID getOfferClaimId() { return offerClaimId; }
     public UUID getVideoOfferId() { return videoOfferId; }
     public Long getStorageReservedBytes() { return storageReservedBytes == null ? 0L : storageReservedBytes; }
     public OffsetDateTime getCreatedAt() { return createdAt; }

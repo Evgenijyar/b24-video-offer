@@ -105,7 +105,7 @@ class VideoOfferPageBuilder {
                 const tag = c.style === 'HEADING' ? 'h3' : 'p';
                 return `<${tag} class="vo-preview-text ${c.style === 'NOTE' ? 'is-note' : ''}">${esc(sample)}</${tag}>`;
             }
-            case 'IMAGE': return c.assetUrl ? `<div class="vo-preview-image"><img src="${attr(c.assetUrl)}" alt=""></div>` : '<div class="vo-preview-placeholder">Изображение</div>';
+            case 'IMAGE': return c.assetUrl ? `<div class="vo-preview-image"><img class="radius-${String(c.radius || 'LARGE').toLowerCase()}" src="${attr(c.assetUrl)}" alt=""></div>` : '<div class="vo-preview-placeholder">Изображение</div>';
             case 'FILE': return `<div class="vo-preview-file"><span>⇩</span><div><b>${esc(c.label || 'Скачать файл')}</b><small>${c.mode === 'MANAGER' ? (c.required ? 'Менеджер · обязательно' : 'Менеджер · необязательно') : esc(c.assetName || 'Статический файл')}</small></div></div>`;
             case 'BUTTON': return `<div class="vo-preview-button-wrap"><span class="vo-preview-button shape-${String(c.shape || 'PILL').toLowerCase()}" style="--pb-button:${attr(c.color || '#2f80ed')}">${esc(c.text || 'Подробнее')}</span></div>`;
             case 'DIVIDER': return `<div class="vo-preview-divider style-${String(c.style || 'SOLID').toLowerCase()}"></div>`;
@@ -158,14 +158,15 @@ class VideoOfferPageBuilder {
         });
         this.root.querySelectorAll('[data-pb-delete]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();if(!btn.disabled)this.deleteBlock(btn.dataset.pbDelete);}));
         this.root.querySelectorAll('[data-pb-config]').forEach(input=>{
-            const rerender = input.tagName==='SELECT' || input.type==='checkbox';
-            const evt = rerender ? 'change' : 'input';
-            input.addEventListener(evt,()=>this.updateConfig(
-                input.dataset.pbConfig,
+            const key = input.dataset.pbConfig;
+            const structural = key === 'source' || key === 'mode';
+            const eventName = (input.tagName === 'SELECT' || input.type === 'checkbox') ? 'change' : 'input';
+            input.addEventListener(eventName,()=>this.updateConfig(
+                key,
                 input.type==='checkbox'?input.checked:input.value,
-                rerender));
+                structural));
         });
-        this.root.querySelector('[data-pb-prop="visibility"]')?.addEventListener('change',e=>{const b=this.selected();if(b){b.visibility=e.target.value;this.render();}});
+        this.root.querySelector('[data-pb-prop="visibility"]')?.addEventListener('change',e=>this.updateVisibility(e.target.value));
         this.root.querySelectorAll('[data-pb-upload]').forEach(input=>input.addEventListener('change',e=>this.handleAssetUpload(input)));
         this.root.querySelectorAll('[data-pb-clear-asset]').forEach(btn=>btn.addEventListener('click',()=>this.clearAsset(btn.dataset.pbClearAsset)));
     }
@@ -191,14 +192,36 @@ class VideoOfferPageBuilder {
         }
         b.config[key]=value;
         if(key==='mode'&&b.type==='TEXT'&&value==='STATIC')delete b.config.required;
-        if(rerender){this.render();return;}
-        this.refreshSelectedPreview();
+        if(rerender){this.renderPreservingStageScroll();return;}
+        this.refreshSelectedCard();
     }
-    refreshSelectedPreview(){
+    updateVisibility(value){
+        const b=this.selected();if(!b)return;
+        b.visibility=value;
+        const card=this.root.querySelector(`[data-pb-block="${cssEscapeValue(b.id)}"]`);
+        const label=card?.querySelector('.vo-builder-visibility');
+        if(label) label.textContent=visibilityLabel(value);
+    }
+    refreshSelectedCard(){
         const b=this.selected();if(!b)return;
         const card=this.root.querySelector(`[data-pb-block="${cssEscapeValue(b.id)}"]`);
         const preview=card?.querySelector('.vo-builder-block-preview');
+        const name=card?.querySelector('.vo-builder-block-name');
+        const visibility=card?.querySelector('.vo-builder-visibility');
         if(preview) preview.innerHTML=this.renderPreview(b);
+        if(name) name.textContent=this.blockLabel(b);
+        if(visibility) visibility.textContent=visibilityLabel(b.visibility);
+    }
+    renderPreservingStageScroll(){
+        const stage=this.root.querySelector('.vo-builder-stage');
+        const sidebar=this.root.querySelector('.vo-builder-sidebar-body');
+        const stageTop=stage?.scrollTop||0;
+        const sidebarTop=sidebar?.scrollTop||0;
+        this.render();
+        const nextStage=this.root.querySelector('.vo-builder-stage');
+        const nextSidebar=this.root.querySelector('.vo-builder-sidebar-body');
+        if(nextStage) nextStage.scrollTop=stageTop;
+        if(nextSidebar) nextSidebar.scrollTop=sidebarTop;
     }
     flashLimit(type){const item=this.root.querySelector(`[data-pb-palette="${type}"]`);item?.classList.add('is-limit-flash');setTimeout(()=>item?.classList.remove('is-limit-flash'),380);}
 
