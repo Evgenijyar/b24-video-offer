@@ -36,6 +36,25 @@ public interface VideoOfferRepository extends JpaRepository<VideoOffer, UUID> {
     @Query("select coalesce(sum(offer.videoFileSize), 0) from VideoOffer offer where offer.tenantId is null and offer.bitrixMemberId = :memberId and offer.status = :status")
     Long sumLegacyReadyStorageByMemberId(@Param("memberId") String memberId, @Param("status") VideoOfferStatus status);
 
+
+    @Query("""
+            select offer from VideoOffer offer
+            where offer.status = :status
+              and offer.expiresAt > :moment
+              and (offer.tenantId = :tenantId
+                   or (:memberId is not null and offer.tenantId is null and offer.bitrixMemberId = :memberId))
+            order by offer.createdAt desc
+            """)
+    List<VideoOffer> findActiveReadyForTenant(
+            @Param("tenantId") Long tenantId,
+            @Param("memberId") String memberId,
+            @Param("status") VideoOfferStatus status,
+            @Param("moment") OffsetDateTime moment);
+
+    List<VideoOffer> findAllByTenantId(Long tenantId);
+
+    List<VideoOffer> findAllByTenantIdIsNullAndBitrixMemberId(String memberId);
+
     @Query("""
             select offer from VideoOffer offer
             where offer.status = :readyStatus

@@ -1943,90 +1943,524 @@ function defaultClientMessageTemplate() {
 }
 
 
-// 031 · tenant/client administration inside desktop Bitrix24
+// 034 · tenant/client administration inside desktop Bitrix24
 let clientSettingsState = null;
+let clientSettingsActiveTab = 'employees';
+let clientSettingsEditingUserId = null;
+let clientOffers = [];
+let clientOffersLoaded = false;
+let clientOfferSort = { key: 'createdAt', direction: 'desc', period: '7' };
+
 function initializeClientSettings() {
     if (!openClientSettingsButton || !clientSettingsModal) return;
     openClientSettingsButton.hidden = !currentUserAdmin;
     if (!currentUserAdmin) return;
+
     openClientSettingsButton.addEventListener('click', openClientSettings);
     document.getElementById('close-client-settings')?.addEventListener('click', closeClientSettings);
-    clientSettingsModal.addEventListener('click', (event) => { if (event.target === clientSettingsModal) closeClientSettings(); });
+    clientSettingsModal.addEventListener('click', event => { if (event.target === clientSettingsModal) closeClientSettings(); });
     document.getElementById('sync-client-users')?.addEventListener('click', syncClientUsers);
-    document.getElementById('save-client-users')?.addEventListener('click', saveClientUsers);
-    document.addEventListener('keydown', event => { if (event.key === 'Escape' && !clientSettingsModal.hidden) closeClientSettings(); });
+    document.getElementById('client-offer-period')?.addEventListener('change', event => {
+        clientOfferSort.period = event.target.value || '7';
+        renderClientOffers();
+    });
+    document.querySelectorAll('[data-client-settings-tab]').forEach(button => {
+        button.addEventListener('click', () => switchClientSettingsTab(button.dataset.clientSettingsTab));
+    });
+    document.querySelectorAll('[data-client-offer-sort]').forEach(button => {
+        button.addEventListener('click', () => changeClientOfferSort(button.dataset.clientOfferSort));
+    });
+
+    const employeeModal = document.getElementById('client-employee-modal');
+    document.getElementById('close-client-employee-modal')?.addEventListener('click', closeClientEmployeeModal);
+    document.getElementById('save-client-employee')?.addEventListener('click', saveClientEmployeeSettings);
+    employeeModal?.addEventListener('click', event => { if (event.target === employeeModal) closeClientEmployeeModal(); });
+
+    document.addEventListener('keydown', event => {
+        if (event.key !== 'Escape') return;
+        if (employeeModal && !employeeModal.hidden) return closeClientEmployeeModal();
+        if (!clientSettingsModal.hidden) closeClientSettings();
+    });
 }
 
 async function openClientSettings() {
+    clientSettingsActiveTab = 'employees';
+    clientOffersLoaded = false;
+    clientOffers = [];
     clientSettingsModal.hidden = false;
     clientSettingsModal.setAttribute('aria-hidden', 'false');
     document.getElementById('client-settings-subtitle').textContent = tenantName || 'Компания Bitrix24';
     await loadClientSettings();
     fitWindow();
 }
+
 function closeClientSettings() {
+    closeClientEmployeeModal();
     if (!clientSettingsModal) return;
     clientSettingsModal.hidden = true;
     clientSettingsModal.setAttribute('aria-hidden', 'true');
 }
+
 async function loadClientSettings() {
     const loading = document.getElementById('client-settings-loading');
     const content = document.getElementById('client-settings-content');
     const error = document.getElementById('client-settings-error');
-    loading.hidden = false; content.hidden = true; error.hidden = true;
+    loading.hidden = false;
+    content.hidden = true;
+    error.hidden = true;
     try {
-        const response = await fetch('/bitrix/settings?contextToken=' + encodeURIComponent(contextToken), {cache:'no-store'});
+        const response = await fetch('/bitrix/settings?contextToken=' + encodeURIComponent(contextToken), { cache: 'no-store' });
         const data = await readJson(response);
         if (!response.ok) throw new Error(data.message || 'Не удалось загрузить настройки');
         clientSettingsState = data;
         renderClientSettings();
-        loading.hidden = true; content.hidden = false;
-    } catch (e) {
-        loading.hidden = true; error.textContent = e.message || 'Не удалось загрузить настройки'; error.hidden = false;
+        loading.hidden = true;
+        content.hidden = false;
+    } catch (errorValue) {
+        loading.hidden = true;
+        error.textContent = errorValue.message || 'Не удалось загрузить настройки';
+        error.hidden = false;
     }
 }
+
 function renderClientSettings() {
-    const d = clientSettingsState;
-    if (!d) return;
-    const human = value => { const n=Number(value||0); return n >= 1024**3 ? (n/1024**3).toFixed(2)+' ГБ' : (n/1024**2).toFixed(1)+' МБ'; };
+    const data = clientSettingsState;
+    if (!data) return;
+    const human = value => {
+        const n = Number(value || 0);
+        if (n >= 1024 ** 3) return (n / 1024 ** 3).toFixed(2) + ' ГБ';
+        return (n / 1024 ** 2).toFixed(1) + ' МБ';
+    };
     document.getElementById('client-settings-metrics').innerHTML = `
-        <div class="client-settings-metric"><span>Пакет</span><b>${escapeClientSettingsHtml(d.packageName||'—')}</b><small>${d.seatsUsed} из ${d.seatLimit} сотрудников</small></div>
-        <div class="client-settings-metric"><span>Видеоофферы</span><b>${d.offersRemaining}</b><small>осталось из ${d.offerLimit} · использовано ${d.offersUsed}</small></div>
-        <div class="client-settings-metric"><span>Диск</span><b>${human(d.diskRemainingBytes)}</b><small>свободно из ${human(d.diskQuotaBytes)}</small></div>`;
-    document.getElementById('client-seat-hint').textContent = `Подключено ${d.seatsUsed} из ${d.seatLimit}. ${d.allowAnyEntity ? 'Разрешено создавать офферы в любых документах.' : 'Создание доступно только ответственному за документ.'}`;
-    const list = document.getElementById('client-users-list');
-    list.innerHTML = (d.users||[]).map(u => `
-      <div class="client-user-settings ${u.active?'':'is-disabled'}" data-client-user="${u.bitrixUserId}">
-        <div class="client-user-identity"><b>${escapeClientSettingsHtml(u.displayName)}</b><small>${escapeClientSettingsHtml(u.email || 'Bitrix ID '+u.bitrixUserId)}${u.primaryAdmin?' · главный администратор':''}</small></div>
-        <label class="client-user-toggle"><input data-field="offerAccess" type="checkbox" ${u.offerAccess?'checked':''} ${u.primaryAdmin||!u.active?'disabled':''}> Доступ</label>
-        <label class="client-user-toggle"><input data-field="admin" type="checkbox" ${u.admin?'checked':''} ${u.primaryAdmin||!u.active?'disabled':''}> Администратор</label>
-        <div class="client-user-usage"><b>${u.offersUsed}</b><small>офферов</small></div>
-        <div class="client-user-templates">
-          <label>Сопроводительный текст<textarea data-field="defaultAccompanyingText" ${!u.active?'disabled':''}>${escapeClientSettingsHtml(u.defaultAccompanyingText||'')}</textarea></label>
-          <label>Сообщение для отправки<textarea data-field="defaultClientMessage" ${!u.active?'disabled':''}>${escapeClientSettingsHtml(u.defaultClientMessage||'')}</textarea></label>
-        </div>
-      </div>`).join('') || '<div class="client-settings-loading">Сотрудники ещё не синхронизированы.</div>';
+        <div class="client-settings-metric"><span>Пакет</span><b>${escapeClientSettingsHtml(data.packageName || '—')}</b><small>${data.seatsUsed} из ${data.seatLimit} сотрудников</small></div>
+        <div class="client-settings-metric"><span>Видеоофферы</span><b>${data.offersRemaining}</b><small>осталось из ${data.offerLimit}</small></div>
+        <div class="client-settings-metric"><span>Диск</span><b>${human(data.diskRemainingBytes)}</b><small>свободно из ${human(data.diskQuotaBytes)}</small></div>`;
+    renderClientSettingsTabs();
+    renderClientEmployeePools();
+    if (clientSettingsActiveTab === 'offers') renderClientOffers();
 }
+
+function renderClientSettingsTabs() {
+    document.querySelectorAll('[data-client-settings-tab]').forEach(button => {
+        button.classList.toggle('is-active', button.dataset.clientSettingsTab === clientSettingsActiveTab);
+    });
+    const employeePanel = document.getElementById('client-settings-employees-panel');
+    const offersPanel = document.getElementById('client-settings-offers-panel');
+    if (employeePanel) employeePanel.hidden = clientSettingsActiveTab !== 'employees';
+    if (offersPanel) offersPanel.hidden = clientSettingsActiveTab !== 'offers';
+}
+
+async function switchClientSettingsTab(tab) {
+    if (!['employees', 'offers'].includes(tab)) return;
+    clientSettingsActiveTab = tab;
+    renderClientSettingsTabs();
+    if (tab === 'offers') {
+        await loadClientOffers();
+    } else {
+        renderClientEmployeePools();
+    }
+    fitWindow();
+}
+
+function activeClientUsers() {
+    return (clientSettingsState?.users || []).filter(user => user.active !== false);
+}
+
+function renderClientEmployeePools() {
+    const data = clientSettingsState;
+    if (!data) return;
+    const users = activeClientUsers();
+    const selected = users.filter(user => user.offerAccess);
+    const available = users.filter(user => !user.offerAccess);
+    const availableList = document.getElementById('client-users-available');
+    const selectedList = document.getElementById('client-users-selected');
+    if (!availableList || !selectedList) return;
+
+    availableList.innerHTML = available.map(user => clientEmployeeCard(user, false)).join('') || '<div class="client-drag-empty">Нет сотрудников</div>';
+    selectedList.innerHTML = selected.map(user => clientEmployeeCard(user, true)).join('') || '<div class="client-drag-empty">Перетащите сотрудника сюда</div>';
+    document.getElementById('client-available-count').textContent = String(available.length);
+    document.getElementById('client-selected-count').textContent = `${selected.length} / ${data.seatLimit}`;
+    const limit = selected.length >= Number(data.seatLimit || 0);
+    document.getElementById('client-seat-limit')?.classList.toggle('is-visible', limit);
+
+    selectedList.querySelectorAll('[data-client-user-gear]').forEach(button => {
+        button.addEventListener('click', event => {
+            event.stopPropagation();
+            openClientEmployeeModal(Number(button.dataset.clientUserGear));
+        });
+    });
+    selectedList.querySelectorAll('[data-client-user-remove]').forEach(button => {
+        button.addEventListener('click', async event => {
+            event.stopPropagation();
+            await removeClientUserAccess(Number(button.dataset.clientUserRemove));
+        });
+    });
+    initClientEmployeeDragDrop();
+}
+
+function clientEmployeeCard(user, selected) {
+    const controls = selected ? `
+        <div class="client-employee-card-actions">
+            <button class="client-employee-card-action" type="button" data-client-user-gear="${user.bitrixUserId}" title="Настроить" aria-label="Настроить">${clientGearSvg()}</button>
+            <button class="client-employee-card-action is-remove" type="button" data-client-user-remove="${user.bitrixUserId}" title="Удалить" aria-label="Удалить" ${user.primaryAdmin ? 'disabled' : ''}>✕</button>
+        </div>` : '';
+    return `<div class="client-employee-drag-item" data-client-user-id="${user.bitrixUserId}" data-primary="${user.primaryAdmin ? 'true' : 'false'}">
+        <span class="client-employee-drag-handle" aria-hidden="true">${clientUserSvg()}</span>
+        <div class="client-employee-drag-main"><div class="client-employee-drag-name">${escapeClientSettingsHtml(user.displayName || ('Bitrix ID ' + user.bitrixUserId))}</div><div class="client-employee-drag-meta">${escapeClientSettingsHtml(user.email || ('Bitrix ID ' + user.bitrixUserId))}${selected ? ` · ${user.offersUsed || 0} офф.` : ''}${user.primaryAdmin ? ' · главный администратор' : user.admin ? ' · администратор' : ''}</div></div>
+        ${controls}
+    </div>`;
+}
+
 async function syncClientUsers() {
     setClientSettingsBusy(true);
     try {
-        const response = await fetch('/bitrix/settings/sync-users?contextToken='+encodeURIComponent(contextToken), {method:'POST'});
-        const data = await readJson(response); if(!response.ok) throw new Error(data.message||'Не удалось обновить сотрудников');
-        clientSettingsState=data; renderClientSettings();
-    } catch(e){showClientSettingsError(e.message);} finally {setClientSettingsBusy(false);}
+        const response = await fetch('/bitrix/settings/sync-users?contextToken=' + encodeURIComponent(contextToken), { method: 'POST' });
+        const data = await readJson(response);
+        if (!response.ok) throw new Error(data.message || 'Не удалось обновить сотрудников');
+        clientSettingsState = data;
+        renderClientSettings();
+    } catch (error) {
+        showClientSettingsError(error.message);
+    } finally {
+        setClientSettingsBusy(false);
+    }
 }
-async function saveClientUsers() {
-    const rows=[...document.querySelectorAll('[data-client-user]')];
-    const users=rows.map(row=>{
-      const get=f=>row.querySelector(`[data-field="${f}"]`);
-      return {bitrixUserId:Number(row.dataset.clientUser),offerAccess:get('offerAccess')?.checked||false,admin:get('admin')?.checked||false,defaultAccompanyingText:get('defaultAccompanyingText')?.value||null,defaultClientMessage:get('defaultClientMessage')?.value||null};
-    });
+
+async function updateClientUser(request) {
     setClientSettingsBusy(true);
-    try{
-      const response=await fetch('/bitrix/settings/users?contextToken='+encodeURIComponent(contextToken),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({users})});
-      const data=await readJson(response);if(!response.ok)throw new Error(data.message||'Не удалось сохранить настройки');clientSettingsState=data;renderClientSettings();
-    }catch(e){showClientSettingsError(e.message);}finally{setClientSettingsBusy(false);}
+    try {
+        const response = await fetch('/bitrix/settings/users?contextToken=' + encodeURIComponent(contextToken), {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ users: [request] })
+        });
+        const data = await readJson(response);
+        if (!response.ok) throw new Error(data.message || 'Не удалось сохранить сотрудника');
+        clientSettingsState = data;
+        renderClientSettings();
+        return data;
+    } finally {
+        setClientSettingsBusy(false);
+    }
 }
-function setClientSettingsBusy(busy){const s=document.getElementById('save-client-users'),u=document.getElementById('sync-client-users');if(s)s.disabled=busy;if(u)u.disabled=busy;}
-function showClientSettingsError(message){const e=document.getElementById('client-settings-error');if(!e)return;e.textContent=message||'Ошибка';e.hidden=false;}
-function escapeClientSettingsHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+async function removeClientUserAccess(userId) {
+    const user = activeClientUsers().find(item => Number(item.bitrixUserId) === Number(userId));
+    if (!user || user.primaryAdmin) return;
+    try {
+        await updateClientUser({
+            bitrixUserId: Number(user.bitrixUserId),
+            offerAccess: false,
+            admin: false,
+            defaultAccompanyingText: user.defaultAccompanyingText || null,
+            defaultClientMessage: user.defaultClientMessage || null
+        });
+    } catch (error) {
+        showClientSettingsError(error.message);
+        await loadClientSettings();
+    }
+}
+
+function openClientEmployeeModal(userId) {
+    const user = activeClientUsers().find(item => Number(item.bitrixUserId) === Number(userId));
+    const modal = document.getElementById('client-employee-modal');
+    if (!user || !modal || !user.offerAccess) return;
+    clientSettingsEditingUserId = Number(userId);
+    document.getElementById('client-employee-modal-subtitle').textContent = user.displayName || ('Bitrix ID ' + userId);
+    const admin = document.getElementById('client-employee-admin');
+    admin.checked = !!user.admin;
+    admin.disabled = !!user.primaryAdmin;
+    document.getElementById('client-employee-accompanying').value = user.defaultAccompanyingText || '';
+    document.getElementById('client-employee-message').value = user.defaultClientMessage || '';
+    document.getElementById('client-employee-modal-error').hidden = true;
+    modal.hidden = false;
+    modal.setAttribute('aria-hidden', 'false');
+}
+
+function closeClientEmployeeModal() {
+    const modal = document.getElementById('client-employee-modal');
+    if (!modal) return;
+    modal.hidden = true;
+    modal.setAttribute('aria-hidden', 'true');
+    clientSettingsEditingUserId = null;
+}
+
+async function saveClientEmployeeSettings() {
+    const user = activeClientUsers().find(item => Number(item.bitrixUserId) === Number(clientSettingsEditingUserId));
+    if (!user) return;
+    const button = document.getElementById('save-client-employee');
+    button.disabled = true;
+    const error = document.getElementById('client-employee-modal-error');
+    error.hidden = true;
+    try {
+        await updateClientUser({
+            bitrixUserId: Number(user.bitrixUserId),
+            offerAccess: true,
+            admin: user.primaryAdmin ? true : !!document.getElementById('client-employee-admin').checked,
+            defaultAccompanyingText: document.getElementById('client-employee-accompanying').value || null,
+            defaultClientMessage: document.getElementById('client-employee-message').value || null
+        });
+        closeClientEmployeeModal();
+    } catch (e) {
+        error.textContent = e.message || 'Не удалось сохранить сотрудника';
+        error.hidden = false;
+    } finally {
+        button.disabled = false;
+    }
+}
+
+function initClientEmployeeDragDrop() {
+    const available = document.getElementById('client-users-available');
+    const selected = document.getElementById('client-users-selected');
+    if (!available || !selected) return;
+    bindClientPhysicalDragGroup('client-employees', [available, selected], '.client-employee-drag-item[data-client-user-id]', {
+        canStart: ({ item, sourceContainer }) => {
+            if (sourceContainer === selected && item.dataset.primary === 'true') return false;
+            if (sourceContainer === available && clientSelectedCount() >= Number(clientSettingsState?.seatLimit || 0)) {
+                signalClientSeatLimit(item);
+                return false;
+            }
+            return true;
+        },
+        onDrop: async ({ item, sourceContainer, targetContainer }) => {
+            if (!item || sourceContainer === targetContainer) return renderClientEmployeePools();
+            const id = Number(item.dataset.clientUserId);
+            const user = activeClientUsers().find(entry => Number(entry.bitrixUserId) === id);
+            if (!user) return renderClientEmployeePools();
+            const enabling = targetContainer === selected;
+            if (enabling && clientSelectedCount() >= Number(clientSettingsState?.seatLimit || 0)) {
+                signalClientSeatLimit(item);
+                return renderClientEmployeePools();
+            }
+            try {
+                await updateClientUser({
+                    bitrixUserId: id,
+                    offerAccess: enabling,
+                    admin: enabling ? !!user.admin : false,
+                    defaultAccompanyingText: user.defaultAccompanyingText || null,
+                    defaultClientMessage: user.defaultClientMessage || null
+                });
+            } catch (error) {
+                showClientSettingsError(error.message);
+                await loadClientSettings();
+            }
+        }
+    });
+}
+
+function clientSelectedCount() {
+    return activeClientUsers().filter(user => user.offerAccess).length;
+}
+
+function signalClientSeatLimit(item) {
+    item?.classList.remove('drag-denied');
+    void item?.offsetWidth;
+    item?.classList.add('drag-denied');
+    const notice = document.getElementById('client-seat-limit');
+    if (!notice) return;
+    notice.classList.add('is-visible', 'is-flashing');
+    setTimeout(() => notice.classList.remove('is-flashing'), 430);
+}
+
+const clientDragGroups = {};
+function bindClientPhysicalDragGroup(key, containers, selector, options = {}) {
+    let group = clientDragGroups[key];
+    if (!group) {
+        group = { key, containers: [], selector, options, bound: new WeakSet(), pointerId: null, item: null, placeholder: null, sourceContainer: null, activeContainer: null, startX: 0, startY: 0, offsetX: 0, offsetY: 0, dragging: false };
+        clientDragGroups[key] = group;
+    }
+    group.containers = containers;
+    group.selector = selector;
+    group.options = options;
+    containers.forEach(container => {
+        if (group.bound.has(container)) return;
+        group.bound.add(container);
+        container.addEventListener('pointerdown', event => clientDragPointerDown(event, group));
+    });
+}
+function clientDragPointerDown(event, group) {
+    if (event.button !== undefined && event.button !== 0) return;
+    if (event.target.closest('button,input,select,textarea,a')) return;
+    const item = event.target.closest(group.selector);
+    if (!item) return;
+    const sourceContainer = item.parentElement;
+    if (!group.containers.includes(sourceContainer)) return;
+    if (typeof group.options.canStart === 'function' && !group.options.canStart({ item, sourceContainer })) { event.preventDefault(); return; }
+    Object.assign(group, { pointerId: event.pointerId, item, sourceContainer, activeContainer: sourceContainer, startX: event.clientX, startY: event.clientY, dragging: false });
+    item.setPointerCapture?.(event.pointerId);
+    const move = e => clientDragPointerMove(e, group, move, up);
+    const up = e => clientDragPointerUp(e, group, move, up);
+    document.addEventListener('pointermove', move, { passive: false });
+    document.addEventListener('pointerup', up, { passive: false });
+    document.addEventListener('pointercancel', up, { passive: false });
+}
+function clientDragPointerMove(event, group, move, up) {
+    if (group.pointerId !== null && event.pointerId !== group.pointerId) return;
+    if (!group.dragging) {
+        if (Math.hypot(event.clientX - group.startX, event.clientY - group.startY) < 4) return;
+        startClientPhysicalDrag(event, group);
+    }
+    event.preventDefault();
+    group.item.style.left = (event.clientX - group.offsetX) + 'px';
+    group.item.style.top = (event.clientY - group.offsetY) + 'px';
+    updateClientDragPlaceholder(event, group);
+    autoscrollClientDrag(event, group);
+}
+function startClientPhysicalDrag(event, group) {
+    const item = group.item;
+    const rect = item.getBoundingClientRect();
+    group.offsetX = event.clientX - rect.left;
+    group.offsetY = event.clientY - rect.top;
+    const placeholder = document.createElement('div');
+    placeholder.className = 'client-physical-drag-placeholder';
+    placeholder.style.width = rect.width + 'px';
+    placeholder.style.height = rect.height + 'px';
+    item.parentElement.insertBefore(placeholder, item);
+    group.placeholder = placeholder;
+    item.classList.add('client-physical-drag-floating');
+    for (const [name, value] of Object.entries({ position: 'fixed', left: rect.left + 'px', top: rect.top + 'px', width: rect.width + 'px', 'min-width': rect.width + 'px', 'max-width': rect.width + 'px', height: rect.height + 'px', 'z-index': '7000', margin: '0' })) item.style.setProperty(name, value, 'important');
+    document.body.appendChild(item);
+    group.dragging = true;
+    document.body.classList.add('client-is-physical-dragging');
+}
+function updateClientDragPlaceholder(event, group) {
+    const target = clientDragTargetContainer(event.clientX, event.clientY, group);
+    if (!target || !group.placeholder) return;
+    const items = [...target.querySelectorAll(group.selector)].filter(el => el !== group.item);
+    let before = null;
+    for (const child of items) {
+        const rect = child.getBoundingClientRect();
+        if (event.clientY < rect.top + rect.height / 2) { before = child; break; }
+    }
+    if (!before) before = target.querySelector('.client-drag-empty');
+    target.insertBefore(group.placeholder, before);
+    group.activeContainer = target;
+    group.containers.forEach(container => container.classList.toggle('is-drag-target', container === target));
+}
+function clientDragTargetContainer(x, y, group) {
+    for (const element of document.elementsFromPoint(x, y)) {
+        for (const container of group.containers) if (element === container || container.contains(element)) return container;
+    }
+    for (const container of group.containers) {
+        const rect = container.getBoundingClientRect();
+        if (x >= rect.left - 20 && x <= rect.right + 20 && y >= rect.top - 28 && y <= rect.bottom + 28) return container;
+    }
+    return group.activeContainer || group.sourceContainer;
+}
+function autoscrollClientDrag(event, group) {
+    let host = group.activeContainer;
+    while (host && host !== document.body) {
+        const style = getComputedStyle(host);
+        if (/(auto|scroll)/.test(style.overflowY) && host.scrollHeight > host.clientHeight) break;
+        host = host.parentElement;
+    }
+    if (!host || host === document.body) host = document.scrollingElement || document.documentElement;
+    const rect = host.getBoundingClientRect();
+    const edge = 52;
+    if (event.clientY < rect.top + edge) host.scrollTop -= 12;
+    else if (event.clientY > rect.bottom - edge) host.scrollTop += 12;
+}
+function clientDragPointerUp(event, group, move, up) {
+    document.removeEventListener('pointermove', move);
+    document.removeEventListener('pointerup', up);
+    document.removeEventListener('pointercancel', up);
+    if (!group.dragging) return resetClientDrag(group);
+    event.preventDefault();
+    const item = group.item;
+    const placeholder = group.placeholder;
+    const target = placeholder?.parentElement || group.sourceContainer;
+    if (item && placeholder && target) { target.insertBefore(item, placeholder); placeholder.remove(); }
+    cleanupClientFloating(item);
+    group.containers.forEach(container => container.classList.remove('is-drag-target'));
+    document.body.classList.remove('client-is-physical-dragging');
+    if (typeof group.options.onDrop === 'function') group.options.onDrop({ item, sourceContainer: group.sourceContainer, targetContainer: target, containers: group.containers });
+    resetClientDrag(group);
+}
+function cleanupClientFloating(item) {
+    if (!item) return;
+    item.classList.remove('client-physical-drag-floating');
+    ['position', 'left', 'top', 'width', 'min-width', 'max-width', 'height', 'z-index', 'margin'].forEach(name => item.style.removeProperty(name));
+}
+function resetClientDrag(group) {
+    Object.assign(group, { pointerId: null, item: null, placeholder: null, sourceContainer: null, activeContainer: null, startX: 0, startY: 0, offsetX: 0, offsetY: 0, dragging: false });
+}
+
+async function loadClientOffers() {
+    const loading = document.getElementById('client-offers-loading');
+    loading.hidden = false;
+    try {
+        const response = await fetch('/bitrix/settings/offers?contextToken=' + encodeURIComponent(contextToken), { cache: 'no-store' });
+        const data = await readJson(response);
+        if (!response.ok) throw new Error(data.message || 'Не удалось загрузить офферы');
+        clientOffers = Array.isArray(data) ? data : [];
+        clientOffersLoaded = true;
+        renderClientOffers();
+    } catch (error) {
+        showClientSettingsError(error.message);
+    } finally {
+        loading.hidden = true;
+    }
+}
+
+function renderClientOffers() {
+    const body = document.getElementById('client-offers-body');
+    if (!body) return;
+    const offers = sortedClientOffers();
+    body.innerHTML = offers.map(offer => `<tr>
+        <td>${escapeClientSettingsHtml(offer.documentTypeLabel || offer.documentType || '—')}</td>
+        <td>${offer.documentId}</td>
+        <td>${escapeClientSettingsHtml(offer.documentTitle || '—')}</td>
+        <td><span class="client-offer-status ${offer.viewed ? 'is-viewed' : ''}">${offer.viewed ? 'Просмотрен клиентом' : 'Не просмотрен'}</span></td>
+        <td><a class="client-offer-open" href="${escapeClientSettingsAttribute(offer.documentUrl || '#')}" target="_blank" rel="noopener noreferrer">Открыть документ</a></td>
+    </tr>`).join('') || '<tr><td colspan="5" class="client-offers-empty">Офферов нет</td></tr>';
+    document.querySelectorAll('[data-client-offer-sort]').forEach(button => {
+        const active = button.dataset.clientOfferSort === clientOfferSort.key;
+        button.classList.toggle('is-active', active);
+        button.dataset.direction = active ? clientOfferSort.direction : '';
+    });
+}
+
+function sortedClientOffers() {
+    const now = Date.now();
+    let offers = [...clientOffers];
+    if (clientOfferSort.period === '7') {
+        const min = now - 7 * 24 * 60 * 60 * 1000;
+        offers = offers.filter(offer => Date.parse(offer.createdAt || '') >= min);
+    }
+    const key = clientOfferSort.key;
+    const direction = clientOfferSort.direction === 'asc' ? 1 : -1;
+    offers.sort((a, b) => {
+        if (key === 'viewed') return (Number(!!a.viewed) - Number(!!b.viewed)) * direction;
+        if (key === 'createdAt') return ((Date.parse(a.createdAt || '') || 0) - (Date.parse(b.createdAt || '') || 0)) * direction;
+        return String(a[key] || '').localeCompare(String(b[key] || ''), 'ru', { sensitivity: 'base', numeric: true }) * direction;
+    });
+    return offers;
+}
+
+function changeClientOfferSort(key) {
+    if (!key) return;
+    if (clientOfferSort.key === key) clientOfferSort.direction = clientOfferSort.direction === 'asc' ? 'desc' : 'asc';
+    else { clientOfferSort.key = key; clientOfferSort.direction = 'asc'; }
+    renderClientOffers();
+}
+
+function setClientSettingsBusy(busy) {
+    const sync = document.getElementById('sync-client-users');
+    if (sync) sync.disabled = busy;
+}
+function showClientSettingsError(message) {
+    const error = document.getElementById('client-settings-error');
+    if (!error) return;
+    error.textContent = message || 'Ошибка';
+    error.hidden = false;
+}
+function clientUserSvg() {
+    return '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0"></path><circle cx="12" cy="8" r="4"></circle></svg>';
+}
+function clientGearSvg() {
+    return '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.1A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h-.1A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.1A1.7 1.7 0 0 0 15.4 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.1.36.31.7.6 1 .3.3.68.5 1.1.6h.1v4h-.1c-.42.1-.8.3-1.1.6-.29.3-.5.64-.6 1Z"></path></svg>';
+}
+function escapeClientSettingsHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function escapeClientSettingsAttribute(value) { return escapeClientSettingsHtml(value).replace(/`/g, '&#96;'); }

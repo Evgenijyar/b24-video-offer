@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Сформировать видеооффер</title>
-    <link rel="stylesheet" href="/assets/bitrix-widget.css?v=031">
+    <link rel="stylesheet" href="/assets/bitrix-widget.css?v=034">
     <script src="//api.bitrix24.com/api/v1/"></script>
 </head>
 <body>
@@ -176,17 +176,48 @@
         <div id="client-settings-loading" class="client-settings-loading">Загрузка настроек…</div>
         <div id="client-settings-content" hidden>
             <div id="client-settings-metrics" class="client-settings-metrics"></div>
-            <article class="client-settings-section">
-                <div class="client-settings-section-head"><div><h3>Сотрудники</h3><p>Выберите, кому доступен Video Offer. Администраторы также видят этот раздел настроек.</p></div><button id="sync-client-users" class="secondary-action" type="button">Обновить из Bitrix24</button></div>
-                <div id="client-users-list" class="client-users-list"></div>
-                <div class="client-settings-actions"><span id="client-seat-hint"></span><button id="save-client-users" class="primary-button compact-primary" type="button">Сохранить настройки</button></div>
-            </article>
-            <article class="client-settings-section page-template-placeholder">
-                <div><div class="eyebrow">СЛЕДУЮЩИЙ ЭТАП</div><h3>Шаблон клиентской страницы</h3><p>Раздел уже зарезервирован. Здесь будут логотип, блоки, CTA-кнопки и оформление компании. Публичную страницу в этой версии не меняем.</p></div>
-            </article>
+            <nav class="client-settings-tabs" aria-label="Разделы настроек">
+                <button class="client-settings-tab is-active" type="button" data-client-settings-tab="employees">Сотрудники</button>
+                <button class="client-settings-tab" type="button" data-client-settings-tab="offers">Офферы</button>
+            </nav>
+            <section id="client-settings-employees-panel" class="client-settings-panel">
+                <div class="client-settings-section-head"><div><h3>Сотрудники</h3></div><button id="sync-client-users" class="secondary-action" type="button">Обновить из Bitrix24</button></div>
+                <div class="client-employee-assignment-grid">
+                    <section class="client-employee-pool">
+                        <div class="client-employee-pool-head"><b>Все сотрудники</b><span id="client-available-count">0</span></div>
+                        <div id="client-users-available" class="client-employee-drag-list" data-side="available"></div>
+                    </section>
+                    <section class="client-employee-pool client-employee-pool-selected">
+                        <div class="client-employee-pool-head"><b>Подключены</b><span id="client-selected-count">0</span></div>
+                        <div id="client-users-selected" class="client-employee-drag-list" data-side="selected"></div>
+                        <div id="client-seat-limit" class="client-seat-limit-notice">Добавлено максимум сотрудников</div>
+                    </section>
+                </div>
+            </section>
+            <section id="client-settings-offers-panel" class="client-settings-panel" hidden>
+                <div class="client-settings-section-head client-offers-head"><div><h3>Актуальные офферы</h3></div><label class="client-offer-period">Период<select id="client-offer-period"><option value="7">Последние 7 дней</option><option value="all">Все актуальные</option></select></label></div>
+                <div id="client-offers-loading" class="client-settings-loading" hidden>Загрузка офферов…</div>
+                <div class="client-offers-table-wrap"><table class="client-offers-table"><thead><tr><th><button type="button" data-client-offer-sort="documentTypeLabel">Тип документа</button></th><th>ID</th><th><button type="button" data-client-offer-sort="documentTitle">Название</button></th><th><button type="button" data-client-offer-sort="viewed">Статус</button></th><th></th></tr></thead><tbody id="client-offers-body"></tbody></table></div>
+            </section>
         </div>
     </section>
 </div>
-<script src="/assets/bitrix-widget.js?v=031"></script>
+
+<div id="client-employee-modal" class="client-settings-backdrop client-employee-modal" hidden aria-hidden="true">
+    <section class="client-employee-modal-card" role="dialog" aria-modal="true" aria-labelledby="client-employee-modal-title">
+        <header class="client-settings-head">
+            <div><div class="eyebrow">СОТРУДНИК</div><h2 id="client-employee-modal-title">Настройки сотрудника</h2><p id="client-employee-modal-subtitle"></p></div>
+            <button id="close-client-employee-modal" class="client-settings-close" type="button" aria-label="Закрыть">✕</button>
+        </header>
+        <div id="client-employee-modal-error" class="message message--error" hidden></div>
+        <div class="client-employee-modal-body">
+            <label class="client-admin-toggle"><input id="client-employee-admin" type="checkbox"> <span>Администратор</span></label>
+            <label>Сопроводительный текст<textarea id="client-employee-accompanying"></textarea></label>
+            <label>Сообщение для отправки<textarea id="client-employee-message"></textarea></label>
+            <div class="client-employee-modal-actions"><button id="save-client-employee" class="primary-button compact-primary" type="button">Сохранить</button></div>
+        </div>
+    </section>
+</div>
+<script src="/assets/bitrix-widget.js?v=034"></script>
 </body>
 </html>

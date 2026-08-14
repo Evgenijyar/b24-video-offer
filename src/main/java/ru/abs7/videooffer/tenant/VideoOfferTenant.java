@@ -48,6 +48,9 @@ public class VideoOfferTenant {
     @Column(name = "disk_quota_bytes", nullable = false)
     private Long diskQuotaBytes;
 
+    @Column(name = "retention_days", nullable = false)
+    private Integer retentionDays;
+
     @Column(name = "allow_any_entity", nullable = false)
     private Boolean allowAnyEntity;
 
@@ -75,6 +78,7 @@ public class VideoOfferTenant {
             int seatLimit,
             int offerLimit,
             long diskQuotaBytes,
+            int retentionDays,
             boolean allowAnyEntity) {
         OffsetDateTime now = OffsetDateTime.now();
         VideoOfferTenant tenant = new VideoOfferTenant();
@@ -83,12 +87,13 @@ public class VideoOfferTenant {
         tenant.webhookUrl = normalize(webhookUrl);
         tenant.localClientId = normalize(localClientId);
         tenant.localClientSecret = normalize(localClientSecret);
-        tenant.status = TenantStatus.ACTIVE;
+        tenant.status = TenantStatus.PENDING;
         tenant.packageName = normalize(packageName) == null ? "Beta" : packageName.trim();
         tenant.seatLimit = Math.max(1, seatLimit);
         tenant.offerLimit = Math.max(1, offerLimit);
         tenant.offersUsed = 0L;
         tenant.diskQuotaBytes = Math.max(100L * 1024 * 1024, diskQuotaBytes);
+        tenant.retentionDays = normalizeRetentionDays(retentionDays);
         tenant.allowAnyEntity = allowAnyEntity;
         tenant.createdAt = now;
         tenant.updatedAt = now;
@@ -106,6 +111,7 @@ public class VideoOfferTenant {
             int seatLimit,
             int offerLimit,
             long diskQuotaBytes,
+            int retentionDays,
             boolean allowAnyEntity) {
         this.name = normalizeRequired(name, "Название клиента");
         this.portalDomain = normalizeDomain(portalDomain);
@@ -117,6 +123,7 @@ public class VideoOfferTenant {
         this.seatLimit = Math.max(1, seatLimit);
         this.offerLimit = Math.max(1, offerLimit);
         this.diskQuotaBytes = Math.max(100L * 1024 * 1024, diskQuotaBytes);
+        this.retentionDays = normalizeRetentionDays(retentionDays);
         this.allowAnyEntity = allowAnyEntity;
         this.updatedAt = OffsetDateTime.now();
     }
@@ -167,6 +174,7 @@ public class VideoOfferTenant {
     public Integer getOfferLimit() { return offerLimit; }
     public Long getOffersUsed() { return offersUsed; }
     public Long getDiskQuotaBytes() { return diskQuotaBytes; }
+    public Integer getRetentionDays() { return retentionDays == null ? 7 : retentionDays; }
     public Boolean getAllowAnyEntity() { return allowAnyEntity; }
     public Long getPrimaryAdminUserId() { return primaryAdminUserId; }
     public String getPageSettingsJson() { return pageSettingsJson; }
@@ -186,6 +194,10 @@ public class VideoOfferTenant {
             throw new IllegalArgumentException("Некорректный адрес портала Bitrix24");
         }
         return normalized;
+    }
+
+    private static int normalizeRetentionDays(int value) {
+        return Math.max(1, Math.min(3650, value));
     }
 
     private static String normalizeRequired(String value, String label) {

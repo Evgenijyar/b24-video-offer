@@ -1,0 +1,52 @@
+Update 034 — employees, offers and per-tenant retention
+
+1. Bitrix employee sync
+- user.get now requests only active employees: FILTER USER_TYPE=employee, ACTIVE=true.
+- Fired/dismissed employees are marked inactive locally, removed from Video Offer access/admin roles and no longer consume a seat.
+- Personal text templates remain stored if the employee is later restored.
+
+2. Master back-office / Employees
+- New Settings / Employees / Offers tabs.
+- Employees uses physical pointer drag-and-drop with two scrollable lists: all available employees and connected employees.
+- Dragging left -> right grants Video Offer access immediately.
+- Removing/dragging right -> left revokes access and admin role.
+- Connected cards have Settings (gear) and Remove buttons.
+- Employee settings modal contains client-admin role, default accompanying text and default client message.
+- Primary client administrator cannot be removed from access.
+- Seat-limit guard blocks new drag operations, shakes the attempted card and flashes “Добавлено максимум сотрудников”.
+- Primary administrator selection remains in the Employees tab.
+
+3. Client administration inside Bitrix24
+- Settings now has Employees / Offers tabs.
+- Employees uses the same physical drag-and-drop model and seat-limit behavior as the master back-office.
+- Gear opens employee settings; X revokes access.
+- Fired employees are not shown.
+
+4. Active offers
+- Added master endpoint GET /api/backoffice/tenants/{tenantId}/offers.
+- Added client-admin endpoint GET /bitrix/settings/offers.
+- Shows current READY, non-expired offers for the tenant, including compatible legacy offers by member_id.
+- Table columns: document type, document ID, document title, viewed/not viewed, open document.
+- Document titles are resolved from Bitrix24 CRM (deal/lead/contact) with a short in-memory cache and safe fallback.
+- Viewed means a VIDEO_STARTED event exists or the configured view goal has already been reached.
+- Default filter: last 7 days; optional all current offers. Sorting: document type, title, viewed status.
+
+5. Per-company retention
+- Flyway V10 adds video_offer_tenant.retention_days (default 7).
+- Master Settings exposes “Хранить офферы, дней”.
+- New desktop/mobile offers use the tenant retention value.
+- Changing retention recalculates expires_at of existing tenant/legacy offers from their original created_at.
+
+6. Master Settings layout
+- Compact metric values.
+- Company/package card on the left.
+- Bitrix24 connection and Service/counters stacked on the right with matching combined height.
+- Increased spacing between action buttons.
+- Removed the old top-level “Сотрудники из Bitrix24” action.
+
+7. Draft lifecycle correction
+- Newly created tenant records start in PENDING, so the add-client wizard can move backward/forward safely until the final activation step.
+
+8. Disk accounting (unchanged by 034)
+- Dashboard disk usage is DB accounting: SUM(video_file_size) for READY offers assigned to the tenant plus legacy READY offers with the same Bitrix member_id.
+- It intentionally does not walk the filesystem and does not include temporary upload chunks, logs, database files or non-READY offers.

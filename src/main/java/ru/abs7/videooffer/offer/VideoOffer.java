@@ -82,6 +82,7 @@ public class VideoOffer {
         return v;
     }
 
+    public void applyRetentionDays(int retentionDays) { expiresAt = createdAt.plusDays(Math.max(1, Math.min(3650, retentionDays))); updatedAt=OffsetDateTime.now(); }
     public void markPreparing(int progress) { status=VideoOfferStatus.PREPARING; progressPercent=Math.max(0, Math.min(99, progress)); updatedAt=OffsetDateTime.now(); }
     public void markReady(String path, long size, String quality) { status=VideoOfferStatus.READY; progressPercent=100; videoFilePath=path; videoFileSize=size; videoQuality=quality; readyAt=OffsetDateTime.now(); updatedAt=readyAt; errorMessage=null; }
     public void markError(String message) { status=VideoOfferStatus.ERROR; errorMessage=message; updatedAt=OffsetDateTime.now(); }

@@ -16,12 +16,14 @@ import java.util.Map;
 public class BackofficeController {
     private final BackofficeAuthService authService;
     private final TenantAdminService adminService;
+    private final TenantOfferService offerService;
     private final String backofficeTemplate;
     private final String loginTemplate;
 
-    public BackofficeController(BackofficeAuthService authService, TenantAdminService adminService) throws IOException {
+    public BackofficeController(BackofficeAuthService authService, TenantAdminService adminService, TenantOfferService offerService) throws IOException {
         this.authService = authService;
         this.adminService = adminService;
+        this.offerService = offerService;
         this.backofficeTemplate = new ClassPathResource("backoffice/backoffice.html").getContentAsString(StandardCharsets.UTF_8);
         this.loginTemplate = new ClassPathResource("backoffice/backoffice-login.html").getContentAsString(StandardCharsets.UTF_8);
     }
@@ -86,6 +88,12 @@ public class BackofficeController {
                                                    @RequestHeader(value = "X-Backoffice-CSRF", required = false) String csrfToken) {
         authService.requireMutation(session, csrfToken);
         return adminService.update(tenantId, request);
+    }
+
+    @GetMapping(value = "/api/backoffice/tenants/{tenantId}/offers", produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<TenantOfferService.OfferView> offers(@PathVariable long tenantId, HttpSession session) {
+        authService.require(session);
+        return offerService.activeOffers(tenantId);
     }
 
     @PostMapping(value = "/api/backoffice/tenants/{tenantId}/test", produces = MediaType.APPLICATION_JSON_VALUE)

@@ -3,6 +3,8 @@ package ru.abs7.videooffer.tenant;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.abs7.videooffer.bitrix.BitrixRestException;
+import ru.abs7.videooffer.offer.VideoOffer;
+import ru.abs7.videooffer.offer.VideoOfferRepository;
 
 import java.util.*;
 
@@ -12,16 +14,19 @@ public class TenantAdminService {
     private final VideoOfferTenantUserRepository userRepository;
     private final BitrixWebhookClient webhookClient;
     private final TenantAccessService accessService;
+    private final VideoOfferRepository offerRepository;
 
     public TenantAdminService(
             VideoOfferTenantRepository tenantRepository,
             VideoOfferTenantUserRepository userRepository,
             BitrixWebhookClient webhookClient,
-            TenantAccessService accessService) {
+            TenantAccessService accessService,
+            VideoOfferRepository offerRepository) {
         this.tenantRepository = tenantRepository;
         this.userRepository = userRepository;
         this.webhookClient = webhookClient;
         this.accessService = accessService;
+        this.offerRepository = offerRepository;
     }
 
     public List<TenantSummary> list() {
@@ -34,6 +39,7 @@ public class TenantAdminService {
     public TenantDetails details(long tenantId) {
         VideoOfferTenant tenant = requiredTenant(tenantId);
         List<TenantUserView> users = userRepository.findAllByTenantIdOrderByDisplayNameAsc(tenantId).stream()
+                .filter(VideoOfferTenantUser::isActive)
                 .map(TenantUserView::from)
                 .toList();
         long storage = accessService.currentStorageBytes(tenantId);
@@ -60,7 +66,8 @@ public class TenantAdminService {
                     request.localClientSecret() == null ? draft.getLocalClientSecret() : request.localClientSecret(),
                     TenantStatus.PENDING,
                     request.packageName(), seats, positive(request.offerLimit(), draft.getOfferLimit()),
-                    quotaBytes(request.diskQuotaGb()), Boolean.TRUE.equals(request.allowAnyEntity()));
+                    quotaBytes(request.diskQuotaGb()), positive(request.retentionDays(), draft.getRetentionDays()),
+                    Boolean.TRUE.equals(request.allowAnyEntity()));
             tenantRepository.saveAndFlush(draft);
             return details(draft.getId());
         }
@@ -68,7 +75,8 @@ public class TenantAdminService {
                 request.name(), normalizedDomain, webhook,
                 request.localClientId(), request.localClientSecret(),
                 request.packageName(), positive(request.seatLimit(), 3), positive(request.offerLimit(), 50),
-                quotaBytes(request.diskQuotaGb()), Boolean.TRUE.equals(request.allowAnyEntity()));
+                quotaBytes(request.diskQuotaGb()), positive(request.retentionDays(), 7),
+                Boolean.TRUE.equals(request.allowAnyEntity()));
         tenant = tenantRepository.saveAndFlush(tenant);
         return details(tenant.getId());
     }
@@ -93,8 +101,10 @@ public class TenantAdminService {
                 request.localClientSecret() == null ? tenant.getLocalClientSecret() : request.localClientSecret(),
                 request.status(),
                 request.packageName(), requestedSeats, positive(request.offerLimit(), tenant.getOfferLimit()),
-                quotaBytes(request.diskQuotaGb()), Boolean.TRUE.equals(request.allowAnyEntity()));
+                quotaBytes(request.diskQuotaGb()), positive(request.retentionDays(), tenant.getRetentionDays()),
+                Boolean.TRUE.equals(request.allowAnyEntity()));
         tenantRepository.saveAndFlush(tenant);
+        applyRetentionPolicy(tenant);
         return details(tenantId);
     }
 
@@ -108,7 +118,7 @@ public class TenantAdminService {
             Map<String, Object> user = map(current.get("result"));
             webhookClient.call(tenant.getWebhookUrl(), "crm.item.fields", Map.of("entityTypeId", 1));
             Map<String, Object> usersResponse = webhookClient.call(tenant.getWebhookUrl(), "user.get", Map.of(
-                    "FILTER", Map.of("USER_TYPE", "employee"),
+                    "FILTER", Map.of("USER_TYPE", "employee", "ACTIVE", true),
                     "start", 0));
             int count = collectionSize(usersResponse.get("result"));
             long total = positiveLong(usersResponse.get("total"));
@@ -137,6 +147,9 @@ public class TenantAdminService {
         for (VideoOfferTenantUser existing : userRepository.findAllByTenantIdOrderByDisplayNameAsc(tenantId)) {
             if (!seen.contains(existing.getBitrixUserId())) {
                 existing.synchronizeProfile(existing.getDisplayName(), existing.getEmail(), false);
+                // A dismissed employee must not keep consuming a seat or silently regain access later.
+                // Personal templates stay stored so they can be reused if the employee is restored and re-enabled manually.
+                existing.configure(false, false, existing.getDefaultAccompanyingText(), existing.getDefaultClientMessage());
                 userRepository.save(existing);
             }
         }
@@ -239,7 +252,7 @@ public class TenantAdminService {
         int start = 0;
         while (start < 10_000) {
             Map<String, Object> response = webhookClient.call(tenant.getWebhookUrl(), "user.get", Map.of(
-                    "FILTER", Map.of("USER_TYPE", "employee"),
+                    "FILTER", Map.of("USER_TYPE", "employee", "ACTIVE", true),
                     "start", start));
             Object result = response.get("result");
             int pageSize = 0;
@@ -249,8 +262,7 @@ public class TenantAdminService {
                     Map<String, Object> user = map(raw);
                     long id = positiveLong(first(user, "ID", "id"));
                     if (id <= 0) continue;
-                    boolean active = booleanValue(first(user, "ACTIVE", "active"), true);
-                    users.add(new BitrixUserSnapshot(id, joinName(user), stringOrNull(first(user, "EMAIL", "email")), active));
+                    users.add(new BitrixUserSnapshot(id, joinName(user), stringOrNull(first(user, "EMAIL", "email")), true));
                 }
             }
             if (pageSize < 50) break;
@@ -265,7 +277,18 @@ public class TenantAdminService {
                 tenant.getStatus(), tenant.getPackageName(), tenant.getSeatLimit(),
                 userRepository.countByTenantIdAndOfferAccessTrueAndActiveTrue(tenant.getId()),
                 tenant.getOfferLimit(), tenant.getOffersUsed(), tenant.getDiskQuotaBytes(), storage,
-                tenant.getAllowAnyEntity(), tenant.getPrimaryAdminUserId());
+                tenant.getRetentionDays(), tenant.getAllowAnyEntity(), tenant.getPrimaryAdminUserId());
+    }
+
+
+    private void applyRetentionPolicy(VideoOfferTenant tenant) {
+        List<VideoOffer> offers = new ArrayList<>(offerRepository.findAllByTenantId(tenant.getId()));
+        if (tenant.getMemberId() != null && !tenant.getMemberId().isBlank()) {
+            offers.addAll(offerRepository.findAllByTenantIdIsNullAndBitrixMemberId(tenant.getMemberId()));
+        }
+        if (offers.isEmpty()) return;
+        for (VideoOffer offer : offers) offer.applyRetentionDays(tenant.getRetentionDays());
+        offerRepository.saveAll(offers);
     }
 
 
@@ -292,11 +315,11 @@ public class TenantAdminService {
     public record CreateTenantRequest(String name, String portalDomain, String webhookUrl,
                                       String localClientId, String localClientSecret,
                                       String packageName, Integer seatLimit, Integer offerLimit,
-                                      Double diskQuotaGb, Boolean allowAnyEntity) {}
+                                      Double diskQuotaGb, Integer retentionDays, Boolean allowAnyEntity) {}
     public record UpdateTenantRequest(String name, String portalDomain, String webhookUrl,
                                       String localClientId, String localClientSecret,
                                       TenantStatus status, String packageName,
-                                      Integer seatLimit, Integer offerLimit, Double diskQuotaGb,
+                                      Integer seatLimit, Integer offerLimit, Double diskQuotaGb, Integer retentionDays,
                                       Boolean allowAnyEntity) {}
     public record UserConfigRequest(long bitrixUserId, boolean offerAccess, boolean admin,
                                     String defaultAccompanyingText, String defaultClientMessage) {}
@@ -306,7 +329,7 @@ public class TenantAdminService {
     public record TenantSummary(Long id, String name, String portalDomain, String memberId,
                                 TenantStatus status, String packageName, int seatLimit, long seatsUsed,
                                 int offerLimit, long offersUsed, long diskQuotaBytes, long diskUsedBytes,
-                                Boolean allowAnyEntity, Long primaryAdminUserId) {}
+                                int retentionDays, Boolean allowAnyEntity, Long primaryAdminUserId) {}
 
     public record TenantUserView(Long bitrixUserId, String displayName, String email, boolean active,
                                  boolean offerAccess, boolean admin, boolean primaryAdmin,
@@ -323,7 +346,7 @@ public class TenantAdminService {
                                 String webhookUrl, String localClientId, String localClientSecret,
                                 TenantStatus status, String packageName,
                                 int seatLimit, long seatsUsed, int offerLimit, long offersUsed,
-                                long diskQuotaBytes, long diskUsedBytes, boolean allowAnyEntity,
+                                long diskQuotaBytes, long diskUsedBytes, int retentionDays, boolean allowAnyEntity,
                                 Long primaryAdminUserId, String pageSettingsJson,
                                 List<TenantUserView> users) {
         static TenantDetails from(VideoOfferTenant tenant, List<TenantUserView> users, long storage) {
@@ -331,7 +354,7 @@ public class TenantAdminService {
             return new TenantDetails(tenant.getId(), tenant.getName(), tenant.getPortalDomain(), tenant.getMemberId(),
                     tenant.getWebhookUrl(), tenant.getLocalClientId(), tenant.getLocalClientSecret(),
                     tenant.getStatus(), tenant.getPackageName(), tenant.getSeatLimit(), seats,
-                    tenant.getOfferLimit(), tenant.getOffersUsed(), tenant.getDiskQuotaBytes(), storage,
+                    tenant.getOfferLimit(), tenant.getOffersUsed(), tenant.getDiskQuotaBytes(), storage, tenant.getRetentionDays(),
                     tenant.allowAnyEntity(), tenant.getPrimaryAdminUserId(), tenant.getPageSettingsJson(), users);
         }
     }

@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService;
 import ru.abs7.videooffer.kontur.KonturRecordingUrlParser;
+import ru.abs7.videooffer.tenant.VideoOfferTenantRepository;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,12 +28,14 @@ public class VideoOfferService {
     private final int retentionDays;
     private final Path videoStorageDir;
     private final BitrixReadyLinkDeliveryService bitrixReadyLinkDeliveryService;
+    private final VideoOfferTenantRepository tenantRepository;
 
     public VideoOfferService(
             VideoOfferRepository repository,
             KonturRecordingUrlParser parser,
             VideoOfferProcessor processor,
             BitrixReadyLinkDeliveryService bitrixReadyLinkDeliveryService,
+            VideoOfferTenantRepository tenantRepository,
             @Value("${app.public-base-url}") String publicBaseUrl,
             @Value("${app.video.retention-days:30}") int retentionDays,
             @Value("${app.video.storage-dir:./data/videos}") String videoStorageDir) {
@@ -40,6 +43,7 @@ public class VideoOfferService {
         this.parser = parser;
         this.processor = processor;
         this.bitrixReadyLinkDeliveryService = bitrixReadyLinkDeliveryService;
+        this.tenantRepository = tenantRepository;
         this.publicBaseUrl = publicBaseUrl.replaceAll("/+$", "");
         this.retentionDays = retentionDays;
         this.videoStorageDir = Path.of(videoStorageDir).toAbsolutePath().normalize();
@@ -76,7 +80,7 @@ public class VideoOfferService {
                 normalize(request.accompanyingText()),
                 normalize(request.clientMessage()),
                 request.viewNotificationGoal(),
-                retentionDays);
+                retentionDaysForTenant(request.tenantId()));
 
         log.info("Video offer entity created in memory: offerId={}, publicToken={}, recordingKey={}, "
                         + "status={}, viewNotificationGoal={}, expiresAt={}",
@@ -128,7 +132,7 @@ public class VideoOfferService {
                 normalize(accompanyingText),
                 normalize(clientMessage),
                 viewNotificationGoal,
-                retentionDays);
+                retentionDaysForTenant(tenantId));
 
         VideoOffer saved = repository.saveAndFlush(offer);
         Files.createDirectories(videoStorageDir);
@@ -191,6 +195,13 @@ public class VideoOfferService {
         log.info("Deleting video offer from database: offerId={}, status={}, file={}",
                 offer.getId(), offer.getStatus(), offer.getVideoFilePath());
         repository.delete(offer);
+    }
+
+    private int retentionDaysForTenant(Long tenantId) {
+        if (tenantId == null || tenantId <= 0) return retentionDays;
+        return tenantRepository.findById(tenantId)
+                .map(tenant -> tenant.getRetentionDays() == null ? retentionDays : tenant.getRetentionDays())
+                .orElse(retentionDays);
     }
 
     private String normalize(String value) {

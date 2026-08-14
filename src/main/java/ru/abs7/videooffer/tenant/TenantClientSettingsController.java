@@ -13,20 +13,29 @@ public class TenantClientSettingsController {
     private final BitrixContextSigner contextSigner;
     private final TenantAccessService accessService;
     private final TenantAdminService adminService;
+    private final TenantOfferService offerService;
 
     public TenantClientSettingsController(
             BitrixContextSigner contextSigner,
             TenantAccessService accessService,
-            TenantAdminService adminService) {
+            TenantAdminService adminService,
+            TenantOfferService offerService) {
         this.contextSigner = contextSigner;
         this.accessService = accessService;
         this.adminService = adminService;
+        this.offerService = offerService;
     }
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ClientSettingsView settings(@RequestParam String contextToken) {
         BitrixPlacementContext context = verifiedAdminContext(contextToken);
         return ClientSettingsView.from(adminService.details(context.tenantId()), context.bitrixUserId());
+    }
+
+    @GetMapping(value = "/offers", produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<TenantOfferService.OfferView> offers(@RequestParam String contextToken) {
+        BitrixPlacementContext context = verifiedAdminContext(contextToken);
+        return offerService.activeOffers(context.tenantId());
     }
 
     @PostMapping(value = "/sync-users", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -68,6 +77,7 @@ public class TenantClientSettingsController {
             long diskQuotaBytes,
             long diskUsedBytes,
             long diskRemainingBytes,
+            int retentionDays,
             boolean allowAnyEntity,
             Long primaryAdminUserId,
             Long currentUserId,
@@ -79,7 +89,7 @@ public class TenantClientSettingsController {
                     details.seatLimit(), details.seatsUsed(),
                     details.offerLimit(), details.offersUsed(), Math.max(0, details.offerLimit() - details.offersUsed()),
                     details.diskQuotaBytes(), details.diskUsedBytes(), Math.max(0, details.diskQuotaBytes() - details.diskUsedBytes()),
-                    details.allowAnyEntity(), details.primaryAdminUserId(), currentUserId,
+                    details.retentionDays(), details.allowAnyEntity(), details.primaryAdminUserId(), currentUserId,
                     "Раздел шаблона клиентской страницы зарезервирован для следующего этапа",
                     details.users());
         }
