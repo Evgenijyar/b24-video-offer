@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import ru.abs7.videooffer.common.ExternalToolLocator;
 import ru.abs7.videooffer.bitrix.mobile.upload.MobileVideoTranscoder;
 
 import java.io.BufferedReader;
@@ -36,16 +37,19 @@ public class YtDlpVideoDownloader {
     private final MobileVideoTranscoder transcoder;
     private final Path videoStorageDir;
     private final Path importDirectory;
-    private final String ytDlpExecutable;
-    private final String denoExecutable;
+    private final String configuredYtDlpExecutable;
+    private final String configuredDenoExecutable;
+    private volatile String ytDlpExecutable;
+    private volatile String denoExecutable;
+    private volatile String externalToolsUnavailableReason;
     private final Duration timeout;
     private final long maxDownloadBytes;
 
     public YtDlpVideoDownloader(
             MobileVideoTranscoder transcoder,
             @Value("${app.video.storage-dir:./data/videos}") String videoStorageDir,
-            @Value("${app.external-video.yt-dlp-path:/usr/local/bin/yt-dlp}") String ytDlpExecutable,
-            @Value("${app.external-video.deno-path:/usr/local/bin/deno}") String denoExecutable,
+            @Value("${app.external-video.yt-dlp-path:auto}") String ytDlpExecutable,
+            @Value("${app.external-video.deno-path:auto}") String denoExecutable,
             @Value("${app.external-video.timeout-minutes:30}") long timeoutMinutes,
             @Value("${app.external-video.max-download-bytes:1073741824}") long maxDownloadBytes) throws IOException {
         this.transcoder = transcoder;
@@ -54,24 +58,46 @@ public class YtDlpVideoDownloader {
         this.importDirectory = dataDir.resolve("external-imports");
         Files.createDirectories(this.videoStorageDir);
         Files.createDirectories(this.importDirectory);
-        this.ytDlpExecutable = ytDlpExecutable;
-        this.denoExecutable = denoExecutable;
+        this.configuredYtDlpExecutable = normalizeExecutable(ytDlpExecutable);
+        this.configuredDenoExecutable = normalizeExecutable(denoExecutable);
         this.timeout = Duration.ofMinutes(Math.max(2, timeoutMinutes));
         this.maxDownloadBytes = Math.max(32L * 1024 * 1024, maxDownloadBytes);
     }
 
     @PostConstruct
     void verifyTools() {
-        String ytVersion = executableVersion(ytDlpExecutable, "--version", "yt-dlp");
-        String denoVersion = executableVersion(denoExecutable, "--version", "Deno");
-        log.info("External video tools ready: ytDlp={}, ytDlpVersion={}, deno={}, denoVersion={}, maxDownloadBytes={}",
-                ytDlpExecutable, ytVersion, denoExecutable, denoVersion, maxDownloadBytes);
+        var ytDlp = ExternalToolLocator.resolve(
+                configuredYtDlpExecutable,
+                List.of("yt-dlp", "yt-dlp.exe", "/usr/local/bin/yt-dlp", "/usr/bin/yt-dlp"),
+                List.of("--version"));
+        var deno = ExternalToolLocator.resolve(
+                configuredDenoExecutable,
+                List.of("deno", "deno.exe", "/usr/local/bin/deno", "/usr/bin/deno"),
+                List.of("--version"));
+
+        if (ytDlp.isPresent() && deno.isPresent()) {
+            this.ytDlpExecutable = ytDlp.get().executable();
+            this.denoExecutable = deno.get().executable();
+            this.externalToolsUnavailableReason = null;
+            log.info("External video tools ready: ytDlp={}, ytDlpVersion={}, deno={}, denoVersion={}, maxDownloadBytes={}",
+                    ytDlpExecutable, ytDlp.get().version(), denoExecutable, deno.get().version(), maxDownloadBytes);
+            return;
+        }
+
+        this.ytDlpExecutable = ytDlp.map(ExternalToolLocator.ResolvedTool::executable).orElse(null);
+        this.denoExecutable = deno.map(ExternalToolLocator.ResolvedTool::executable).orElse(null);
+        this.externalToolsUnavailableReason = "yt-dlp/Deno are not available on this machine";
+        log.warn("External video tools are unavailable. Application startup will continue; importing video by URL "
+                        + "will be unavailable until yt-dlp and Deno are installed or app.external-video.*-path is configured. "
+                        + "configuredYtDlp={}, configuredDeno={}, ytDlpResolved={}, denoResolved={}",
+                configuredYtDlpExecutable, configuredDenoExecutable, ytDlpExecutable, denoExecutable);
     }
 
     public DownloadResult download(
             String rawUrl,
             String targetBaseName,
             IntConsumer progressConsumer) throws IOException, InterruptedException {
+        requireExternalToolsAvailable();
         URI sourceUri = validatePublicHttpUrl(rawUrl);
         cleanupTargetArtifacts(targetBaseName);
 
@@ -231,6 +257,18 @@ public class YtDlpVideoDownloader {
         return new DownloadResult(normalizedResult.path(), normalizedResult.size(), "external-" + normalizedResult.quality());
     }
 
+    private void requireExternalToolsAvailable() {
+        if (ytDlpExecutable != null && denoExecutable != null) return;
+        throw new IllegalStateException(externalToolsUnavailableReason == null
+                ? "yt-dlp and Deno are required for importing video by URL"
+                : externalToolsUnavailableReason);
+    }
+
+    private String normalizeExecutable(String value) {
+        if (value == null || value.isBlank()) return "auto";
+        return value.trim();
+    }
+
     private URI validatePublicHttpUrl(String rawUrl) {
         if (rawUrl == null || rawUrl.isBlank()) {
             throw new IllegalArgumentException("Ссылка на видео не передана");
@@ -306,25 +344,6 @@ public class YtDlpVideoDownloader {
                 try { Files.deleteIfExists(path); } catch (IOException ignored) { }
             }
         } catch (IOException ignored) { }
-    }
-
-    private String executableVersion(String executable, String argument, String label) {
-        Path path = Path.of(executable);
-        if (!Files.isRegularFile(path) || !Files.isExecutable(path)) {
-            throw new IllegalStateException(label + " is required but is not executable: " + executable);
-        }
-        try {
-            Process process = new ProcessBuilder(executable, argument).redirectErrorStream(true).start();
-            String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8).trim();
-            if (!process.waitFor(8, TimeUnit.SECONDS) || process.exitValue() != 0) {
-                process.destroyForcibly();
-                throw new IllegalStateException(label + " availability check failed");
-            }
-            return output.lines().findFirst().orElse(label + " available");
-        } catch (IOException | InterruptedException error) {
-            if (error instanceof InterruptedException) Thread.currentThread().interrupt();
-            throw new IllegalStateException("Cannot start " + label + ": " + executable, error);
-        }
     }
 
     private String diagnosticSuffix(String output) {

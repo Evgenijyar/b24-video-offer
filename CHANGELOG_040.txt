@@ -1,0 +1,35 @@
+Update 040 — cross-platform local startup / external media tools
+
+Problem fixed
+- Local Windows startup failed because FFmpeg/FFprobe defaults were hard-coded to Linux paths (/usr/bin/ffmpeg, /usr/bin/ffprobe).
+- After fixing that first failure, yt-dlp/Deno would have failed for the same reason (/usr/local/bin/*).
+
+Changes
+1. Added ExternalToolLocator.
+   - Resolves configured executable first.
+   - With "auto", resolves from OS PATH and then common Linux paths.
+   - Does not depend on Unix executable flags, so it works on Windows and Linux.
+
+2. MobileVideoTranscoder
+   - app.mobile-video.ffmpeg-path / ffprobe-path now default to auto.
+   - Missing local FFmpeg/FFprobe no longer abort Spring Boot startup.
+   - If the user invokes a function that really requires the missing tools, that operation fails with a clear error.
+   - Docker production behavior is unchanged because the image installs and verifies FFmpeg/FFprobe.
+
+3. MobileVideoMerger
+   - Uses the same cross-platform resolver.
+   - A single segment can still be copied without FFmpeg.
+   - Multi-segment merge requires FFmpeg/FFprobe and reports a clear runtime error if unavailable.
+
+4. YtDlpVideoDownloader
+   - app.external-video.yt-dlp-path / deno-path now default to auto.
+   - Missing yt-dlp/Deno no longer prevents the whole application from starting locally.
+   - URL import requires the tools and reports a clear runtime error if they are absent.
+   - Docker image still installs/verifies both tools at image build time.
+
+5. application.properties
+   - Added explicit auto settings for all four tools.
+
+No database migration.
+No UI changes.
+No changes to offer/business logic, page builder, Bitrix permissions, screen capture, concurrency, quotas or analytics.

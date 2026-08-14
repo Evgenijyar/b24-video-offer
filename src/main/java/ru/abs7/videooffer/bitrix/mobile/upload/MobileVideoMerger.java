@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import ru.abs7.videooffer.common.ExternalToolLocator;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -26,10 +27,20 @@ public class MobileVideoMerger {
     private final String ffprobe;
 
     public MobileVideoMerger(
-            @Value("${app.mobile-video.ffmpeg-path:/usr/bin/ffmpeg}") String ffmpeg,
-            @Value("${app.mobile-video.ffprobe-path:/usr/bin/ffprobe}") String ffprobe) {
-        this.ffmpeg = ffmpeg;
-        this.ffprobe = ffprobe;
+            @Value("${app.mobile-video.ffmpeg-path:auto}") String ffmpeg,
+            @Value("${app.mobile-video.ffprobe-path:auto}") String ffprobe) {
+        this.ffmpeg = ExternalToolLocator.resolve(
+                ffmpeg,
+                List.of("ffmpeg", "ffmpeg.exe", "/usr/bin/ffmpeg", "/usr/local/bin/ffmpeg"),
+                List.of("-version"))
+                .map(ExternalToolLocator.ResolvedTool::executable)
+                .orElse(null);
+        this.ffprobe = ExternalToolLocator.resolve(
+                ffprobe,
+                List.of("ffprobe", "ffprobe.exe", "/usr/bin/ffprobe", "/usr/local/bin/ffprobe"),
+                List.of("-version"))
+                .map(ExternalToolLocator.ResolvedTool::executable)
+                .orElse(null);
     }
 
     public MergeResult merge(List<Path> sources, Path output) throws IOException, InterruptedException {
@@ -42,6 +53,7 @@ public class MobileVideoMerger {
             return new MergeResult(output, Files.size(output), "single-segment-copy");
         }
 
+        requireMediaToolsAvailable();
         Files.createDirectories(output.toAbsolutePath().normalize().getParent());
         Files.deleteIfExists(output);
         List<SegmentInfo> infos = new ArrayList<>();
@@ -240,6 +252,11 @@ public class MobileVideoMerger {
             Files.deleteIfExists(output);
             throw new IOException("FFmpeg не смог объединить части записи" + suffix(result.output()));
         }
+    }
+
+    private void requireMediaToolsAvailable() {
+        if (ffmpeg != null && ffprobe != null) return;
+        throw new IllegalStateException("FFmpeg/FFprobe are required for merging multiple recorded video segments");
     }
 
     private ProcessResult run(List<String> command, Duration timeout) throws IOException, InterruptedException {

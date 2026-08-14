@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import ru.abs7.videooffer.common.ExternalToolLocator;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -29,26 +30,50 @@ public class MobileVideoTranscoder {
 
     private final Duration timeout;
     private final Semaphore transcodeSlots;
-    private final String ffmpegExecutable;
-    private final String ffprobeExecutable;
+    private final String configuredFfmpegExecutable;
+    private final String configuredFfprobeExecutable;
+    private volatile String ffmpegExecutable;
+    private volatile String ffprobeExecutable;
+    private volatile String mediaToolsUnavailableReason;
 
     public MobileVideoTranscoder(
             @Value("${app.mobile-video.ffmpeg-timeout-minutes:20}") long timeoutMinutes,
             @Value("${app.mobile-video.max-concurrent-transcodes:1}") int maxConcurrentTranscodes,
-            @Value("${app.mobile-video.ffmpeg-path:/usr/bin/ffmpeg}") String ffmpegExecutable,
-            @Value("${app.mobile-video.ffprobe-path:/usr/bin/ffprobe}") String ffprobeExecutable) {
+            @Value("${app.mobile-video.ffmpeg-path:auto}") String ffmpegExecutable,
+            @Value("${app.mobile-video.ffprobe-path:auto}") String ffprobeExecutable) {
         this.timeout = Duration.ofMinutes(Math.max(2, timeoutMinutes));
         this.transcodeSlots = new Semaphore(Math.max(1, Math.min(4, maxConcurrentTranscodes)), true);
-        this.ffmpegExecutable = normalizeExecutable(ffmpegExecutable, "/usr/bin/ffmpeg");
-        this.ffprobeExecutable = normalizeExecutable(ffprobeExecutable, "/usr/bin/ffprobe");
+        this.configuredFfmpegExecutable = normalizeExecutable(ffmpegExecutable, "auto");
+        this.configuredFfprobeExecutable = normalizeExecutable(ffprobeExecutable, "auto");
     }
 
     @PostConstruct
     void verifyMediaToolsAvailable() {
-        String ffmpegVersion = verifyExecutable(ffmpegExecutable, "FFmpeg");
-        String ffprobeVersion = verifyExecutable(ffprobeExecutable, "FFprobe");
-        log.info("Mobile media tools ready: ffmpeg={}, ffprobe={}, ffmpegVersion={}, ffprobeVersion={}",
-                ffmpegExecutable, ffprobeExecutable, ffmpegVersion, ffprobeVersion);
+        var ffmpeg = ExternalToolLocator.resolve(
+                configuredFfmpegExecutable,
+                List.of("ffmpeg", "ffmpeg.exe", "/usr/bin/ffmpeg", "/usr/local/bin/ffmpeg"),
+                List.of("-version"));
+        var ffprobe = ExternalToolLocator.resolve(
+                configuredFfprobeExecutable,
+                List.of("ffprobe", "ffprobe.exe", "/usr/bin/ffprobe", "/usr/local/bin/ffprobe"),
+                List.of("-version"));
+
+        if (ffmpeg.isPresent() && ffprobe.isPresent()) {
+            this.ffmpegExecutable = ffmpeg.get().executable();
+            this.ffprobeExecutable = ffprobe.get().executable();
+            this.mediaToolsUnavailableReason = null;
+            log.info("Mobile media tools ready: ffmpeg={}, ffprobe={}, ffmpegVersion={}, ffprobeVersion={}",
+                    ffmpegExecutable, ffprobeExecutable, ffmpeg.get().version(), ffprobe.get().version());
+            return;
+        }
+
+        this.ffmpegExecutable = ffmpeg.map(ExternalToolLocator.ResolvedTool::executable).orElse(null);
+        this.ffprobeExecutable = ffprobe.map(ExternalToolLocator.ResolvedTool::executable).orElse(null);
+        this.mediaToolsUnavailableReason = "FFmpeg/FFprobe are not available on this machine";
+        log.warn("Mobile media tools are unavailable. Application startup will continue; video import/transcoding "
+                        + "will be unavailable until FFmpeg and FFprobe are installed or app.mobile-video.*-path is configured. "
+                        + "configuredFfmpeg={}, configuredFfprobe={}, ffmpegResolved={}, ffprobeResolved={}",
+                configuredFfmpegExecutable, configuredFfprobeExecutable, ffmpegExecutable, ffprobeExecutable);
     }
 
     public TranscodeResult transcode(Path input, Path output, String declaredMimeType)
@@ -66,6 +91,7 @@ public class MobileVideoTranscoder {
             String declaredMimeType,
             IntConsumer progressConsumer) throws IOException, InterruptedException {
         IntConsumer progress = progressConsumer == null ? ignored -> { } : progressConsumer;
+        requireMediaToolsAvailable();
         Files.createDirectories(output.toAbsolutePath().normalize().getParent());
         Files.deleteIfExists(output);
 
@@ -358,21 +384,11 @@ public class MobileVideoTranscoder {
         return new ProcessResult(process.exitValue(), diagnostics.toString());
     }
 
-    private String verifyExecutable(String executable, String label) {
-        Path path = Path.of(executable);
-        if (!Files.isRegularFile(path) || !Files.isExecutable(path)) {
-            throw new IllegalStateException(label + " is required for mobile video processing but is not executable: " + executable);
-        }
-        try {
-            ProcessResult result = runProcess(List.of(executable, "-version"), Duration.ofSeconds(5));
-            if (result.exitCode() != 0) throw new IllegalStateException(label + " availability check failed with code " + result.exitCode());
-            return result.output().lines().findFirst().orElse(label + " available");
-        } catch (IOException error) {
-            throw new IllegalStateException("Cannot start " + label + " required for mobile video processing: " + executable, error);
-        } catch (InterruptedException error) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("Interrupted while checking " + label + " availability", error);
-        }
+    private void requireMediaToolsAvailable() {
+        if (ffmpegExecutable != null && ffprobeExecutable != null) return;
+        throw new IllegalStateException(mediaToolsUnavailableReason == null
+                ? "FFmpeg/FFprobe are required for video processing"
+                : mediaToolsUnavailableReason);
     }
 
     private String normalizeExecutable(String value, String fallback) {
