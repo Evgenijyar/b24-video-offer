@@ -1,0 +1,8 @@
+Update 037
+
+- Unified the user-level access denied placeholder.
+- USER_NOT_ALLOWED and desktop NOT_RESPONSIBLE now show only:
+  «Ой, кажется, вы вошли не в ту дверь»
+- Removed the subtitle from this placeholder.
+- Technical access-resolution and portal-level errors keep their existing diagnostic text.
+- No database migration.

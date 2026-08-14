@@ -60,6 +60,9 @@ public class BitrixMobileController {
             return blocked("Не удалось проверить доступ", "Закройте Video Offer и откройте приложение из мобильного Bitrix24 ещё раз.");
         }
         if (!access.allowed()) {
+            if ("USER_NOT_ALLOWED".equals(access.code())) {
+                return blocked("Ой, кажется, вы вошли не в ту дверь", null);
+            }
             return blocked("Video Offer недоступен", access.message());
         }
 
@@ -107,10 +110,11 @@ public class BitrixMobileController {
     }
 
     private ResponseEntity<String> blocked(String title, String message) {
+        String subtitle = message == null || message.isBlank() ? "" : "<p>" + escapeHtml(message) + "</p>";
         String html = """
                 <!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-                <style>body{margin:0;background:#f2f5f8;color:#263238;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}.b{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:22px}.c{width:100%%;max-width:480px;background:#fff;border:1px solid #e2e8ec;border-radius:18px;padding:26px;box-shadow:0 16px 44px rgba(31,45,61,.08)}h2{margin:0 0 10px;font-size:21px}p{margin:0;color:#6b7785;line-height:1.55}</style></head><body><div class="b"><div class="c"><h2>%s</h2><p>%s</p></div></div></body></html>
-                """.formatted(escapeHtml(title), escapeHtml(message));
+                <style>body{margin:0;background:#f2f5f8;color:#263238;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}.b{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:22px}.c{width:100%%;max-width:480px;background:#fff;border:1px solid #e2e8ec;border-radius:18px;padding:26px;box-shadow:0 16px 44px rgba(31,45,61,.08)}h2{margin:0;font-size:21px}p{margin:10px 0 0;color:#6b7785;line-height:1.55}</style></head><body><div class="b"><div class="c"><h2>%s</h2>%s</div></div></body></html>
+                """.formatted(escapeHtml(title), subtitle);
         return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).header("Cache-Control", "no-store").body(html);
     }
 
