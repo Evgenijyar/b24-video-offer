@@ -3,6 +3,7 @@ package ru.abs7.videooffer.publicpage;
 import ru.abs7.videooffer.offer.VideoOffer;
 import ru.abs7.videooffer.offer.VideoOfferStatus;
 import ru.abs7.videooffer.offer.ViewNotificationGoal;
+import ru.abs7.videooffer.tenant.PageTemplateService;
 
 import java.time.OffsetDateTime;
 
@@ -14,9 +15,11 @@ public record PublicOfferResponse(
         boolean ready,
         boolean viewTrackingActive,
         ViewNotificationGoal viewNotificationGoal,
-        OffsetDateTime createdAt) {
+        OffsetDateTime createdAt,
+        PageTemplateService.PageTemplateView pageTemplate,
+        PageTemplateService.OfferPageContent pageContent) {
 
-    public static PublicOfferResponse from(VideoOffer offer) {
+    public static PublicOfferResponse from(VideoOffer offer, PageTemplateService pageTemplateService) {
         return new PublicOfferResponse(
                 offer.getPublicToken(),
                 offer.getStatus(),
@@ -27,6 +30,8 @@ public record PublicOfferResponse(
                         && offer.getViewNotificationGoal() != ViewNotificationGoal.NONE
                         && offer.getViewGoalReachedAt() == null,
                 offer.getViewNotificationGoal(),
-                offer.getCreatedAt());
+                offer.getCreatedAt(),
+                pageTemplateService.templateForOffer(offer),
+                pageTemplateService.contentForOffer(offer));
     }
 }

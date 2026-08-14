@@ -6,6 +6,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -17,13 +18,15 @@ public class BackofficeController {
     private final BackofficeAuthService authService;
     private final TenantAdminService adminService;
     private final TenantOfferService offerService;
+    private final PageTemplateService pageTemplateService;
     private final String backofficeTemplate;
     private final String loginTemplate;
 
-    public BackofficeController(BackofficeAuthService authService, TenantAdminService adminService, TenantOfferService offerService) throws IOException {
+    public BackofficeController(BackofficeAuthService authService, TenantAdminService adminService, TenantOfferService offerService, PageTemplateService pageTemplateService) throws IOException {
         this.authService = authService;
         this.adminService = adminService;
         this.offerService = offerService;
+        this.pageTemplateService = pageTemplateService;
         this.backofficeTemplate = new ClassPathResource("backoffice/backoffice.html").getContentAsString(StandardCharsets.UTF_8);
         this.loginTemplate = new ClassPathResource("backoffice/backoffice-login.html").getContentAsString(StandardCharsets.UTF_8);
     }
@@ -94,6 +97,33 @@ public class BackofficeController {
     public List<TenantOfferService.OfferView> offers(@PathVariable long tenantId, HttpSession session) {
         authService.require(session);
         return offerService.activeOffers(tenantId);
+    }
+
+    @GetMapping(value = "/api/backoffice/tenants/{tenantId}/page-template", produces = MediaType.APPLICATION_JSON_VALUE)
+    public PageTemplateService.PageTemplateView pageTemplate(@PathVariable long tenantId, HttpSession session) {
+        authService.require(session);
+        return pageTemplateService.template(tenantId);
+    }
+
+    @PutMapping(value = "/api/backoffice/tenants/{tenantId}/page-template", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public PageTemplateService.PageTemplateView savePageTemplate(
+            @PathVariable long tenantId,
+            @RequestBody PageTemplateService.PageTemplateView request,
+            HttpSession session,
+            @RequestHeader(value = "X-Backoffice-CSRF", required = false) String csrfToken) {
+        authService.requireMutation(session, csrfToken);
+        return pageTemplateService.saveTemplate(tenantId, request);
+    }
+
+    @PostMapping(value = "/api/backoffice/tenants/{tenantId}/page-template/assets", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public PageTemplateService.AssetUploadResponse uploadPageAsset(
+            @PathVariable long tenantId,
+            @RequestParam String kind,
+            @RequestPart("file") MultipartFile file,
+            HttpSession session,
+            @RequestHeader(value = "X-Backoffice-CSRF", required = false) String csrfToken) throws IOException {
+        authService.requireMutation(session, csrfToken);
+        return pageTemplateService.uploadTemplateAsset(tenantId, kind, file);
     }
 
     @PostMapping(value = "/api/backoffice/tenants/{tenantId}/test", produces = MediaType.APPLICATION_JSON_VALUE)

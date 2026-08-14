@@ -496,6 +496,8 @@ public class MobileVideoUploadService {
                         request.accompanyingText(),
                         request.clientMessage(),
                         ViewNotificationGoal.orDefault(request.viewNotificationGoal()),
+                        request.pageTextValues(),
+                        request.pageFileDraftIds(),
                         switch (claim.sourceKind()) {
                             case FILE -> "uploaded-file-h264";
                             case MERGED -> "mixed-recording-h264";

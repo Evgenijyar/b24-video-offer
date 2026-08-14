@@ -639,3 +639,13 @@ body.has-local-video-fullscreen { overflow: hidden !important; }
 .client-offer-title-cell,.client-offer-author-cell{white-space:normal!important;overflow-wrap:anywhere;word-break:normal;line-height:1.35}
 .client-offer-title-cell{max-width:300px}
 .client-offer-author-cell{max-width:220px}
+
+/* Update 039: page builder + configurable manager fields */
+#client-settings-page-panel{padding:0;overflow:hidden;background:transparent;border:0}
+#client-page-builder{width:100%}
+.page-template-file-field input[type=file]{width:100%;margin-top:7px;padding:9px 10px;border:1px dashed #d5dfe4;border-radius:9px;background:#f8fafb;color:#4c5d67;font:inherit;font-size:12px}
+.page-template-field small{display:block;margin-top:5px;color:#84929a;font-size:10.5px}
+.client-offers-table th,.client-offers-table td{white-space:normal}
+.client-offer-title-cell,.client-offer-author-cell{white-space:normal!important;overflow-wrap:anywhere;line-height:1.35}
+.client-offer-open{white-space:nowrap!important}
+.client-offer-status{white-space:nowrap!important}

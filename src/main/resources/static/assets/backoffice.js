@@ -5,6 +5,9 @@ const state = {
     activeTab: 'settings',
     offers: [],
     offersLoadedFor: null,
+    pageTemplate: null,
+    pageTemplateLoadedFor: null,
+    pageBuilder: null,
     offerSort: { key: 'createdAt', direction: 'desc', period: '7' },
     wizard: createWizardState()
 };
@@ -62,6 +65,9 @@ function bind() {
         state.activeTab = 'settings';
         state.offers = [];
         state.offersLoadedFor = null;
+        state.pageTemplate = null;
+        state.pageTemplateLoadedFor = null;
+        state.pageBuilder = null;
         await loadDetails();
         render();
     };
@@ -143,9 +149,11 @@ function renderWorkspace() {
             ${tabButton('settings', 'Настройки')}
             ${tabButton('employees', 'Сотрудники')}
             ${tabButton('offers', 'Офферы')}
+            ${tabButton('page', 'Страница')}
         </nav>
         <section class="workspace-tab-panel">${renderActiveTab(details)}</section>`;
     if (state.activeTab === 'employees') initBackofficeEmployeeDragDrop();
+    if (state.activeTab === 'page') initBackofficePageBuilder();
 }
 
 function tabButton(id, label) {
@@ -155,6 +163,7 @@ function tabButton(id, label) {
 function renderActiveTab(details) {
     if (state.activeTab === 'employees') return renderEmployeesTab(details);
     if (state.activeTab === 'offers') return renderOffersTab();
+    if (state.activeTab === 'page') return renderPageTab();
     return renderSettingsTab(details);
 }
 
@@ -221,6 +230,40 @@ function employeeDragCard(user, selected) {
     return `<div class="employee-drag-item" data-user-id="${user.bitrixUserId}" data-primary="${user.primaryAdmin ? 'true' : 'false'}"><span class="employee-drag-handle" aria-hidden="true">${userIconSvg()}</span><div class="employee-drag-main"><div class="employee-drag-name">${esc(user.displayName)}</div><div class="employee-drag-meta">${esc(user.email || 'Bitrix ID ' + user.bitrixUserId)}${selected ? ` · ${user.offersUsed} офф.` : ''}</div></div>${controls}</div>`;
 }
 
+function renderPageTab() {
+    if (state.pageTemplateLoadedFor !== state.selectedId) return '<article class="settings-card"><div class="offers-loading">Загрузка шаблона…</div></article>';
+    if (!state.pageTemplate) return '<article class="settings-card"><div class="offers-loading">Шаблон страницы недоступен</div></article>';
+    return '<div id="bo-page-builder"></div>';
+}
+
+function initBackofficePageBuilder() {
+    const root = document.getElementById('bo-page-builder');
+    if (!root || !state.pageTemplate) return;
+    state.pageBuilder = new VideoOfferPageBuilder({
+        root,
+        theme: 'dark',
+        template: state.pageTemplate,
+        uploadAsset: (kind, file) => uploadBackofficePageAsset(kind, file),
+        saveTemplate: template => api(`/api/backoffice/tenants/${state.selectedId}/page-template`, { method:'PUT', body:JSON.stringify(template) }),
+        onSaved: saved => { state.pageTemplate = saved; state.pageTemplateLoadedFor = state.selectedId; }
+    });
+}
+
+async function uploadBackofficePageAsset(kind, file) {
+    const form = new FormData();
+    form.append('file', file);
+    const response = await fetch(`/api/backoffice/tenants/${state.selectedId}/page-template/assets?kind=${encodeURIComponent(kind)}`, {
+        method:'POST',
+        headers: backofficeCsrf ? {'X-Backoffice-CSRF': backofficeCsrf} : {},
+        body: form
+    });
+    let data = null;
+    try { data = await response.json(); } catch (_) {}
+    if (response.status === 401 || response.status === 403) { location.reload(); throw new Error(data?.message || 'Сессия завершена'); }
+    if (!response.ok) throw new Error(data?.message || data?.error || `HTTP ${response.status}`);
+    return data;
+}
+
 function renderOffersTab() {
     if (state.offersLoadedFor !== state.selectedId) return '<article class="settings-card"><div class="offers-loading">Загрузка офферов…</div></article>';
     const offers = sortedFilteredOffers(state.offers);
@@ -254,7 +297,7 @@ function sortHeader(key, label) {
 }
 
 function offerRow(item) {
-    return `<tr><td class="offer-date-cell">${formatOfferDate(item.createdAt)}</td><td>${esc(item.documentTypeLabel)}</td><td>${item.documentId}</td><td class="offer-title-cell">${esc(item.documentTitle)}</td><td class="offer-author-cell">${esc(item.authorName || '—')}</td><td><span class="view-status ${item.viewed ? 'is-viewed' : 'is-unviewed'}">${item.viewed ? 'Просмотрен клиентом' : 'Не просмотрен'}</span></td><td class="offer-open-cell"><a class="btn btn-flat btn-sm" href="${esc(item.documentUrl)}" target="_blank" rel="noopener noreferrer">Открыть документ</a></td></tr>`;
+    return `<tr><td class="offer-date-cell">${formatOfferDate(item.createdAt)}</td><td>${esc(item.documentTypeLabel)}</td><td>${item.documentId}</td><td class="offer-title-cell">${esc(item.documentTitle)}</td><td class="offer-author-cell">${esc(item.authorName || '—')}</td><td><span class="view-status ${item.viewed ? 'is-viewed' : 'is-unviewed'}">${item.viewed ? 'Просмотрен' : 'Не просмотрен'}</span></td><td class="offer-open-cell"><a class="btn btn-flat btn-sm" href="${esc(item.documentUrl)}" target="_blank" rel="noopener noreferrer">Открыть документ</a></td></tr>`;
 }
 
 function formatOfferDate(value) {
@@ -322,7 +365,7 @@ async function workspaceClick(event) {
         if (action.dataset.action === 'delete') {
             if (confirm(`Удалить клиента ${state.details.name}?`)) {
                 await api(`/api/backoffice/tenants/${state.selectedId}`, {method:'DELETE'});
-                state.selectedId = null; state.details = null; state.offers=[]; state.offersLoadedFor=null;
+                state.selectedId = null; state.details = null; state.offers=[]; state.offersLoadedFor=null; state.pageTemplate=null; state.pageTemplateLoadedFor=null; state.pageBuilder=null;
                 await loadTenants();
             }
         }
@@ -330,7 +373,7 @@ async function workspaceClick(event) {
 }
 
 async function switchMainTab(tab) {
-    if (!['settings','employees','offers'].includes(tab)) return;
+    if (!['settings','employees','offers','page'].includes(tab)) return;
     state.activeTab = tab;
     renderWorkspace();
     if (tab === 'offers' && state.offersLoadedFor !== state.selectedId) {
@@ -340,6 +383,17 @@ async function switchMainTab(tab) {
         } catch (error) {
             state.offers = [];
             state.offersLoadedFor = state.selectedId;
+            alert(error.message);
+        }
+        renderWorkspace();
+    }
+    if (tab === 'page' && state.pageTemplateLoadedFor !== state.selectedId) {
+        try {
+            state.pageTemplate = await api(`/api/backoffice/tenants/${state.selectedId}/page-template`);
+            state.pageTemplateLoadedFor = state.selectedId;
+        } catch (error) {
+            state.pageTemplate = null;
+            state.pageTemplateLoadedFor = state.selectedId;
             alert(error.message);
         }
         renderWorkspace();

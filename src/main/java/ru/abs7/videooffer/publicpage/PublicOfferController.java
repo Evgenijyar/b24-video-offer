@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 import ru.abs7.videooffer.offer.VideoOffer;
 import ru.abs7.videooffer.offer.VideoOfferService;
 import ru.abs7.videooffer.offer.VideoOfferStatus;
+import ru.abs7.videooffer.tenant.PageTemplateService;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,9 +30,11 @@ public class PublicOfferController {
     private static final int BUFFER_SIZE = 64 * 1024;
 
     private final VideoOfferService service;
+    private final PageTemplateService pageTemplateService;
 
-    public PublicOfferController(VideoOfferService service) {
+    public PublicOfferController(VideoOfferService service, PageTemplateService pageTemplateService) {
         this.service = service;
+        this.pageTemplateService = pageTemplateService;
     }
 
     @GetMapping(value = "/o/{token}", produces = MediaType.TEXT_HTML_VALUE)
@@ -48,7 +51,31 @@ public class PublicOfferController {
         VideoOffer offer = service.getByToken(token);
         log.info("Public offer data requested: offerId={}, status={}, progress={}%",
                 offer.getId(), offer.getStatus(), offer.getProgressPercent());
-        return PublicOfferResponse.from(offer);
+        return PublicOfferResponse.from(offer, pageTemplateService);
+    }
+
+    @GetMapping("/page-assets/{tenantId}/{assetToken}")
+    public void pageAsset(
+            @PathVariable long tenantId,
+            @PathVariable String assetToken,
+            @RequestHeader(value = "Range", required = false) String rangeHeader,
+            HttpServletResponse response) throws IOException {
+        PageTemplateService.AssetFile asset = pageTemplateService.resolveTemplateAsset(tenantId, assetToken);
+        if (asset.contentType() != null && asset.contentType().toLowerCase(java.util.Locale.ROOT).startsWith("video/")) {
+            streamRangedAsset(asset, rangeHeader, response);
+            return;
+        }
+        streamWholeFile(asset, response, false);
+    }
+
+    @GetMapping("/offer-files/{token}/{attachmentId}")
+    public void offerAttachment(
+            @PathVariable String token,
+            @PathVariable String attachmentId,
+            HttpServletResponse response) throws IOException {
+        VideoOffer offer = service.getByToken(token);
+        PageTemplateService.AssetFile asset = pageTemplateService.resolveOfferAttachment(offer, attachmentId);
+        streamWholeFile(asset, response, true);
     }
 
     @GetMapping("/media/{token}")
@@ -112,6 +139,58 @@ public class PublicOfferController {
         }
         log.info("Public video stream completed: offerId={}, length={}, durationMs={}",
                 offer.getId(), range.length(), (System.nanoTime() - streamStartedAt) / 1_000_000L);
+    }
+
+    private void streamRangedAsset(PageTemplateService.AssetFile asset, String rangeHeader, HttpServletResponse response) throws IOException {
+        Path path = asset.path();
+        if (!Files.isRegularFile(path)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Файл не найден");
+        long fileSize = Files.size(path);
+        ByteRange range = ByteRange.parse(rangeHeader, fileSize);
+        if (range == null) {
+            response.setStatus(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
+            response.setHeader(HttpHeaders.ACCEPT_RANGES, "bytes");
+            response.setHeader(HttpHeaders.CONTENT_RANGE, "bytes */" + fileSize);
+            return;
+        }
+        response.reset();
+        response.setStatus(range.partial() ? HttpServletResponse.SC_PARTIAL_CONTENT : HttpServletResponse.SC_OK);
+        response.setContentType(asset.contentType());
+        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "inline");
+        response.setHeader(HttpHeaders.ACCEPT_RANGES, "bytes");
+        response.setHeader(HttpHeaders.CACHE_CONTROL, "public, max-age=3600, no-transform");
+        response.setHeader("X-Content-Type-Options", "nosniff");
+        response.setContentLengthLong(range.length());
+        if (range.partial()) {
+            response.setHeader(HttpHeaders.CONTENT_RANGE, "bytes " + range.start() + "-" + range.end() + "/" + fileSize);
+        }
+        try (RandomAccessFile file = new RandomAccessFile(path.toFile(), "r");
+             OutputStream output = response.getOutputStream()) {
+            file.seek(range.start());
+            byte[] buffer = new byte[BUFFER_SIZE];
+            long remaining = range.length();
+            while (remaining > 0) {
+                int read = file.read(buffer, 0, (int) Math.min(buffer.length, remaining));
+                if (read < 0) break;
+                output.write(buffer, 0, read);
+                remaining -= read;
+            }
+        }
+    }
+
+    private void streamWholeFile(PageTemplateService.AssetFile asset, HttpServletResponse response, boolean attachment) throws IOException {
+        Path path = asset.path();
+        if (!Files.isRegularFile(path)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Файл не найден");
+        String contentType = asset.contentType() == null || asset.contentType().isBlank()
+                ? MediaType.APPLICATION_OCTET_STREAM_VALUE : asset.contentType();
+        response.reset();
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.setContentType(contentType);
+        String safeName = asset.fileName() == null ? "file" : asset.fileName().replace("\"", "");
+        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, (attachment ? "attachment" : "inline") + "; filename*=UTF-8''" + java.net.URLEncoder.encode(safeName, java.nio.charset.StandardCharsets.UTF_8).replace("+", "%20"));
+        response.setHeader(HttpHeaders.CACHE_CONTROL, attachment ? "private, max-age=3600" : "public, max-age=3600");
+        response.setHeader("X-Content-Type-Options", "nosniff");
+        response.setContentLengthLong(Files.size(path));
+        Files.copy(path, response.getOutputStream());
     }
 
     private record ByteRange(long start, long end, boolean partial) {

@@ -1,0 +1,60 @@
+Update 039 — configurable Video Offer public page
+
+1. Back-office offers table
+- Shortened view status labels to "Просмотрен" / "Не просмотрен".
+- Kept "Открыть документ" on one line.
+- Rebalanced columns to match the compact Bitrix administrator table; document titles and author names may wrap to any required row height.
+
+2. Per-company page builder
+- Added shared tenant page template stored in video_offer_tenant.page_settings_json.
+- The same template is editable from the master back-office and from the tenant administrator settings inside desktop Bitrix24.
+- New clients receive a starter template automatically.
+- Builder layout: reusable element palette on the left and one-column page canvas on the right.
+- Physical pointer drag-and-drop from palette to canvas and drag reorder inside canvas.
+- Up to 3 blocks of each regular type; header is limited to one. Palette items become disabled at their limit.
+- Clicking a block opens its properties in the left panel. Blocks can be removed with X; mandatory header and active main-video block are protected.
+- Each block supports visibility on all devices, desktop only, or mobile only.
+
+3. Builder blocks
+- HEADER: mandatory 3-part header with company logo, company name and phone/link.
+- VIDEO: main personalized Video Offer or uploaded MP4/WebM video.
+- TEXT: static text or manager-filled text; heading, paragraph and highlighted note variants; manager fields may be required.
+- IMAGE: uploaded PNG/JPG/JPEG/WebP banner/image, optional click URL and corner radius.
+- FILE: static administrator document or manager-provided document; manager attachment may be required.
+- BUTTON: editable text, URL (http/https/tel/mailto), color, shape and new-tab option.
+- DIVIDER: solid, dashed or dotted separator.
+- Uploaded static builder assets can be replaced or removed from the template.
+
+4. Manager offer creation
+- Desktop and mobile forms now render manager-editable TEXT and FILE fields defined by the tenant page template.
+- The legacy accompanying-text field is reused by the starter template for backward compatibility.
+- Required dynamic text/file fields are validated before offer creation.
+- Manager files are first uploaded as tenant/user-scoped drafts and atomically claimed by the created offer.
+- Supported manager/static office files: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, RTF, CSV, ODT, ODS, ODP.
+
+5. Public offer page
+- New adaptive one-column renderer for all page-builder block types.
+- Header uses 3 columns on desktop and stacks cleanly on mobile.
+- Main personalized video keeps existing view tracking and HTTP Range playback.
+- Uploaded static videos also support HTTP Range playback.
+- Offer attachments are served through token-scoped public URLs.
+- Desktop-only and mobile-only block visibility is enforced by responsive layout.
+
+6. Snapshot / compatibility model
+- New offers snapshot both the page template and manager-provided page content. Later template edits do not change already-created offers.
+- Existing pre-039 offers without a snapshot remain readable and fall back to the current tenant template / legacy accompanying text.
+- New Flyway migration V12 adds page_template_json and page_content_json to video_offer.
+
+7. Storage and cleanup
+- Builder static assets and persistent per-offer attachments are included in tenant disk usage/quota calculations together with READY video files.
+- Temporary manager drafts are not billed as persistent storage and are cleaned after 24 hours.
+- Replaced/removed static template assets are cleaned only when no current template or existing offer snapshot references them, so old public offers cannot lose their assets.
+- Tenant deletion removes its builder assets/drafts/attachments; offer deletion removes its own attachments.
+
+8. Limits and security
+- Static image limit: 10 MiB; static video: 100 MiB; document: 25 MiB.
+- Template links are restricted to http, https, tel and mailto schemes.
+- Tenant-bound asset URLs are validated server-side to prevent cross-company asset references.
+- Draft files are bound to tenant, Bitrix user and exact block ID before they can be attached to an offer.
+
+Screen capture/camera behavior is unchanged from Update 038.

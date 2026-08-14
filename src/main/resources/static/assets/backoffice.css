@@ -42,3 +42,31 @@
 .offer-title-cell,.offer-author-cell{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;overflow-wrap:anywhere;word-break:normal;line-height:1.35}
 .offer-title-cell{max-width:340px}
 .offer-author-cell{max-width:230px}
+
+/* Update 039: offer table proportions + page builder */
+.offers-table{min-width:980px;table-layout:fixed}
+.offers-table th:nth-child(1),.offers-table td:nth-child(1){width:112px}
+.offers-table th:nth-child(2),.offers-table td:nth-child(2){width:102px}
+.offers-table th:nth-child(3),.offers-table td:nth-child(3){width:72px}
+.offers-table th:nth-child(4),.offers-table td:nth-child(4){width:28%}
+.offers-table th:nth-child(5),.offers-table td:nth-child(5){width:20%}
+.offers-table th:nth-child(6),.offers-table td:nth-child(6){width:142px}
+.offers-table th:nth-child(7),.offers-table td:nth-child(7){width:152px}
+.offers-table th,.offers-table td{padding:12px 10px}
+.offer-open-cell{white-space:nowrap!important;text-align:center!important}
+.offer-open-cell .btn{white-space:nowrap!important;padding:7px 10px;font-size:.74rem}
+.view-status{white-space:nowrap!important}
+.offer-title-cell,.offer-author-cell{max-width:none!important;white-space:normal!important;overflow-wrap:anywhere;line-height:1.35}
+#bo-page-builder{width:100%}
+
+/* Update 039 final: same compact proportions as the Bitrix administrator table. */
+.offers-table{min-width:820px;table-layout:auto}
+.offers-table th:nth-child(1),.offers-table td:nth-child(1),
+.offers-table th:nth-child(2),.offers-table td:nth-child(2),
+.offers-table th:nth-child(3),.offers-table td:nth-child(3),
+.offers-table th:nth-child(6),.offers-table td:nth-child(6),
+.offers-table th:nth-child(7),.offers-table td:nth-child(7){width:auto}
+.offers-table th:nth-child(4),.offers-table td:nth-child(4){width:30%}
+.offers-table th:nth-child(5),.offers-table td:nth-child(5){width:20%}
+.offer-date-cell,.offers-table td:nth-child(2),.offers-table td:nth-child(3){white-space:nowrap}
+.offer-open-cell,.offer-open-cell .btn,.view-status{white-space:nowrap!important}

@@ -15,18 +15,21 @@ public class TenantAdminService {
     private final BitrixWebhookClient webhookClient;
     private final TenantAccessService accessService;
     private final VideoOfferRepository offerRepository;
+    private final PageTemplateService pageTemplateService;
 
     public TenantAdminService(
             VideoOfferTenantRepository tenantRepository,
             VideoOfferTenantUserRepository userRepository,
             BitrixWebhookClient webhookClient,
             TenantAccessService accessService,
-            VideoOfferRepository offerRepository) {
+            VideoOfferRepository offerRepository,
+            PageTemplateService pageTemplateService) {
         this.tenantRepository = tenantRepository;
         this.userRepository = userRepository;
         this.webhookClient = webhookClient;
         this.accessService = accessService;
         this.offerRepository = offerRepository;
+        this.pageTemplateService = pageTemplateService;
     }
 
     public List<TenantSummary> list() {
@@ -69,6 +72,7 @@ public class TenantAdminService {
                     quotaBytes(request.diskQuotaGb()), positive(request.retentionDays(), draft.getRetentionDays()),
                     Boolean.TRUE.equals(request.allowAnyEntity()));
             tenantRepository.saveAndFlush(draft);
+            pageTemplateService.ensureDefault(draft);
             return details(draft.getId());
         }
         VideoOfferTenant tenant = VideoOfferTenant.create(
@@ -78,6 +82,7 @@ public class TenantAdminService {
                 quotaBytes(request.diskQuotaGb()), positive(request.retentionDays(), 7),
                 Boolean.TRUE.equals(request.allowAnyEntity()));
         tenant = tenantRepository.saveAndFlush(tenant);
+        pageTemplateService.ensureDefault(tenant);
         return details(tenant.getId());
     }
 
@@ -236,7 +241,9 @@ public class TenantAdminService {
 
     @Transactional
     public void delete(long tenantId) {
-        tenantRepository.delete(requiredTenant(tenantId));
+        VideoOfferTenant tenant = requiredTenant(tenantId);
+        pageTemplateService.deleteTenantFiles(tenantId);
+        tenantRepository.delete(tenant);
     }
 
     public VideoOfferTenant requiredTenant(long tenantId) {

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService;
 import ru.abs7.videooffer.kontur.KonturRecordingUrlParser;
 import ru.abs7.videooffer.tenant.VideoOfferTenantRepository;
+import ru.abs7.videooffer.tenant.PageTemplateService;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -29,6 +30,7 @@ public class VideoOfferService {
     private final Path videoStorageDir;
     private final BitrixReadyLinkDeliveryService bitrixReadyLinkDeliveryService;
     private final VideoOfferTenantRepository tenantRepository;
+    private final PageTemplateService pageTemplateService;
 
     public VideoOfferService(
             VideoOfferRepository repository,
@@ -36,6 +38,7 @@ public class VideoOfferService {
             VideoOfferProcessor processor,
             BitrixReadyLinkDeliveryService bitrixReadyLinkDeliveryService,
             VideoOfferTenantRepository tenantRepository,
+            PageTemplateService pageTemplateService,
             @Value("${app.public-base-url}") String publicBaseUrl,
             @Value("${app.video.retention-days:30}") int retentionDays,
             @Value("${app.video.storage-dir:./data/videos}") String videoStorageDir) {
@@ -44,6 +47,7 @@ public class VideoOfferService {
         this.processor = processor;
         this.bitrixReadyLinkDeliveryService = bitrixReadyLinkDeliveryService;
         this.tenantRepository = tenantRepository;
+        this.pageTemplateService = pageTemplateService;
         this.publicBaseUrl = publicBaseUrl.replaceAll("/+$", "");
         this.retentionDays = retentionDays;
         this.videoStorageDir = Path.of(videoStorageDir).toAbsolutePath().normalize();
@@ -69,7 +73,17 @@ public class VideoOfferService {
         String recordingKey = parser.isKonturRecordingUrl(sourceUrl)
                 ? parser.extractRecordingKey(sourceUrl)
                 : "external-" + UUID.randomUUID();
-        VideoOffer offer = VideoOffer.create(
+        UUID offerId = UUID.randomUUID();
+        PageTemplateService.OfferPagePrepared page;
+        try {
+            page = pageTemplateService.prepareOfferPage(
+                    request.tenantId(), request.bitrixUserId(), offerId, request.accompanyingText(),
+                    request.pageTextValues(), request.pageFileDraftIds());
+        } catch (IOException error) {
+            throw new IllegalStateException("Не удалось подготовить дополнительные материалы видеооффера", error);
+        }
+        VideoOffer offer = VideoOffer.createWithId(
+                offerId,
                 request.entityType(),
                 request.entityId(),
                 normalize(request.bitrixMemberId()),
@@ -81,6 +95,7 @@ public class VideoOfferService {
                 normalize(request.clientMessage()),
                 request.viewNotificationGoal(),
                 retentionDaysForTenant(request.tenantId()));
+        offer.setPageSnapshot(page.templateJson(), page.contentJson());
 
         log.info("Video offer entity created in memory: offerId={}, publicToken={}, recordingKey={}, "
                         + "status={}, viewNotificationGoal={}, expiresAt={}",
@@ -93,7 +108,13 @@ public class VideoOfferService {
 
         // Здесь намеренно нет внешней @Transactional-транзакции: saveAndFlush должен завершить
         // фиксацию записи до запуска фонового потока.
-        VideoOffer saved = repository.saveAndFlush(offer);
+        VideoOffer saved;
+        try {
+            saved = repository.saveAndFlush(offer);
+        } catch (RuntimeException error) {
+            pageTemplateService.deleteOfferFiles(request.tenantId(), offerId);
+            throw error;
+        }
         log.info("Video offer persisted: offerId={}, status={}, progress={}%, durationMs={}",
                 saved.getId(),
                 saved.getStatus(),
@@ -117,6 +138,8 @@ public class VideoOfferService {
             String accompanyingText,
             String clientMessage,
             ViewNotificationGoal viewNotificationGoal,
+            java.util.Map<String, String> pageTextValues,
+            java.util.Map<String, String> pageFileDraftIds,
             String quality) throws IOException {
         if (normalizedSource == null) {
             throw new IllegalArgumentException("Нормализованный мобильный видеофайл не найден");
@@ -128,6 +151,8 @@ public class VideoOfferService {
             return saved;
         }
         if (saved == null) {
+            PageTemplateService.OfferPagePrepared page = pageTemplateService.prepareOfferPage(
+                    tenantId, bitrixUserId, stableOfferId, accompanyingText, pageTextValues, pageFileDraftIds);
             VideoOffer offer = VideoOffer.createWithId(
                     stableOfferId,
                     entityType,
@@ -141,7 +166,13 @@ public class VideoOfferService {
                     normalize(clientMessage),
                     viewNotificationGoal,
                     retentionDaysForTenant(tenantId));
-            saved = repository.saveAndFlush(offer);
+            offer.setPageSnapshot(page.templateJson(), page.contentJson());
+            try {
+                saved = repository.saveAndFlush(offer);
+            } catch (RuntimeException error) {
+                pageTemplateService.deleteOfferFiles(tenantId, stableOfferId);
+                throw error;
+            }
         }
 
         Files.createDirectories(videoStorageDir);
@@ -216,6 +247,7 @@ public class VideoOfferService {
     public void delete(VideoOffer offer) {
         log.info("Deleting video offer from database: offerId={}, status={}, file={}",
                 offer.getId(), offer.getStatus(), offer.getVideoFilePath());
+        pageTemplateService.deleteOfferFiles(offer);
         repository.delete(offer);
     }
 

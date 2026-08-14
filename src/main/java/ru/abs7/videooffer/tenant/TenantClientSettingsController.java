@@ -2,9 +2,11 @@ package ru.abs7.videooffer.tenant;
 
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import ru.abs7.videooffer.bitrix.BitrixContextSigner;
 import ru.abs7.videooffer.bitrix.BitrixPlacementContext;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -14,16 +16,19 @@ public class TenantClientSettingsController {
     private final TenantAccessService accessService;
     private final TenantAdminService adminService;
     private final TenantOfferService offerService;
+    private final PageTemplateService pageTemplateService;
 
     public TenantClientSettingsController(
             BitrixContextSigner contextSigner,
             TenantAccessService accessService,
             TenantAdminService adminService,
-            TenantOfferService offerService) {
+            TenantOfferService offerService,
+            PageTemplateService pageTemplateService) {
         this.contextSigner = contextSigner;
         this.accessService = accessService;
         this.adminService = adminService;
         this.offerService = offerService;
+        this.pageTemplateService = pageTemplateService;
     }
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
@@ -36,6 +41,29 @@ public class TenantClientSettingsController {
     public List<TenantOfferService.OfferView> offers(@RequestParam String contextToken) {
         BitrixPlacementContext context = verifiedAdminContext(contextToken);
         return offerService.activeOffers(context.tenantId());
+    }
+
+    @GetMapping(value = "/page-template", produces = MediaType.APPLICATION_JSON_VALUE)
+    public PageTemplateService.PageTemplateView pageTemplate(@RequestParam String contextToken) {
+        BitrixPlacementContext context = verifiedAdminContext(contextToken);
+        return pageTemplateService.template(context.tenantId());
+    }
+
+    @PutMapping(value = "/page-template", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public PageTemplateService.PageTemplateView savePageTemplate(
+            @RequestParam String contextToken,
+            @RequestBody PageTemplateService.PageTemplateView request) {
+        BitrixPlacementContext context = verifiedAdminContext(contextToken);
+        return pageTemplateService.saveTemplate(context.tenantId(), request);
+    }
+
+    @PostMapping(value = "/page-template/assets", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public PageTemplateService.AssetUploadResponse uploadPageAsset(
+            @RequestParam String contextToken,
+            @RequestParam String kind,
+            @RequestPart("file") MultipartFile file) throws IOException {
+        BitrixPlacementContext context = verifiedAdminContext(contextToken);
+        return pageTemplateService.uploadTemplateAsset(context.tenantId(), kind, file);
     }
 
     @PostMapping(value = "/sync-users", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -90,7 +118,7 @@ public class TenantClientSettingsController {
                     details.offerLimit(), details.offersUsed(), Math.max(0, details.offerLimit() - details.offersUsed()),
                     details.diskQuotaBytes(), details.diskUsedBytes(), Math.max(0, details.diskQuotaBytes() - details.diskUsedBytes()),
                     details.retentionDays(), details.allowAnyEntity(), details.primaryAdminUserId(), currentUserId,
-                    "Раздел шаблона клиентской страницы зарезервирован для следующего этапа",
+                    "Конструктор страницы доступен во вкладке «Страница»",
                     details.users());
         }
     }

@@ -158,7 +158,8 @@ public class BitrixController {
         try {
             VideoOffer offer = videoOfferService.create(new CreateVideoOfferRequest(
                     context.entityType(), context.entityId(), context.memberId(), context.bitrixUserId(), context.tenantId(),
-                    request.recordingUrl(), request.accompanyingText(), request.clientMessage(), request.viewNotificationGoal()));
+                    request.recordingUrl(), request.accompanyingText(), request.clientMessage(), request.viewNotificationGoal(),
+                    request.pageTextValues(), request.pageFileDraftIds()));
             log.info("Bitrix video offer accepted: offerId={}, tenantId={}, userId={}, entityType={}, entityId={}, status={}",
                     offer.getId(), context.tenantId(), context.bitrixUserId(), offer.getCrmEntityType(), offer.getCrmEntityId(), offer.getStatus());
             return ResponseEntity.accepted().body(videoOfferService.response(offer));

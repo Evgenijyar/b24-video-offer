@@ -2,6 +2,7 @@ package ru.abs7.videooffer.tenant;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.abs7.videooffer.bitrix.mobile.upload.MobileVideoUploadRepository;
@@ -9,8 +10,12 @@ import ru.abs7.videooffer.offer.VideoOffer;
 import ru.abs7.videooffer.offer.VideoOfferRepository;
 import ru.abs7.videooffer.offer.VideoOfferStatus;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 /**
  * Serializes storage admission per tenant while keeping the actual long-running
@@ -24,14 +29,17 @@ public class TenantStorageQuotaService {
     private final VideoOfferTenantRepository tenantRepository;
     private final VideoOfferRepository offerRepository;
     private final MobileVideoUploadRepository uploadRepository;
+    private final Path pageBuilderRoot;
 
     public TenantStorageQuotaService(
             VideoOfferTenantRepository tenantRepository,
             VideoOfferRepository offerRepository,
-            MobileVideoUploadRepository uploadRepository) {
+            MobileVideoUploadRepository uploadRepository,
+            @Value("${app.page-builder.storage-dir:./data/page-builder}") String pageBuilderStorageDir) {
         this.tenantRepository = tenantRepository;
         this.offerRepository = offerRepository;
         this.uploadRepository = uploadRepository;
+        this.pageBuilderRoot = Path.of(pageBuilderStorageDir).toAbsolutePath().normalize();
     }
 
     /** Advisory check used before a potentially large upload starts. */
@@ -149,6 +157,27 @@ public class TenantStorageQuotaService {
             total += safe(offerRepository.sumLegacyReadyStorageByMemberId(
                     tenant.getMemberId(), VideoOfferStatus.READY));
         }
+        total += persistentPageBytes(tenant.getId());
+        return total;
+    }
+
+    private long persistentPageBytes(long tenantId) {
+        return directoryBytes(pageBuilderRoot.resolve("assets").resolve(Long.toString(tenantId)))
+                + directoryBytes(pageBuilderRoot.resolve("attachments").resolve(Long.toString(tenantId)));
+    }
+
+    private long directoryBytes(Path directory) {
+        if (!Files.isDirectory(directory)) return 0L;
+        long total = 0L;
+        try (Stream<Path> stream = Files.walk(directory)) {
+            for (Path path : (Iterable<Path>) stream.filter(Files::isRegularFile)::iterator) {
+                try {
+                    total = Math.addExact(total, Files.size(path));
+                } catch (ArithmeticException error) {
+                    return Long.MAX_VALUE;
+                } catch (IOException ignored) {}
+            }
+        } catch (IOException ignored) {}
         return total;
     }
 

@@ -42,6 +42,6 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /workspace/target/b24-video-offer-*.jar app.jar
-RUN mkdir -p /app/data/videos /app/data/mobile-uploads /app/data/external-imports /app/data/logs
+RUN mkdir -p /app/data/videos /app/data/mobile-uploads /app/data/external-imports /app/data/logs /app/data/page-builder/assets /app/data/page-builder/drafts /app/data/page-builder/attachments
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

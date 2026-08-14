@@ -4,7 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Сформировать видеооффер</title>
-    <link rel="stylesheet" href="/assets/bitrix-widget.css?v=036">
+    <link rel="stylesheet" href="/assets/bitrix-widget.css?v=039">
+    <link rel="stylesheet" href="/assets/page-builder.css?v=039">
     <script src="//api.bitrix24.com/api/v1/"></script>
 </head>
 <body>
@@ -132,6 +133,8 @@
                 <textarea id="accompanying-text" rows="5" placeholder="Например: направляю короткую презентацию по итогам разговора."></textarea>
             </label>
 
+            <div id="page-dynamic-fields"></div>
+
             <label class="field">
                 <span>Сообщение для отправки</span>
                 <textarea id="client-message" rows="9" placeholder="Сообщение по умолчанию задаётся администратором компании…"></textarea>
@@ -179,6 +182,7 @@
             <nav class="client-settings-tabs" aria-label="Разделы настроек">
                 <button class="client-settings-tab is-active" type="button" data-client-settings-tab="employees">Сотрудники</button>
                 <button class="client-settings-tab" type="button" data-client-settings-tab="offers">Офферы</button>
+                <button class="client-settings-tab" type="button" data-client-settings-tab="page">Страница</button>
             </nav>
             <section id="client-settings-employees-panel" class="client-settings-panel">
                 <div class="client-settings-section-head"><div><h3>Сотрудники</h3></div><button id="sync-client-users" class="secondary-action" type="button">Обновить из Bitrix24</button></div>
@@ -199,6 +203,9 @@
                 <div id="client-offers-loading" class="client-settings-loading" hidden>Загрузка офферов…</div>
                 <div class="client-offers-table-wrap"><table class="client-offers-table"><thead><tr><th><button type="button" data-client-offer-sort="createdAt">Дата создания</button></th><th><button type="button" data-client-offer-sort="documentTypeLabel">Тип документа</button></th><th>ID</th><th><button type="button" data-client-offer-sort="documentTitle">Название</button></th><th><button type="button" data-client-offer-sort="authorName">Автор</button></th><th><button type="button" data-client-offer-sort="viewed">Статус</button></th><th></th></tr></thead><tbody id="client-offers-body"></tbody></table></div>
             </section>
+            <section id="client-settings-page-panel" class="client-settings-panel" hidden>
+                <div id="client-page-builder"></div>
+            </section>
         </div>
     </section>
 </div>
@@ -218,6 +225,7 @@
         </div>
     </section>
 </div>
-<script src="/assets/bitrix-widget.js?v=036"></script>
+<script src="/assets/page-builder.js?v=039"></script>
+<script src="/assets/bitrix-widget.js?v=039"></script>
 </body>
 </html>

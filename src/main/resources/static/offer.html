@@ -4,28 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Персональная видеопрезентация</title>
-    <link rel="stylesheet" href="/assets/app.css">
+    <link rel="stylesheet" href="/assets/app.css?v=039">
 </head>
-<body class="public-page">
-<main class="public-shell">
-    <section class="public-card">
-        <div class="public-brand"><span class="public-brand__mark">VO</span> Персональная видеопрезентация</div>
-        <h1>Материалы по итогам разговора</h1>
-        <p class="public-intro">Коротко показываем решение и важные детали, которые обсуждали с вами.</p>
-
-        <div class="video-frame">
-            <video id="video" controls playsinline preload="metadata"></video>
-            <div id="video-placeholder" class="video-placeholder">
-                <div class="loader"></div>
-                <strong id="placeholder-title">Подготавливаем видео</strong>
-                <span id="placeholder-text">Страница обновится автоматически</span>
-            </div>
-        </div>
-
-        <p id="text" class="public-message"></p>
-        <div id="state" class="public-status"><span></span> Загружаем данные…</div>
+<body class="public-page public-page-builder">
+<main class="public-shell public-builder-shell">
+    <section id="offer-page" class="public-builder-card" aria-live="polite">
+        <div class="public-page-loading"><div class="loader"></div><span>Загружаем видеопрезентацию…</span></div>
     </section>
 </main>
-<script src="/assets/offer.js"></script>
+<script src="/assets/offer.js?v=039"></script>
 </body>
 </html>

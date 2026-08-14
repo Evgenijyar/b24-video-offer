@@ -108,6 +108,9 @@ let activeOfferId = null;
 let offerPollTimer = null;
 let clientMessageGeneration = 0;
 let clientMessageLoadPromise = Promise.resolve();
+let offerPageTemplate = null;
+let offerPageTemplateGeneration = 0;
+let offerPageTemplateLoadPromise = Promise.resolve();
 
 initializeBitrixFrame();
 initializeEntityPicker();
@@ -170,6 +173,14 @@ form.addEventListener('submit', async (event) => {
     }
 
     await clientMessageLoadPromise;
+    await offerPageTemplateLoadPromise;
+    let pagePayload;
+    try {
+        pagePayload = await collectMobileOfferPagePayload();
+    } catch (error) {
+        setFormError(error.message || 'Заполните обязательные поля страницы оффера.');
+        return;
+    }
     clearInterval(offerPollTimer);
     setFormError(null);
     readyResult.hidden = true;
@@ -190,7 +201,9 @@ form.addEventListener('submit', async (event) => {
                     recordingUrl: mobileVideoUrl.value.trim(),
                     accompanyingText: document.getElementById('accompanying-text').value.trim() || null,
                     clientMessage: clientMessageInput.value.trim() || null,
-                    viewNotificationGoal: goalInput.value
+                    viewNotificationGoal: goalInput.value,
+                    pageTextValues: pagePayload.textValues,
+                    pageFileDraftIds: pagePayload.fileDraftIds
                 })
             });
         } else {
@@ -202,7 +215,9 @@ form.addEventListener('submit', async (event) => {
                     contextToken: selectedEntity.contextToken,
                     accompanyingText: document.getElementById('accompanying-text').value.trim() || null,
                     clientMessage: clientMessageInput.value.trim() || null,
-                    viewNotificationGoal: goalInput.value
+                    viewNotificationGoal: goalInput.value,
+                    pageTextValues: pagePayload.textValues,
+                    pageFileDraftIds: pagePayload.fileDraftIds
                 })
             });
         }
@@ -436,6 +451,7 @@ async function selectEntity(item) {
         delete clientMessageInput.dataset.userEdited;
         clientMessageLoadPromise = loadClientMessageTemplate(item.contextToken);
     }
+    offerPageTemplateLoadPromise = loadMobileOfferPageTemplate(item.contextToken);
     selectedTitle.textContent = item.title;
     selectedMeta.textContent = typeLabel(item.entityType) + ' №' + item.id
         + (item.subtitle ? ' · ' + item.subtitle : '');
@@ -463,6 +479,10 @@ async function selectEntity(item) {
 async function resetSelection() {
     selectedEntity = null;
     clientMessageGeneration++;
+    offerPageTemplateGeneration++;
+    offerPageTemplate = null;
+    offerPageTemplateLoadPromise = Promise.resolve();
+    renderMobileOfferPageFields();
     if (clientMessageInput) {
         clientMessageInput.value = '';
         delete clientMessageInput.dataset.userEdited;
@@ -1738,6 +1758,117 @@ async function loadClientMessageTemplate(token) {
     } finally {
         if (generation === clientMessageGeneration) clientMessageInput.disabled = false;
     }
+}
+
+
+async function loadMobileOfferPageTemplate(token) {
+    if (!token) return;
+    const generation = ++offerPageTemplateGeneration;
+    try {
+        const response = await fetch('/bitrix/page/template?contextToken=' + encodeURIComponent(token), {cache: 'no-store'});
+        const data = await readJson(response);
+        if (generation !== offerPageTemplateGeneration) return;
+        if (!response.ok) throw new Error(data.message || 'Не удалось загрузить шаблон страницы');
+        offerPageTemplate = data;
+        renderMobileOfferPageFields();
+    } catch (error) {
+        if (generation !== offerPageTemplateGeneration) return;
+        offerPageTemplate = null;
+        renderMobileOfferPageFields();
+        console.warn('[PAGE_TEMPLATE] mobile load failed:', error?.message || error);
+    }
+}
+
+function renderMobileOfferPageFields() {
+    const host = document.getElementById('page-dynamic-fields');
+    if (!host) return;
+    const blocks = Array.isArray(offerPageTemplate?.blocks) ? offerPageTemplate.blocks : [];
+    const dynamicTexts = blocks.filter(block => block.type === 'TEXT' && block.config?.mode === 'MANAGER');
+    const dynamicFiles = blocks.filter(block => block.type === 'FILE' && block.config?.mode === 'MANAGER');
+    const legacyBlock = dynamicTexts.find(block => block.config?.fieldKey === 'accompanyingText');
+    const legacyLabel = accompanyingTextInput?.closest('label.field');
+    if (legacyLabel) {
+        legacyLabel.hidden = !!offerPageTemplate && !legacyBlock;
+        const title = legacyLabel.querySelector('span');
+        if (title && legacyBlock) title.textContent = legacyBlock.config?.label || 'Сопроводительный текст';
+        if (legacyBlock) {
+            accompanyingTextInput.required = Boolean(legacyBlock.config?.required);
+            accompanyingTextInput.placeholder = legacyBlock.config?.placeholder || '';
+        } else {
+            accompanyingTextInput.required = false;
+        }
+    }
+    const textHtml = dynamicTexts.filter(block => block !== legacyBlock).map(block => `
+        <label class="field page-template-field">
+            <span>${escapeMobilePageHtml(block.config?.label || 'Текст')}${block.config?.required ? ' *' : ''}</span>
+            <textarea rows="4" data-page-text-id="${escapeMobilePageAttribute(block.id)}" placeholder="${escapeMobilePageAttribute(block.config?.placeholder || '')}" ${block.config?.required ? 'required' : ''}></textarea>
+        </label>`).join('');
+    const fileHtml = dynamicFiles.map(block => `
+        <label class="field page-template-field page-template-file-field">
+            <span>${escapeMobilePageHtml(block.config?.label || 'Файл')}${block.config?.required ? ' *' : ''}</span>
+            <input type="file" data-page-file-id="${escapeMobilePageAttribute(block.id)}" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.rtf,.csv,.odt,.ods,.odp" ${block.config?.required ? 'required' : ''}>
+            <small data-page-file-status="${escapeMobilePageAttribute(block.id)}">PDF, Word, Excel, PowerPoint и текстовые документы</small>
+        </label>`).join('');
+    host.innerHTML = textHtml + fileHtml;
+    host.querySelectorAll('[data-page-file-id]').forEach(input => input.addEventListener('change', () => {
+        delete input.dataset.draftId;
+        const status = host.querySelector(`[data-page-file-status="${cssEscapeMobilePage(input.dataset.pageFileId)}"]`);
+        if (status) status.textContent = input.files?.[0]?.name || 'Файл не выбран';
+    }));
+    fitWindow();
+}
+
+async function collectMobileOfferPagePayload() {
+    const textValues = {};
+    const fileDraftIds = {};
+    document.querySelectorAll('[data-page-text-id]').forEach(input => {
+        const value = input.value.trim();
+        if (input.required && !value) {
+            throw new Error(`Заполните поле «${input.closest('label')?.querySelector('span')?.textContent?.replace(/\s*\*\s*$/, '') || 'Текст'}»`);
+        }
+        if (value) textValues[input.dataset.pageTextId] = value;
+    });
+    const fileInputs = [...document.querySelectorAll('[data-page-file-id]')];
+    for (const input of fileInputs) {
+        const blockId = input.dataset.pageFileId;
+        if (input.required && !input.files?.[0] && !input.dataset.draftId) {
+            throw new Error(`Прикрепите файл «${input.closest('label')?.querySelector('span')?.textContent?.replace(/\s*\*\s*$/, '') || 'Файл'}»`);
+        }
+        if (input.files?.[0] && !input.dataset.draftId) {
+            const uploaded = await uploadMobileOfferPageDraft(blockId, input.files[0]);
+            input.dataset.draftId = uploaded.draftId;
+            const status = document.querySelector(`[data-page-file-status="${cssEscapeMobilePage(blockId)}"]`);
+            if (status) status.textContent = `${uploaded.fileName} · загружен`;
+        }
+        if (input.dataset.draftId) fileDraftIds[blockId] = input.dataset.draftId;
+    }
+    return {textValues, fileDraftIds};
+}
+
+async function uploadMobileOfferPageDraft(blockId, file) {
+    if (!selectedEntity?.contextToken) throw new Error('Сначала выберите документ Bitrix24');
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await fetch('/bitrix/page/draft-files?contextToken=' + encodeURIComponent(selectedEntity.contextToken)
+        + '&blockId=' + encodeURIComponent(blockId), {method: 'POST', body: formData});
+    const data = await readJson(response);
+    if (!response.ok) throw new Error(data.message || 'Не удалось загрузить файл');
+    return data;
+}
+
+function escapeMobilePageHtml(value) {
+    const div = document.createElement('div');
+    div.textContent = String(value ?? '');
+    return div.innerHTML;
+}
+
+function escapeMobilePageAttribute(value) {
+    return escapeMobilePageHtml(value).replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+}
+
+function cssEscapeMobilePage(value) {
+    if (globalThis.CSS?.escape) return CSS.escape(String(value));
+    return String(value).replace(/[^A-Za-z0-9_-]/g, '\\$&');
 }
 
 function displayClientMessageTemplate(value) {
