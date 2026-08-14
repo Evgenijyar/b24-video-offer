@@ -19,6 +19,7 @@ public class TenantOfferService {
     private final VideoOfferTenantRepository tenantRepository;
     private final VideoOfferRepository offerRepository;
     private final VideoOfferEventRepository eventRepository;
+    private final VideoOfferTenantUserRepository tenantUserRepository;
     private final BitrixWebhookClient webhookClient;
     private final Map<String, CachedTitle> titleCache = new ConcurrentHashMap<>();
 
@@ -26,10 +27,12 @@ public class TenantOfferService {
             VideoOfferTenantRepository tenantRepository,
             VideoOfferRepository offerRepository,
             VideoOfferEventRepository eventRepository,
+            VideoOfferTenantUserRepository tenantUserRepository,
             BitrixWebhookClient webhookClient) {
         this.tenantRepository = tenantRepository;
         this.offerRepository = offerRepository;
         this.eventRepository = eventRepository;
+        this.tenantUserRepository = tenantUserRepository;
         this.webhookClient = webhookClient;
     }
 
@@ -45,6 +48,12 @@ public class TenantOfferService {
 
         List<UUID> ids = offers.stream().map(VideoOffer::getId).toList();
         Set<UUID> started = new HashSet<>(eventRepository.findOfferIdsWithEvent(ids, VideoOfferEventType.VIDEO_STARTED));
+        Map<Long, String> authorNames = new HashMap<>();
+        for (VideoOfferTenantUser user : tenantUserRepository.findAllByTenantIdOrderByDisplayNameAsc(tenantId)) {
+            if (user.getBitrixUserId() != null) {
+                authorNames.put(user.getBitrixUserId(), user.getDisplayName());
+            }
+        }
 
         List<OfferView> result = new ArrayList<>(offers.size());
         for (VideoOffer offer : offers) {
@@ -56,6 +65,7 @@ public class TenantOfferService {
                     offer.getCrmEntityType().russianLabel(),
                     offer.getCrmEntityId(),
                     title,
+                    authorName(offer.getBitrixUserId(), authorNames),
                     viewed,
                     offer.getCreatedAt(),
                     offer.getExpiresAt(),
@@ -90,6 +100,12 @@ public class TenantOfferService {
         } catch (RuntimeException ignored) {
             return cached != null ? cached.title() : fallback;
         }
+    }
+
+    private String authorName(Long bitrixUserId, Map<Long, String> authorNames) {
+        if (bitrixUserId == null || bitrixUserId <= 0) return "—";
+        String name = normalize(authorNames.get(bitrixUserId));
+        return name == null ? "Bitrix ID " + bitrixUserId : name;
     }
 
     private String documentUrl(String domain, CrmEntityType type, long entityId) {
@@ -130,6 +146,7 @@ public class TenantOfferService {
             String documentTypeLabel,
             long documentId,
             String documentTitle,
+            String authorName,
             boolean viewed,
             OffsetDateTime createdAt,
             OffsetDateTime expiresAt,

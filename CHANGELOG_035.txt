@@ -1,0 +1,9 @@
+Update 035
+
+- Added offer author to active-offer tables in master back-office and Bitrix client settings.
+- Offer author is resolved from the Bitrix user who created the offer (video_offer.bitrix_user_id) and the tenant user profile; old/unknown users fall back to Bitrix ID.
+- Added explanatory text under the master setting "Разрешить любые документы CRM".
+- Removed artificial equal-height stretching of the Bitrix24 connection and Service cards; both now use natural content height.
+- Long document titles and author names wrap to multiple lines in both offer tables.
+- Long primary-admin names wrap in the master metrics card instead of being truncated.
+- Updated static cache versions to v035.

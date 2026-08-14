@@ -183,7 +183,7 @@ function renderSettingsTab(details) {
                         <label>Диск, ГБ<input name="diskQuotaGb" type="number" step=".1" min=".1" class="custom-input" value="${(details.diskQuotaBytes / 1024 ** 3).toFixed(2)}"></label>
                         <label>Хранить офферы, дней<input name="retentionDays" type="number" min="1" max="3650" class="custom-input" value="${details.retentionDays || 7}"></label>
                     </div>
-                    <label class="toggle-card"><input name="allowAnyEntity" type="checkbox" ${details.allowAnyEntity ? 'checked' : ''}><span><b>Разрешить любые документы CRM</b></span></label>
+                    <label class="toggle-card"><input name="allowAnyEntity" type="checkbox" ${details.allowAnyEntity ? 'checked' : ''}><span><b>Разрешить любые документы CRM</b><small>Любые добавленные сотрудники могут создавать офферы в любых документах с любым ответственным.</small></span></label>
                     <button class="btn btn-save" type="submit">Сохранить</button>
                 </form>
             </article>
@@ -227,7 +227,7 @@ function renderOffersTab() {
     return `
         <article class="settings-card offers-card">
             <div class="settings-card-head offers-head"><div><div class="eyebrow">Офферы</div><h3>Актуальные видеоофферы</h3></div><label class="offer-period-control">Период<select id="bo-offer-period" class="custom-input"><option value="7" ${state.offerSort.period === '7' ? 'selected' : ''}>Последние 7 дней</option><option value="all" ${state.offerSort.period === 'all' ? 'selected' : ''}>Все актуальные</option></select></label></div>
-            <div class="offers-table-wrap"><table class="offers-table"><thead><tr><th>${sortHeader('documentTypeLabel','Тип документа')}</th><th>ID</th><th>${sortHeader('documentTitle','Название')}</th><th>${sortHeader('viewed','Статус')}</th><th></th></tr></thead><tbody>${offers.map(offerRow).join('') || '<tr><td colspan="5" class="offers-empty">Офферов нет</td></tr>'}</tbody></table></div>
+            <div class="offers-table-wrap"><table class="offers-table"><thead><tr><th>${sortHeader('documentTypeLabel','Тип документа')}</th><th>ID</th><th>${sortHeader('documentTitle','Название')}</th><th>${sortHeader('authorName','Автор')}</th><th>${sortHeader('viewed','Статус')}</th><th></th></tr></thead><tbody>${offers.map(offerRow).join('') || '<tr><td colspan="6" class="offers-empty">Офферов нет</td></tr>'}</tbody></table></div>
         </article>`;
 }
 
@@ -254,7 +254,7 @@ function sortHeader(key, label) {
 }
 
 function offerRow(item) {
-    return `<tr><td>${esc(item.documentTypeLabel)}</td><td>${item.documentId}</td><td class="offer-title-cell">${esc(item.documentTitle)}</td><td><span class="view-status ${item.viewed ? 'is-viewed' : 'is-unviewed'}">${item.viewed ? 'Просмотрен клиентом' : 'Не просмотрен'}</span></td><td class="offer-open-cell"><a class="btn btn-flat btn-sm" href="${esc(item.documentUrl)}" target="_blank" rel="noopener noreferrer">Открыть документ</a></td></tr>`;
+    return `<tr><td>${esc(item.documentTypeLabel)}</td><td>${item.documentId}</td><td class="offer-title-cell">${esc(item.documentTitle)}</td><td class="offer-author-cell">${esc(item.authorName || '—')}</td><td><span class="view-status ${item.viewed ? 'is-viewed' : 'is-unviewed'}">${item.viewed ? 'Просмотрен клиентом' : 'Не просмотрен'}</span></td><td class="offer-open-cell"><a class="btn btn-flat btn-sm" href="${esc(item.documentUrl)}" target="_blank" rel="noopener noreferrer">Открыть документ</a></td></tr>`;
 }
 
 function metric(label, value, hint, progress) {

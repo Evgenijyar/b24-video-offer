@@ -27,3 +27,18 @@
 /* 034 aliases for rendered employee workspace */
 .employees-card{padding:0;overflow:hidden}.employees-head{padding:18px 20px;margin:0;border-bottom:1px solid var(--border-subtle)}.employee-pools{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:18px}.employee-icon-action{width:29px;height:29px;border:0;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,.055);color:var(--text-secondary);padding:0;line-height:1;transition:.18s ease}.employee-icon-action:hover{background:rgba(255,255,255,.11);color:var(--text-primary)}.employee-remove-action{background:rgba(255,138,128,.08);color:var(--danger-soft)}.employee-remove-action:hover{background:rgba(255,138,128,.17);color:#ffb4ac}.employee-icon-action:disabled{opacity:.3;cursor:not-allowed}.table-sort{border:0;background:transparent;color:inherit;padding:0;font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer}.view-status{display:inline-flex;align-items:center;border-radius:999px;padding:5px 9px;font-size:.72rem;font-weight:650;background:rgba(255,209,128,.09);color:var(--warning-soft)}.view-status.is-viewed{background:rgba(143,214,148,.1);color:var(--success-soft)}.offer-title-cell{max-width:340px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.offer-open-cell{text-align:right!important}.company-settings-card{min-height:100%}
 @media(max-width:1050px){.employee-pools{grid-template-columns:1fr}}
+
+
+/* Update 035: natural settings layout and wrapping */
+.settings-overview-grid{align-items:start}
+.settings-overview-grid>.settings-card{height:auto;min-height:0}
+.settings-side-stack{display:grid;grid-template-rows:auto auto;gap:14px;min-height:0;align-self:start}
+.settings-side-stack>.settings-card{height:auto;min-height:0;display:block}
+.settings-side-stack>.settings-card form,.settings-side-stack>.settings-card .service-card-body{display:block}
+.settings-side-stack .settings-actions,.settings-side-stack .button-row{margin-top:0}
+.company-settings-card{min-height:0}
+.compact-metrics .metric-card:last-child .metric-value{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;word-break:normal;line-height:1.25}
+.offers-table{min-width:900px}
+.offer-title-cell,.offer-author-cell{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;overflow-wrap:anywhere;word-break:normal;line-height:1.35}
+.offer-title-cell{max-width:340px}
+.offer-author-cell{max-width:230px}
