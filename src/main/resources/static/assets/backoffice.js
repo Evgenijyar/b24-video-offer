@@ -227,7 +227,7 @@ function renderOffersTab() {
     return `
         <article class="settings-card offers-card">
             <div class="settings-card-head offers-head"><div><div class="eyebrow">Офферы</div><h3>Актуальные видеоофферы</h3></div><label class="offer-period-control">Период<select id="bo-offer-period" class="custom-input"><option value="7" ${state.offerSort.period === '7' ? 'selected' : ''}>Последние 7 дней</option><option value="all" ${state.offerSort.period === 'all' ? 'selected' : ''}>Все актуальные</option></select></label></div>
-            <div class="offers-table-wrap"><table class="offers-table"><thead><tr><th>${sortHeader('documentTypeLabel','Тип документа')}</th><th>ID</th><th>${sortHeader('documentTitle','Название')}</th><th>${sortHeader('authorName','Автор')}</th><th>${sortHeader('viewed','Статус')}</th><th></th></tr></thead><tbody>${offers.map(offerRow).join('') || '<tr><td colspan="6" class="offers-empty">Офферов нет</td></tr>'}</tbody></table></div>
+            <div class="offers-table-wrap"><table class="offers-table"><thead><tr><th>${sortHeader('createdAt','Дата создания')}</th><th>${sortHeader('documentTypeLabel','Тип документа')}</th><th>ID</th><th>${sortHeader('documentTitle','Название')}</th><th>${sortHeader('authorName','Автор')}</th><th>${sortHeader('viewed','Статус')}</th><th></th></tr></thead><tbody>${offers.map(offerRow).join('') || '<tr><td colspan="7" class="offers-empty">Офферов нет</td></tr>'}</tbody></table></div>
         </article>`;
 }
 
@@ -254,7 +254,13 @@ function sortHeader(key, label) {
 }
 
 function offerRow(item) {
-    return `<tr><td>${esc(item.documentTypeLabel)}</td><td>${item.documentId}</td><td class="offer-title-cell">${esc(item.documentTitle)}</td><td class="offer-author-cell">${esc(item.authorName || '—')}</td><td><span class="view-status ${item.viewed ? 'is-viewed' : 'is-unviewed'}">${item.viewed ? 'Просмотрен клиентом' : 'Не просмотрен'}</span></td><td class="offer-open-cell"><a class="btn btn-flat btn-sm" href="${esc(item.documentUrl)}" target="_blank" rel="noopener noreferrer">Открыть документ</a></td></tr>`;
+    return `<tr><td class="offer-date-cell">${formatOfferDate(item.createdAt)}</td><td>${esc(item.documentTypeLabel)}</td><td>${item.documentId}</td><td class="offer-title-cell">${esc(item.documentTitle)}</td><td class="offer-author-cell">${esc(item.authorName || '—')}</td><td><span class="view-status ${item.viewed ? 'is-viewed' : 'is-unviewed'}">${item.viewed ? 'Просмотрен клиентом' : 'Не просмотрен'}</span></td><td class="offer-open-cell"><a class="btn btn-flat btn-sm" href="${esc(item.documentUrl)}" target="_blank" rel="noopener noreferrer">Открыть документ</a></td></tr>`;
+}
+
+function formatOfferDate(value) {
+    const date = value ? new Date(value) : null;
+    if (!date || Number.isNaN(date.getTime())) return '—';
+    return new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
 }
 
 function metric(label, value, hint, progress) {

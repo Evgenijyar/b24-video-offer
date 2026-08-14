@@ -1,0 +1,8 @@
+Update 036
+
+- Added the leftmost "Дата создания" column to the offers table in master back-office and Bitrix client admin settings.
+- Date format: dd.MM.yyyy (for example 01.01.2026).
+- Creation date is sortable in both tables; default order remains newest first.
+- Empty-table colspan updated for the new column.
+- Existing wrapping behavior for long document titles, authors and admin names is preserved.
+- Static cache versions updated to v036.

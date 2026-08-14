@@ -2407,18 +2407,26 @@ function renderClientOffers() {
     if (!body) return;
     const offers = sortedClientOffers();
     body.innerHTML = offers.map(offer => `<tr>
+        <td class="client-offer-date-cell">${formatClientOfferDate(offer.createdAt)}</td>
         <td>${escapeClientSettingsHtml(offer.documentTypeLabel || offer.documentType || '—')}</td>
         <td>${offer.documentId}</td>
         <td class="client-offer-title-cell">${escapeClientSettingsHtml(offer.documentTitle || '—')}</td>
         <td class="client-offer-author-cell">${escapeClientSettingsHtml(offer.authorName || '—')}</td>
         <td><span class="client-offer-status ${offer.viewed ? 'is-viewed' : ''}">${offer.viewed ? 'Просмотрен клиентом' : 'Не просмотрен'}</span></td>
         <td><a class="client-offer-open" href="${escapeClientSettingsAttribute(offer.documentUrl || '#')}" target="_blank" rel="noopener noreferrer">Открыть документ</a></td>
-    </tr>`).join('') || '<tr><td colspan="6" class="client-offers-empty">Офферов нет</td></tr>';
+    </tr>`).join('') || '<tr><td colspan="7" class="client-offers-empty">Офферов нет</td></tr>';
     document.querySelectorAll('[data-client-offer-sort]').forEach(button => {
         const active = button.dataset.clientOfferSort === clientOfferSort.key;
         button.classList.toggle('is-active', active);
         button.dataset.direction = active ? clientOfferSort.direction : '';
     });
+}
+
+
+function formatClientOfferDate(value) {
+    const date = value ? new Date(value) : null;
+    if (!date || Number.isNaN(date.getTime())) return '—';
+    return new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
 }
 
 function sortedClientOffers() {
