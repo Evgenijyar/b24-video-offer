@@ -34,6 +34,8 @@ public class PageTemplateService {
     private static final Pattern HEX_COLOR = Pattern.compile("#[0-9a-fA-F]{6}");
     private static final Set<String> TYPES = Set.of("HEADER", "VIDEO", "TEXT", "IMAGE", "FILE", "BUTTON", "DIVIDER");
     private static final Set<String> VISIBILITY = Set.of("ALL", "DESKTOP", "MOBILE");
+    private static final Set<String> ALIGNMENT = Set.of("LEFT", "CENTER", "RIGHT");
+    private static final Set<String> FONT_FAMILIES = Set.of("DEFAULT", "ARIAL", "VERDANA", "GEORGIA", "TIMES_NEW_ROMAN", "TREBUCHET_MS", "COURIER_NEW");
     private static final Set<String> IMAGE_EXT = Set.of("png", "jpg", "jpeg", "webp");
     private static final Set<String> VIDEO_EXT = Set.of("mp4", "webm");
     private static final Set<String> FILE_EXT = Set.of("pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "rtf", "csv", "odt", "ods", "odp");
@@ -436,12 +438,20 @@ public class PageTemplateService {
             case "TEXT" -> {
                 String mode = string(c.get("mode"), "STATIC").toUpperCase(Locale.ROOT);
                 if (!Set.of("STATIC", "MANAGER").contains(mode)) mode = "STATIC";
+                String style = string(c.get("style"), "PARAGRAPH").toUpperCase(Locale.ROOT);
+                if (!Set.of("HEADING", "PARAGRAPH", "NOTE").contains(style)) style = "PARAGRAPH";
                 out.put("mode", mode);
-                out.put("style", Set.of("HEADING", "PARAGRAPH", "NOTE").contains(string(c.get("style"), "PARAGRAPH").toUpperCase(Locale.ROOT)) ? string(c.get("style"), "PARAGRAPH").toUpperCase(Locale.ROOT) : "PARAGRAPH");
+                out.put("style", style);
                 out.put("text", limit(string(c.get("text"), ""), 20_000));
                 out.put("label", limit(string(c.get("label"), "Текст"), 255));
                 out.put("placeholder", limit(string(c.get("placeholder"), ""), 500));
                 out.put("required", bool(c.get("required"), false));
+                out.put("alignment", alignment(c.get("alignment"), "LEFT"));
+                out.put("fontFamily", fontFamily(c.get("fontFamily")));
+                out.put("fontSize", boundedInteger(c.get("fontSize"), 8, 120));
+                out.put("bold", bool(c.get("bold"), "HEADING".equals(style)));
+                out.put("italic", bool(c.get("italic"), false));
+                out.put("underline", bool(c.get("underline"), false));
                 String fieldKey = string(c.get("fieldKey"), null);
                 if (fieldKey != null) out.put("fieldKey", limit(fieldKey, 100));
             }
@@ -451,6 +461,11 @@ public class PageTemplateService {
                 out.put("alt", limit(string(c.get("alt"), ""), 500));
                 out.put("href", safeHref(string(c.get("href"), "")));
                 out.put("radius", Set.of("NONE", "SMALL", "LARGE").contains(string(c.get("radius"), "LARGE").toUpperCase(Locale.ROOT)) ? string(c.get("radius"), "LARGE").toUpperCase(Locale.ROOT) : "LARGE");
+                out.put("alignment", alignment(c.get("alignment"), "CENTER"));
+                out.put("width", boundedInteger(c.get("width"), 1, 5000));
+                out.put("height", boundedInteger(c.get("height"), 1, 5000));
+                out.put("keepAspectRatio", bool(c.get("keepAspectRatio"), true));
+                out.put("aspectRatio", boundedDouble(c.get("aspectRatio"), 0.02d, 50d));
             }
             case "FILE" -> {
                 String mode = string(c.get("mode"), "STATIC").toUpperCase(Locale.ROOT);
@@ -460,6 +475,7 @@ public class PageTemplateService {
                 out.put("assetName", limit(string(c.get("assetName"), ""), 255));
                 out.put("label", limit(string(c.get("label"), "Скачать файл"), 255));
                 out.put("required", "MANAGER".equals(mode) && bool(c.get("required"), false));
+                out.put("alignment", alignment(c.get("alignment"), "LEFT"));
             }
             case "BUTTON" -> {
                 out.put("text", limit(string(c.get("text"), "Подробнее"), 120));
@@ -469,6 +485,7 @@ public class PageTemplateService {
                 String shape = string(c.get("shape"), "PILL").toUpperCase(Locale.ROOT);
                 out.put("shape", Set.of("SQUARE", "ROUNDED", "PILL").contains(shape) ? shape : "PILL");
                 out.put("newTab", bool(c.get("newTab"), false));
+                out.put("alignment", alignment(c.get("alignment"), "CENTER"));
             }
             case "DIVIDER" -> {
                 out.put("style", Set.of("SOLID", "DASHED", "DOTTED").contains(string(c.get("style"), "SOLID").toUpperCase(Locale.ROOT)) ? string(c.get("style"), "SOLID").toUpperCase(Locale.ROOT) : "SOLID");
@@ -484,13 +501,16 @@ public class PageTemplateService {
                         "phoneText", "", "phoneHref", "")),
                 new PageBlockView("title-default", "TEXT", "ALL", mapOf(
                         "mode", "STATIC", "style", "HEADING", "text", "Материалы по итогам разговора",
-                        "label", "Заголовок", "placeholder", "", "required", false)),
+                        "label", "Заголовок", "placeholder", "", "required", false,
+                        "alignment", "LEFT", "fontFamily", "DEFAULT", "fontSize", null,
+                        "bold", true, "italic", false, "underline", false)),
                 new PageBlockView("main-video-default", "VIDEO", "ALL", mapOf(
                         "source", "MAIN", "title", "", "assetUrl", null, "assetName", "")),
                 new PageBlockView("accompanying-default", "TEXT", "ALL", mapOf(
                         "mode", "MANAGER", "style", "NOTE", "text", "", "label", "Сопроводительный текст",
                         "placeholder", "Например: направляю короткую презентацию по итогам разговора.",
-                        "required", false, "fieldKey", "accompanyingText"))
+                        "required", false, "fieldKey", "accompanyingText", "alignment", "LEFT",
+                        "fontFamily", "DEFAULT", "fontSize", null, "bold", false, "italic", false, "underline", false))
         );
         return new PageTemplateView(TEMPLATE_VERSION, blocks);
     }
@@ -501,6 +521,36 @@ public class PageTemplateService {
         if (tenantId != null && !url.startsWith("/page-assets/" + tenantId + "/")) throw new IllegalArgumentException("Файл шаблона относится к другой компании");
         if (!url.matches("/page-assets/\\d+/[A-Za-z0-9_-]{1,100}")) throw new IllegalArgumentException("Некорректная ссылка на файл шаблона");
         return url;
+    }
+
+    private String alignment(Object value, String fallback) {
+        String normalized = string(value, fallback).toUpperCase(Locale.ROOT);
+        return ALIGNMENT.contains(normalized) ? normalized : fallback;
+    }
+
+    private String fontFamily(Object value) {
+        String normalized = string(value, "DEFAULT").toUpperCase(Locale.ROOT);
+        return FONT_FAMILIES.contains(normalized) ? normalized : "DEFAULT";
+    }
+
+    private Integer boundedInteger(Object value, int min, int max) {
+        if (value == null || String.valueOf(value).isBlank()) return null;
+        try {
+            int number = (int) Math.round(Double.parseDouble(String.valueOf(value)));
+            return number >= min && number <= max ? number : null;
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+    }
+
+    private Double boundedDouble(Object value, double min, double max) {
+        if (value == null || String.valueOf(value).isBlank()) return null;
+        try {
+            double number = Double.parseDouble(String.valueOf(value));
+            return Double.isFinite(number) && number >= min && number <= max ? number : null;
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
     }
 
     private String safeHref(String value) {

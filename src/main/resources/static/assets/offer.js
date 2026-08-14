@@ -1,6 +1,14 @@
 const token = location.pathname.split('/').filter(Boolean).pop();
 const pageHost = document.getElementById('offer-page');
 const previewMode = new URLSearchParams(location.search).get('preview') === '1';
+const FONT_STACKS = {
+    ARIAL: 'Arial, sans-serif',
+    VERDANA: 'Verdana, sans-serif',
+    GEORGIA: 'Georgia, serif',
+    TIMES_NEW_ROMAN: '"Times New Roman", Times, serif',
+    TREBUCHET_MS: '"Trebuchet MS", sans-serif',
+    COURIER_NEW: '"Courier New", monospace'
+};
 
 let video = null;
 let state = null;
@@ -108,14 +116,16 @@ function renderBlock(block, data, content) {
                 ? ((content.text || {})[block.id] || (c.fieldKey === 'accompanyingText' ? data.text : '') || '')
                 : (c.text || '');
             if (!value) return '';
-            if (c.style === 'HEADING') return wrap(`<h1 class="vo-public-heading">${escapeHtml(value)}</h1>`);
-            if (c.style === 'NOTE') return wrap(`<div class="vo-public-note">${formatMultiline(value)}</div>`);
-            return wrap(`<div class="vo-public-text">${formatMultiline(value)}</div>`);
+            const textStyle = textInlineStyle(c);
+            if (c.style === 'HEADING') return wrap(`<h1 class="vo-public-heading" style="${escapeHtml(textStyle)}">${escapeHtml(value)}</h1>`);
+            if (c.style === 'NOTE') return wrap(`<div class="vo-public-note" style="${escapeHtml(textStyle)}">${formatMultiline(value)}</div>`);
+            return wrap(`<div class="vo-public-text" style="${escapeHtml(textStyle)}">${formatMultiline(value)}</div>`);
         }
         case 'IMAGE': {
             if (!c.assetUrl) return '';
-            const image = `<img class="vo-public-image radius-${String(c.radius || 'LARGE').toLowerCase()}" src="${safeUrl(c.assetUrl)}" alt="${escapeHtml(c.alt || '')}">`;
-            return wrap(c.href ? `<a class="vo-public-image-link" href="${safeUrl(c.href)}">${image}</a>` : image);
+            const image = `<img class="vo-public-image radius-${String(c.radius || 'LARGE').toLowerCase()}" style="${escapeHtml(imageContentStyle(c))}" src="${safeUrl(c.assetUrl)}" alt="${escapeHtml(c.alt || '')}">`;
+            const content = c.href ? `<a class="vo-public-image-link" href="${safeUrl(c.href)}">${image}</a>` : image;
+            return wrap(`<div class="vo-public-image-row ${alignmentClass(c.alignment, 'CENTER')}"><span class="vo-public-image-frame" style="${escapeHtml(imageFrameStyle(c))}">${content}</span></div>`);
         }
         case 'FILE': {
             let href = '', fileName = '';
@@ -129,13 +139,13 @@ function renderBlock(block, data, content) {
                 href = c.assetUrl;
                 fileName = c.assetName || c.label || 'Скачать файл';
             }
-            return wrap(`<a class="vo-public-file" href="${safeUrl(href)}" download><span class="vo-public-file-icon">⇩</span><span><b>${escapeHtml(c.label || 'Скачать файл')}</b><small>${escapeHtml(fileName)}</small></span></a>`);
+            return wrap(`<div class="vo-public-file-row ${alignmentClass(c.alignment, 'LEFT')}"><a class="vo-public-file" href="${safeUrl(href)}" download><span class="vo-public-file-icon">⇩</span><span><b>${escapeHtml(c.label || 'Скачать файл')}</b><small>${escapeHtml(fileName)}</small></span></a></div>`);
         }
         case 'BUTTON': {
             if (!c.href) return '';
             const shape = ['square','rounded','pill'].includes(String(c.shape || '').toLowerCase()) ? String(c.shape).toLowerCase() : 'pill';
             const target = c.newTab ? ' target="_blank" rel="noopener noreferrer"' : '';
-            return wrap(`<div class="vo-public-button-row"><a class="vo-public-button shape-${shape}" style="--vo-button:${escapeHtml(c.color || '#2f80ed')}" href="${safeUrl(c.href)}"${target}>${escapeHtml(c.text || 'Подробнее')}</a></div>`);
+            return wrap(`<div class="vo-public-button-row ${alignmentClass(c.alignment, 'CENTER')}"><a class="vo-public-button shape-${shape}" style="--vo-button:${escapeHtml(c.color || '#2f80ed')}" href="${safeUrl(c.href)}"${target}>${escapeHtml(c.text || 'Подробнее')}</a></div>`);
         }
         case 'DIVIDER': {
             const style = ['solid','dashed','dotted'].includes(String(c.style || '').toLowerCase()) ? String(c.style).toLowerCase() : 'solid';
@@ -199,6 +209,42 @@ function createSessionId() { return globalThis.crypto?.randomUUID?.() || Date.no
 function sendEvent(eventType, playbackPositionSeconds) { fetch('/api/public/offers/' + token + '/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({eventType,playbackPositionSeconds}),keepalive:true}).catch(()=>{}); }
 function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function formatMultiline(value) { return escapeHtml(value).replace(/\n/g,'<br>'); }
+function alignmentValue(value, fallback = 'LEFT') {
+    const normalized = String(value || fallback).toUpperCase();
+    return ['LEFT', 'CENTER', 'RIGHT'].includes(normalized) ? normalized : fallback;
+}
+function alignmentClass(value, fallback = 'LEFT') { return 'align-' + alignmentValue(value, fallback).toLowerCase(); }
+function textInlineStyle(c) {
+    const parts = [];
+    const family = FONT_STACKS[String(c.fontFamily || 'DEFAULT').toUpperCase()];
+    if (family) parts.push(`font-family:${family}`);
+    const size = positiveInteger(c.fontSize, 120);
+    if (size && size >= 8) parts.push(`font-size:${size}px`);
+    parts.push(`font-weight:${c.bold === true ? 700 : 400}`);
+    parts.push(`font-style:${c.italic === true ? 'italic' : 'normal'}`);
+    parts.push(`text-decoration:${c.underline === true ? 'underline' : 'none'}`);
+    parts.push(`text-align:${alignmentValue(c.alignment, 'LEFT').toLowerCase()}`);
+    return parts.join(';');
+}
+function imageFrameStyle(c) {
+    const width = positiveInteger(c.width, 5000);
+    const height = positiveInteger(c.height, 5000);
+    const keep = c.keepAspectRatio !== false;
+    const parts = [`width:${width ? width + 'px' : '100%'}`, 'max-width:100%'];
+    if (keep && width && height) parts.push(`aspect-ratio:${width}/${height}`);
+    else if (!keep && height) parts.push(`height:${height}px`);
+    return parts.join(';');
+}
+function imageContentStyle(c) {
+    const height = positiveInteger(c.height, 5000);
+    const keep = c.keepAspectRatio !== false;
+    return keep || !height ? 'width:100%;height:auto;object-fit:contain' : 'width:100%;height:100%;object-fit:fill';
+}
+function positiveInteger(value, max) {
+    if (value === null || value === undefined || value === '') return null;
+    const number = Math.round(Number(value));
+    return Number.isFinite(number) && number > 0 && number <= max ? number : null;
+}
 function safeUrl(value) {
     const url = String(value || '').trim();
     if (url.startsWith('/page-assets/') || url.startsWith('/offer-files/')) return escapeHtml(url);
