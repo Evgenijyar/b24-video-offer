@@ -1,0 +1,14 @@
+Update 041 — Spring Boot 4 / Jackson 3 startup fix
+
+Исправлено:
+- PageTemplateService переведён с Jackson 2 package com.fasterxml.jackson.databind.ObjectMapper
+  на штатный для Spring Boot 4 Jackson 3 package tools.jackson.databind.ObjectMapper.
+- Не добавляется отдельный Jackson 2 ObjectMapper и не подключается spring-boot-jackson2:
+  конструктор страницы использует стандартную Jackson 3 auto-configuration Spring Boot 4.
+
+Причина:
+Spring Boot 4 использует Jackson 3 как основную JSON-библиотеку. В Update 039 PageTemplateService
+по ошибке запросил в конструкторе ObjectMapper из Jackson 2, поэтому ApplicationContext не мог
+создать bean PageTemplateService.
+
+База данных и UI не изменены. Новых Flyway migration нет.
