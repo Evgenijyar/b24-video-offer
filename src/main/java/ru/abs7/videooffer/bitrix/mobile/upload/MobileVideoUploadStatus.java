@@ -5,6 +5,7 @@ public enum MobileVideoUploadStatus {
     UPLOADED,
     PROCESSING,
     READY,
+    CONSUMING,
     CONSUMED,
     ERROR
 }

@@ -17,4 +17,11 @@ public interface MobileVideoUploadRepository extends JpaRepository<MobileVideoUp
     Optional<MobileVideoUpload> findByIdForUpdate(@Param("id") UUID id);
 
     List<MobileVideoUpload> findAllByExpiresAtBefore(OffsetDateTime moment);
+
+    @Query("select coalesce(sum(upload.storageReservedBytes), 0) from MobileVideoUpload upload where upload.tenantId = :tenantId")
+    Long sumReservedStorageByTenantId(@Param("tenantId") Long tenantId);
+
+    List<MobileVideoUpload> findAllByStatusIn(List<MobileVideoUploadStatus> statuses);
+
+    List<MobileVideoUpload> findAllByStatusAndUpdatedAtBefore(MobileVideoUploadStatus status, OffsetDateTime moment);
 }

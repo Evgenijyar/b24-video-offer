@@ -2,15 +2,16 @@ package ru.abs7.videooffer.offer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import ru.abs7.videooffer.bitrix.BitrixReadyLinkDeliveryService;
+import ru.abs7.videooffer.concurrency.TenantFairVideoScheduler;
 import ru.abs7.videooffer.source.UniversalVideoDownloader;
 import ru.abs7.videooffer.tenant.TenantAccessService;
 
 import java.nio.file.Files;
 
 import java.util.UUID;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
@@ -21,20 +22,42 @@ public class VideoOfferProcessor {
     private final UniversalVideoDownloader downloader;
     private final BitrixReadyLinkDeliveryService bitrixReadyLinkDeliveryService;
     private final TenantAccessService accessService;
+    private final TenantFairVideoScheduler scheduler;
 
     public VideoOfferProcessor(
             VideoOfferRepository repository,
             UniversalVideoDownloader downloader,
             BitrixReadyLinkDeliveryService bitrixReadyLinkDeliveryService,
-            TenantAccessService accessService) {
+            TenantAccessService accessService,
+            TenantFairVideoScheduler scheduler) {
         this.repository = repository;
         this.downloader = downloader;
         this.bitrixReadyLinkDeliveryService = bitrixReadyLinkDeliveryService;
         this.accessService = accessService;
+        this.scheduler = scheduler;
     }
 
-    @Async
     public void process(UUID id) {
+        VideoOffer snapshot = repository.findById(id).orElse(null);
+        if (snapshot == null) {
+            log.warn("Video offer processing cannot be queued because entity was not found: offerId={}", id);
+            return;
+        }
+        try {
+            scheduler.submit(snapshot.getTenantId(), "offer:" + id, () -> processNow(id));
+        } catch (RejectedExecutionException rejected) {
+            String message = "Очередь обработки видео временно переполнена. Повторите попытку позже";
+            log.error("Video offer processing queue rejected task: offerId={}, tenantId={}",
+                    id, snapshot.getTenantId(), rejected);
+            repository.findById(id).ifPresent(current -> {
+                current.markError(message);
+                repository.saveAndFlush(current);
+                accessService.releaseConsumedOffer(current.getTenantId(), current.getBitrixUserId());
+            });
+        }
+    }
+
+    private void processNow(UUID id) {
         long startedAt = System.nanoTime();
         log.info("Video offer processing started: offerId={}, thread={}",
                 id, Thread.currentThread().getName());
@@ -81,7 +104,7 @@ public class VideoOfferProcessor {
                     id, result.sourceType(), result.path(), result.size(), result.quality(), elapsedMillis(startedAt));
 
             try {
-                accessService.ensureStorageAvailable(offer.getTenantId(), result.size());
+                accessService.reserveStorageForOffer(offer.getTenantId(), id, result.size());
             } catch (RuntimeException quotaError) {
                 try { Files.deleteIfExists(result.path()); } catch (Exception cleanupError) {
                     log.warn("Cannot delete downloaded video rejected by tenant quota: offerId={}, path={}, error={}",
@@ -94,31 +117,25 @@ public class VideoOfferProcessor {
                     new IllegalStateException("Видеооффер исчез из базы после скачивания: " + id));
             log.info("Marking video offer ready: offerId={}, previousStatus={}, path={}, bytes={}, quality={}",
                     id, current.getStatus(), result.path(), result.size(), result.quality());
-            current.markReady(result.path().toString(), result.size(), result.quality());
-            repository.saveAndFlush(current);
+            accessService.markDownloadedOfferReady(id, result.path().toString(), result.size(), result.quality());
+            current = repository.findById(id).orElseThrow(() ->
+                    new IllegalStateException("Видеооффер исчез из базы после фиксации готового файла: " + id));
             log.info("Video offer READY state persisted: offerId={}, publicToken={}, readyAt={}",
                     id, current.getPublicToken(), current.getReadyAt());
 
-            log.info("Publishing ready link to Bitrix24: offerId={}, bitrixMemberId={}, entityType={}, entityId={}",
+            log.info("Submitting ready link delivery to fast system executor: offerId={}, bitrixMemberId={}, entityType={}, entityId={}",
                     id,
                     current.getBitrixMemberId(),
                     current.getCrmEntityType(),
                     current.getCrmEntityId());
-            bitrixReadyLinkDeliveryService.deliver(id);
-            VideoOffer delivered = repository.findById(id).orElseThrow(() ->
-                    new IllegalStateException("Видеооффер исчез из базы после отправки в Bitrix24: " + id));
-            log.info("Bitrix delivery state persisted: offerId={}, deliveryStatus={}, commentId={}, deliveryError={}",
-                    id,
-                    delivered.getBitrixDeliveryStatus(),
-                    delivered.getBitrixTimelineCommentId(),
-                    delivered.getBitrixDeliveryError());
+            bitrixReadyLinkDeliveryService.deliverAsync(id);
 
             log.info("Video offer processing completed: offerId={}, publicToken={}, status={}, bitrixDelivery={}, "
                             + "totalDurationMs={}",
                     id,
-                    delivered.getPublicToken(),
-                    delivered.getStatus(),
-                    delivered.getBitrixDeliveryStatus(),
+                    current.getPublicToken(),
+                    current.getStatus(),
+                    current.getBitrixDeliveryStatus(),
                     elapsedMillis(startedAt));
         } catch (Exception error) {
             String message = rootMessage(error);

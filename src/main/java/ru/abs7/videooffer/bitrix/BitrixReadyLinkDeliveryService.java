@@ -2,7 +2,9 @@ package ru.abs7.videooffer.bitrix;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -12,7 +14,9 @@ import ru.abs7.videooffer.offer.VideoOfferStatus;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class BitrixReadyLinkDeliveryService {
@@ -23,14 +27,37 @@ public class BitrixReadyLinkDeliveryService {
     private final VideoOfferRepository repository;
     private final BitrixTimelineService timelineService;
     private final TransactionTemplate transactionTemplate;
+    private final ThreadPoolTaskExecutor systemAsyncExecutor;
+    private final Set<UUID> scheduledOfferIds = ConcurrentHashMap.newKeySet();
 
     public BitrixReadyLinkDeliveryService(
             VideoOfferRepository repository,
             BitrixTimelineService timelineService,
-            PlatformTransactionManager transactionManager) {
+            PlatformTransactionManager transactionManager,
+            @Qualifier("systemAsyncExecutor") ThreadPoolTaskExecutor systemAsyncExecutor) {
         this.repository = repository;
         this.timelineService = timelineService;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
+        this.systemAsyncExecutor = systemAsyncExecutor;
+    }
+
+    public void deliverAsync(UUID offerId) {
+        if (offerId == null || !scheduledOfferIds.add(offerId)) return;
+        try {
+            systemAsyncExecutor.execute(() -> {
+                try {
+                    deliver(offerId);
+                } finally {
+                    scheduledOfferIds.remove(offerId);
+                }
+            });
+        } catch (RuntimeException rejected) {
+            scheduledOfferIds.remove(offerId);
+            // Delivery state remains PENDING/ERROR and will be picked up by the
+            // durable retry loop. Never block video workers or scheduler threads.
+            log.error("Bitrix ready-link executor rejected task: offerId={}, error={}",
+                    offerId, rejected.getMessage(), rejected);
+        }
     }
 
     public void deliver(UUID offerId) {
@@ -62,7 +89,7 @@ public class BitrixReadyLinkDeliveryService {
             log.info("Retrying Bitrix ready-link deliveries: count={}", pending.size());
         }
         for (VideoOffer offer : pending) {
-            deliver(offer.getId());
+            deliverAsync(offer.getId());
         }
         return pending.size();
     }

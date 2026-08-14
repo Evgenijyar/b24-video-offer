@@ -26,6 +26,12 @@ public class MobileVideoUpload {
     @Column(name = "crm_entity_id", nullable = false)
     private Long crmEntityId;
 
+    @Column(name = "tenant_id")
+    private Long tenantId;
+
+    @Column(name = "bitrix_user_id")
+    private Long bitrixUserId;
+
     @Column(name = "mime_type", nullable = false, length = 160)
     private String mimeType;
 
@@ -61,6 +67,9 @@ public class MobileVideoUpload {
     @Column(name = "video_offer_id")
     private UUID videoOfferId;
 
+    @Column(name = "storage_reserved_bytes", nullable = false)
+    private Long storageReservedBytes;
+
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
@@ -80,6 +89,8 @@ public class MobileVideoUpload {
             String memberId,
             CrmEntityType entityType,
             long entityId,
+            Long tenantId,
+            Long bitrixUserId,
             String mimeType,
             MobileVideoSourceKind sourceKind,
             Long declaredSizeBytes,
@@ -92,6 +103,8 @@ public class MobileVideoUpload {
         upload.bitrixMemberId = memberId;
         upload.crmEntityType = entityType;
         upload.crmEntityId = entityId;
+        upload.tenantId = tenantId;
+        upload.bitrixUserId = bitrixUserId;
         upload.mimeType = mimeType;
         upload.sourceKind = MobileVideoSourceKind.orDefault(sourceKind);
         upload.declaredSizeBytes = declaredSizeBytes;
@@ -100,6 +113,7 @@ public class MobileVideoUpload {
         upload.nextSequence = 0;
         upload.processingProgressPercent = 0;
         upload.status = MobileVideoUploadStatus.RECORDING;
+        upload.storageReservedBytes = 0L;
         upload.createdAt = OffsetDateTime.now();
         upload.updatedAt = upload.createdAt;
         upload.expiresAt = upload.createdAt.plusHours(retentionHours);
@@ -126,6 +140,7 @@ public class MobileVideoUpload {
         if (status == MobileVideoUploadStatus.UPLOADED
                 || status == MobileVideoUploadStatus.PROCESSING
                 || status == MobileVideoUploadStatus.READY
+                || status == MobileVideoUploadStatus.CONSUMING
                 || status == MobileVideoUploadStatus.CONSUMED) {
             return;
         }
@@ -165,6 +180,7 @@ public class MobileVideoUpload {
     public void markReady(String normalizedPath, long readyBytes) {
         status = MobileVideoUploadStatus.READY;
         processingProgressPercent = 100;
+        storageReservedBytes = 0L;
         normalizedFilePath = normalizedPath;
         bytesReceived = Math.max(0L, readyBytes);
         errorMessage = null;
@@ -172,14 +188,56 @@ public class MobileVideoUpload {
         updatedAt = readyAt;
     }
 
+    public void markConsuming(UUID offerId, long reservedBytes, Long tenantId, Long bitrixUserId) {
+        if (status != MobileVideoUploadStatus.READY) {
+            throw new IllegalStateException("Видео нельзя начать создавать из статуса " + status);
+        }
+        this.tenantId = tenantId;
+        this.bitrixUserId = bitrixUserId;
+        this.videoOfferId = offerId;
+        this.storageReservedBytes = Math.max(0L, reservedBytes);
+        this.status = MobileVideoUploadStatus.CONSUMING;
+        this.updatedAt = OffsetDateTime.now();
+    }
+
     public void markConsumed(UUID offerId) {
         status = MobileVideoUploadStatus.CONSUMED;
         videoOfferId = offerId;
+        storageReservedBytes = 0L;
+        updatedAt = OffsetDateTime.now();
+    }
+
+    public void renewConsumingClaim() {
+        if (status == MobileVideoUploadStatus.CONSUMING) {
+            updatedAt = OffsetDateTime.now();
+        }
+    }
+
+    public void releaseConsumingToReady() {
+        if (status != MobileVideoUploadStatus.CONSUMING) return;
+        status = MobileVideoUploadStatus.READY;
+        videoOfferId = null;
+        storageReservedBytes = 0L;
+        updatedAt = OffsetDateTime.now();
+    }
+
+    public void bindTenantContext(Long tenantId, Long bitrixUserId) {
+        if (tenantId != null && tenantId > 0) this.tenantId = tenantId;
+        if (bitrixUserId != null && bitrixUserId > 0) this.bitrixUserId = bitrixUserId;
+        updatedAt = OffsetDateTime.now();
+    }
+
+    public void resetProcessingForRecovery() {
+        if (status != MobileVideoUploadStatus.PROCESSING) return;
+        status = MobileVideoUploadStatus.UPLOADED;
+        processingProgressPercent = 0;
+        errorMessage = null;
         updatedAt = OffsetDateTime.now();
     }
 
     public void markError(String message) {
         status = MobileVideoUploadStatus.ERROR;
+        storageReservedBytes = 0L;
         processingProgressPercent = 100;
         errorMessage = message;
         updatedAt = OffsetDateTime.now();
@@ -190,6 +248,8 @@ public class MobileVideoUpload {
     public String getBitrixMemberId() { return bitrixMemberId; }
     public CrmEntityType getCrmEntityType() { return crmEntityType; }
     public Long getCrmEntityId() { return crmEntityId; }
+    public Long getTenantId() { return tenantId; }
+    public Long getBitrixUserId() { return bitrixUserId; }
     public String getMimeType() { return mimeType; }
     public MobileVideoSourceKind getSourceKind() { return sourceKind; }
     public Long getDeclaredSizeBytes() { return declaredSizeBytes; }
@@ -201,6 +261,7 @@ public class MobileVideoUpload {
     public MobileVideoUploadStatus getStatus() { return status; }
     public String getErrorMessage() { return errorMessage; }
     public UUID getVideoOfferId() { return videoOfferId; }
+    public Long getStorageReservedBytes() { return storageReservedBytes == null ? 0L : storageReservedBytes; }
     public OffsetDateTime getCreatedAt() { return createdAt; }
     public OffsetDateTime getUpdatedAt() { return updatedAt; }
     public OffsetDateTime getReadyAt() { return readyAt; }

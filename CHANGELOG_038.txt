@@ -1,0 +1,48 @@
+Update 038 — concurrency hardening
+
+1. Heavy video work no longer uses Spring's single generic @Async pool.
+   - Shared tenant-fair scheduler for source downloads/processing, mobile normalization and mobile segment merging.
+   - Defaults: 3 heavy jobs globally, maximum 2 heavy jobs per tenant, 500 queued jobs.
+   - Round-robin tenant scheduling prevents one company from monopolizing all heavy workers.
+   - Duplicate durable jobs are ignored while already queued/running.
+
+2. Separate fast executors.
+   - Bitrix view notifications: notificationExecutor (2..4 threads, queue 500).
+   - Ready-link delivery and Bitrix installation self-healing: systemAsyncExecutor (2..4 threads, queue 200).
+   - Bitrix bell/todo delivery therefore does not wait behind FFmpeg or large downloads.
+
+3. Atomic disk quota reservations.
+   - V11 adds storage_reserved_bytes to video_offer and mobile_video_upload.
+   - Storage admission is serialized by tenant row lock.
+   - Quota check includes READY storage + all durable in-flight reservations.
+   - Downloaded offer reservation atomically converts into READY storage.
+   - UI still reports actual READY bytes as used; remaining capacity also respects active reservations.
+
+4. Atomic mobile offer claim / idempotency.
+   - V11 adds tenant_id and bitrix_user_id to mobile_video_upload.
+   - New CONSUMING state.
+   - READY -> CONSUMING, disk reservation and offer-counter consumption commit in one DB transaction.
+   - A stable offer UUID is assigned at claim time, preventing double creation across duplicate requests.
+   - Same-JVM duplicate requests are serialized by the existing per-upload file lock.
+   - Cross-instance duplicates see CONSUMING and do not create a second offer.
+   - Stale claims can resume or are recovered after 2 minutes without consuming another quota unit.
+   - Recovery job finalizes READY offers or releases quota/reservation when creation was interrupted.
+
+5. Crash/restart recovery.
+   - UPLOADED/PROCESSING mobile normalization jobs are recovered after application startup.
+   - PROCESSING is reset to UPLOADED before resubmission.
+   - Source offer recovery continues through the existing QUEUED/PREPARING lifecycle recovery.
+
+6. Mobile segment merge is also admitted through the same fair heavy-video scheduler.
+
+Database migration: V11__concurrency_hardening.sql
+
+7. Storage accounting uses one tenant-level lock order for admission/finalization.
+   - reservation/READY transitions cannot be observed half-applied under PostgreSQL READ_COMMITTED.
+   - mobile claim/finalize/recovery/expiry paths use tenant -> upload -> user/offer lock order.
+
+8. Spring Boot's standard applicationTaskExecutor is explicitly retained for MVC/JPA framework integration (`spring.task.execution.mode=force`).
+   - Video Offer heavy/notification/system work still uses the dedicated named pools above.
+
+9. Fast Bitrix executor submissions are deduplicated per offer in-memory.
+   - Retry cycles cannot fill their queues with duplicate work for the same offer while it is already waiting/running.

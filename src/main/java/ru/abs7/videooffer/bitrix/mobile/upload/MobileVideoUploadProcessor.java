@@ -2,13 +2,17 @@ package ru.abs7.videooffer.bitrix.mobile.upload;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Async;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
+import ru.abs7.videooffer.concurrency.TenantFairVideoScheduler;
 
 @Service
 public class MobileVideoUploadProcessor {
@@ -16,16 +20,48 @@ public class MobileVideoUploadProcessor {
 
     private final MobileVideoUploadRepository repository;
     private final MobileVideoTranscoder transcoder;
+    private final TenantFairVideoScheduler scheduler;
 
     public MobileVideoUploadProcessor(
             MobileVideoUploadRepository repository,
-            MobileVideoTranscoder transcoder) {
+            MobileVideoTranscoder transcoder,
+            TenantFairVideoScheduler scheduler) {
         this.repository = repository;
         this.transcoder = transcoder;
+        this.scheduler = scheduler;
     }
 
-    @Async
     public void normalize(UUID uploadId) {
+        MobileVideoUpload snapshot = repository.findById(uploadId).orElse(null);
+        if (snapshot == null) return;
+        try {
+            scheduler.submit(snapshot.getTenantId(), "mobile-normalize:" + uploadId, () -> normalizeNow(uploadId));
+        } catch (RejectedExecutionException rejected) {
+            log.error("Mobile normalization queue rejected task: uploadId={}, tenantId={}",
+                    uploadId, snapshot.getTenantId(), rejected);
+            repository.findById(uploadId).ifPresent(current -> {
+                current.markError("Очередь обработки видео временно переполнена. Повторите попытку позже");
+                repository.saveAndFlush(current);
+            });
+        }
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void recoverInterruptedNormalizations() {
+        List<MobileVideoUpload> interrupted = repository.findAllByStatusIn(
+                List.of(MobileVideoUploadStatus.UPLOADED, MobileVideoUploadStatus.PROCESSING));
+        if (interrupted.isEmpty()) return;
+        log.info("Recovering interrupted mobile video normalizations: count={}", interrupted.size());
+        for (MobileVideoUpload upload : interrupted) {
+            if (upload.getStatus() == MobileVideoUploadStatus.PROCESSING) {
+                upload.resetProcessingForRecovery();
+                repository.saveAndFlush(upload);
+            }
+            normalize(upload.getId());
+        }
+    }
+
+    private void normalizeNow(UUID uploadId) {
         MobileVideoUpload upload = repository.findById(uploadId).orElse(null);
         if (upload == null) {
             log.debug("Mobile video normalization skipped: upload not found, uploadId={}", uploadId);

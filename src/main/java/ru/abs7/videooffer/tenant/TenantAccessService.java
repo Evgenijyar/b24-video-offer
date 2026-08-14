@@ -7,12 +7,12 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.abs7.videooffer.bitrix.BitrixPlacementContext;
 import ru.abs7.videooffer.bitrix.BitrixRestClient;
 import ru.abs7.videooffer.offer.CrmEntityType;
-import ru.abs7.videooffer.offer.VideoOfferRepository;
 
 import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class TenantAccessService {
@@ -21,19 +21,19 @@ public class TenantAccessService {
 
     private final VideoOfferTenantRepository tenantRepository;
     private final VideoOfferTenantUserRepository userRepository;
-    private final VideoOfferRepository offerRepository;
+    private final TenantStorageQuotaService storageQuotaService;
     private final BitrixRestClient restClient;
     private final BitrixWebhookClient webhookClient;
 
     public TenantAccessService(
             VideoOfferTenantRepository tenantRepository,
             VideoOfferTenantUserRepository userRepository,
-            VideoOfferRepository offerRepository,
+            TenantStorageQuotaService storageQuotaService,
             BitrixRestClient restClient,
             BitrixWebhookClient webhookClient) {
         this.tenantRepository = tenantRepository;
         this.userRepository = userRepository;
-        this.offerRepository = offerRepository;
+        this.storageQuotaService = storageQuotaService;
         this.restClient = restClient;
         this.webhookClient = webhookClient;
     }
@@ -145,10 +145,26 @@ public class TenantAccessService {
     @Transactional
     public UsageSnapshot consumeOffer(BitrixPlacementContext context) {
         assertContextCanCreate(context);
+        return consumeOfferLocked(context);
+    }
+
+    /**
+     * Variant for flows that already performed the authoritative responsible/access
+     * check before opening their short database transaction (mobile offer claim).
+     */
+    @Transactional
+    public UsageSnapshot consumeOfferAfterAccessCheck(BitrixPlacementContext context) {
+        return consumeOfferLocked(context);
+    }
+
+    private UsageSnapshot consumeOfferLocked(BitrixPlacementContext context) {
         VideoOfferTenant tenant = tenantRepository.findByIdForUpdate(context.tenantId())
                 .orElseThrow(() -> new IllegalArgumentException("Компания Video Offer не найдена"));
         VideoOfferTenantUser user = userRepository.findForUpdate(tenant.getId(), context.bitrixUserId())
                 .orElseThrow(() -> new IllegalArgumentException("Сотрудник Video Offer не найден"));
+        if (!tenant.isActive() || !user.isActive() || !user.hasOfferAccess()) {
+            throw new IllegalArgumentException("У вас нет доступа к приложению");
+        }
         long used = tenant.getOffersUsed() == null ? 0 : tenant.getOffersUsed();
         if (used >= tenant.getOfferLimit()) {
             throw new IllegalArgumentException("Лимит видеоофферов исчерпан. Обратитесь к администратору компании");
@@ -178,29 +194,25 @@ public class TenantAccessService {
         userRepository.save(user);
     }
 
-    @Transactional
     public void ensureStorageAvailable(Long tenantId, long additionalBytes) {
-        if (tenantId == null || tenantId <= 0 || additionalBytes <= 0) return;
-        VideoOfferTenant tenant = tenantRepository.findByIdForUpdate(tenantId)
-                .orElseThrow(() -> new IllegalArgumentException("Компания Video Offer не найдена"));
-        long used = currentStorageBytes(tenantId);
-        if (used + additionalBytes > tenant.getDiskQuotaBytes()) {
-            throw new IllegalArgumentException("Недостаточно места в хранилище компании. Использовано "
-                    + humanBytes(used) + " из " + humanBytes(tenant.getDiskQuotaBytes()));
-        }
+        storageQuotaService.ensureAvailable(tenantId, additionalBytes);
+    }
+
+    public void reserveStorageForOffer(Long tenantId, UUID offerId, long bytes) {
+        storageQuotaService.reserveForOffer(tenantId, offerId, bytes);
+    }
+
+    public ru.abs7.videooffer.offer.VideoOffer markDownloadedOfferReady(
+            UUID offerId, String path, long size, String quality) {
+        return storageQuotaService.markDownloadedOfferReady(offerId, path, size, quality);
     }
 
     public long currentStorageBytes(Long tenantId) {
-        if (tenantId == null) return 0;
-        var status = ru.abs7.videooffer.offer.VideoOfferStatus.READY;
-        Long tenantValue = offerRepository.sumReadyStorageByTenantId(tenantId, status);
-        long total = tenantValue == null ? 0L : tenantValue;
-        VideoOfferTenant tenant = tenantRepository.findById(tenantId).orElse(null);
-        if (tenant != null && tenant.getMemberId() != null && !tenant.getMemberId().isBlank()) {
-            Long legacyValue = offerRepository.sumLegacyReadyStorageByMemberId(tenant.getMemberId(), status);
-            total += legacyValue == null ? 0L : legacyValue;
-        }
-        return total;
+        return storageQuotaService.currentReadyBytes(tenantId);
+    }
+
+    public long currentReservedStorageBytes(Long tenantId) {
+        return storageQuotaService.currentReservedBytes(tenantId);
     }
 
     public UserDefaults defaults(BitrixPlacementContext context) {
@@ -245,10 +257,11 @@ public class TenantAccessService {
 
     private UsageSnapshot usage(VideoOfferTenant tenant, VideoOfferTenantUser user) {
         long storage = currentStorageBytes(tenant.getId());
+        long reservedStorage = currentReservedStorageBytes(tenant.getId());
         return new UsageSnapshot(
                 tenant.getOfferLimit(), tenant.getOffersUsed(), Math.max(0, tenant.getOfferLimit() - tenant.getOffersUsed()),
                 tenant.getSeatLimit(), userRepository.countByTenantIdAndOfferAccessTrueAndActiveTrue(tenant.getId()),
-                tenant.getDiskQuotaBytes(), storage, Math.max(0, tenant.getDiskQuotaBytes() - storage),
+                tenant.getDiskQuotaBytes(), storage, Math.max(0, tenant.getDiskQuotaBytes() - storage - reservedStorage),
                 user.getOffersUsed());
     }
 

@@ -33,6 +33,10 @@ public interface VideoOfferRepository extends JpaRepository<VideoOffer, UUID> {
     @Query("select coalesce(sum(offer.videoFileSize), 0) from VideoOffer offer where offer.tenantId = :tenantId and offer.status = :status")
     Long sumReadyStorageByTenantId(@Param("tenantId") Long tenantId, @Param("status") VideoOfferStatus status);
 
+
+    @Query("select coalesce(sum(offer.storageReservedBytes), 0) from VideoOffer offer where offer.tenantId = :tenantId")
+    Long sumReservedStorageByTenantId(@Param("tenantId") Long tenantId);
+
     @Query("select coalesce(sum(offer.videoFileSize), 0) from VideoOffer offer where offer.tenantId is null and offer.bitrixMemberId = :memberId and offer.status = :status")
     Long sumLegacyReadyStorageByMemberId(@Param("memberId") String memberId, @Param("status") VideoOfferStatus status);
 

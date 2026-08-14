@@ -107,6 +107,7 @@ public class VideoOfferService {
 
 
     public VideoOffer createReadyFromMobile(
+            UUID offerId,
             CrmEntityType entityType,
             long entityId,
             String memberId,
@@ -117,28 +118,42 @@ public class VideoOfferService {
             String clientMessage,
             ViewNotificationGoal viewNotificationGoal,
             String quality) throws IOException {
-        if (normalizedSource == null || !Files.isRegularFile(normalizedSource)) {
+        if (normalizedSource == null) {
             throw new IllegalArgumentException("Нормализованный мобильный видеофайл не найден");
         }
 
-        VideoOffer offer = VideoOffer.create(
-                entityType,
-                entityId,
-                normalize(memberId),
-                bitrixUserId,
-                tenantId,
-                "mobile-upload://" + normalizedSource.getFileName(),
-                "mobile-" + UUID.randomUUID(),
-                normalize(accompanyingText),
-                normalize(clientMessage),
-                viewNotificationGoal,
-                retentionDaysForTenant(tenantId));
+        UUID stableOfferId = offerId == null ? UUID.randomUUID() : offerId;
+        VideoOffer saved = repository.findById(stableOfferId).orElse(null);
+        if (saved != null && saved.getStatus() == VideoOfferStatus.READY) {
+            return saved;
+        }
+        if (saved == null) {
+            VideoOffer offer = VideoOffer.createWithId(
+                    stableOfferId,
+                    entityType,
+                    entityId,
+                    normalize(memberId),
+                    bitrixUserId,
+                    tenantId,
+                    "mobile-upload://" + normalizedSource.getFileName(),
+                    "mobile-" + UUID.randomUUID(),
+                    normalize(accompanyingText),
+                    normalize(clientMessage),
+                    viewNotificationGoal,
+                    retentionDaysForTenant(tenantId));
+            saved = repository.saveAndFlush(offer);
+        }
 
-        VideoOffer saved = repository.saveAndFlush(offer);
         Files.createDirectories(videoStorageDir);
-        Path destination = videoStorageDir.resolve(saved.getId() + ".mp4");
+        Path destination = videoStorageDir.resolve(stableOfferId + ".mp4");
         try {
-            Files.move(normalizedSource, destination, StandardCopyOption.REPLACE_EXISTING);
+            if (Files.isRegularFile(normalizedSource)) {
+                if (!normalizedSource.toAbsolutePath().normalize().equals(destination.toAbsolutePath().normalize())) {
+                    Files.move(normalizedSource, destination, StandardCopyOption.REPLACE_EXISTING);
+                }
+            } else if (!Files.isRegularFile(destination)) {
+                throw new IllegalArgumentException("Нормализованный мобильный видеофайл не найден");
+            }
             long size = Files.size(destination);
             saved.markReady(destination.toString(), size, quality);
             saved = repository.saveAndFlush(saved);
@@ -150,14 +165,21 @@ public class VideoOfferService {
             throw error;
         }
 
-        bitrixReadyLinkDeliveryService.deliver(saved.getId());
-        return repository.findById(saved.getId()).orElse(saved);
+        return saved;
     }
 
     public VideoOffer get(UUID id) {
         log.debug("Loading video offer by id: offerId={}", id);
         return repository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Видеооффер не найден: " + id));
+    }
+
+    public VideoOffer findOrNull(UUID id) {
+        return id == null ? null : repository.findById(id).orElse(null);
+    }
+
+    public void deliverReadyLinkAsync(UUID id) {
+        bitrixReadyLinkDeliveryService.deliverAsync(id);
     }
 
     public VideoOffer getByToken(String token) {

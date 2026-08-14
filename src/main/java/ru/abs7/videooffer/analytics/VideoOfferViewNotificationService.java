@@ -2,9 +2,10 @@ package ru.abs7.videooffer.analytics;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import ru.abs7.videooffer.bitrix.BitrixTimelineService;
@@ -14,7 +15,9 @@ import ru.abs7.videooffer.offer.ViewNotificationStatus;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class VideoOfferViewNotificationService {
@@ -23,19 +26,37 @@ public class VideoOfferViewNotificationService {
     private final VideoOfferRepository repository;
     private final BitrixTimelineService timelineService;
     private final TransactionTemplate transactionTemplate;
+    private final ThreadPoolTaskExecutor notificationExecutor;
+    private final Set<UUID> scheduledOfferIds = ConcurrentHashMap.newKeySet();
 
     public VideoOfferViewNotificationService(
             VideoOfferRepository repository,
             BitrixTimelineService timelineService,
-            TransactionTemplate transactionTemplate) {
+            TransactionTemplate transactionTemplate,
+            @Qualifier("notificationExecutor") ThreadPoolTaskExecutor notificationExecutor) {
         this.repository = repository;
         this.timelineService = timelineService;
         this.transactionTemplate = transactionTemplate;
+        this.notificationExecutor = notificationExecutor;
     }
 
-    @Async
     public void deliver(UUID offerId) {
-        deliverNow(offerId);
+        if (offerId == null || !scheduledOfferIds.add(offerId)) return;
+        try {
+            notificationExecutor.execute(() -> {
+                try {
+                    deliverNow(offerId);
+                } finally {
+                    scheduledOfferIds.remove(offerId);
+                }
+            });
+        } catch (RuntimeException rejected) {
+            scheduledOfferIds.remove(offerId);
+            // The durable notification state is still PENDING/ERROR, so the scheduled
+            // retry loop can pick it up later without losing the event.
+            log.error("Bitrix view notification executor rejected task: offerId={}, error={}",
+                    offerId, rejected.getMessage(), rejected);
+        }
     }
 
     @Scheduled(
@@ -50,7 +71,7 @@ public class VideoOfferViewNotificationService {
         if (!pending.isEmpty()) {
             log.info("Retrying pending Bitrix view notifications: count={}", pending.size());
         }
-        pending.forEach(offer -> deliverNow(offer.getId()));
+        pending.forEach(offer -> deliver(offer.getId()));
     }
 
     private void recoverStaleSendingNotifications() {

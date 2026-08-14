@@ -15,6 +15,17 @@ public class MobileVideoUploadCleanupService {
         this.service = service;
     }
 
+    @Scheduled(
+            fixedDelayString = "${app.mobile-video.claim-recovery-delay-ms:60000}",
+            initialDelayString = "${app.mobile-video.claim-recovery-initial-delay-ms:30000}")
+    public void recoverClaims() {
+        try {
+            service.recoverStaleConsumingClaims();
+        } catch (Exception error) {
+            log.error("Mobile video offer claim recovery failed: {}", error.getMessage(), error);
+        }
+    }
+
     @Scheduled(cron = "${app.mobile-video.cleanup-cron:0 */30 * * * *}")
     public void cleanup() {
         try {

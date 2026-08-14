@@ -8,11 +8,13 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import ru.abs7.videooffer.bitrix.BitrixContextSigner;
 import ru.abs7.videooffer.bitrix.BitrixPlacementContext;
+import ru.abs7.videooffer.concurrency.TenantFairVideoScheduler;
 import ru.abs7.videooffer.offer.VideoOffer;
 import ru.abs7.videooffer.offer.VideoOfferResponse;
 import ru.abs7.videooffer.offer.VideoOfferService;
 import ru.abs7.videooffer.offer.ViewNotificationGoal;
 import ru.abs7.videooffer.tenant.TenantAccessService;
+import ru.abs7.videooffer.tenant.TenantStorageQuotaService;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,6 +47,8 @@ public class MobileVideoUploadService {
     private final MobileVideoMerger merger;
     private final VideoOfferService videoOfferService;
     private final TenantAccessService accessService;
+    private final TenantStorageQuotaService storageQuotaService;
+    private final TenantFairVideoScheduler videoScheduler;
     private final TransactionTemplate transactionTemplate;
     private final Path uploadDirectory;
     private final long maxUploadBytes;
@@ -60,6 +64,8 @@ public class MobileVideoUploadService {
             MobileVideoMerger merger,
             VideoOfferService videoOfferService,
             TenantAccessService accessService,
+            TenantStorageQuotaService storageQuotaService,
+            TenantFairVideoScheduler videoScheduler,
             PlatformTransactionManager transactionManager,
             @Value("${app.video.storage-dir:./data/videos}") String videoStorageDir,
             @Value("${app.mobile-video.max-upload-bytes:536870912}") long maxUploadBytes,
@@ -72,6 +78,8 @@ public class MobileVideoUploadService {
         this.merger = merger;
         this.videoOfferService = videoOfferService;
         this.accessService = accessService;
+        this.storageQuotaService = storageQuotaService;
+        this.videoScheduler = videoScheduler;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         Path videos = Path.of(videoStorageDir).toAbsolutePath().normalize();
         Path dataDir = videos.getParent() == null ? videos : videos.getParent();
@@ -106,6 +114,8 @@ public class MobileVideoUploadService {
                 context.memberId(),
                 context.entityType(),
                 context.entityId(),
+                context.tenantId(),
+                context.bitrixUserId(),
                 mimeType,
                 sourceKind,
                 declaredSizeBytes,
@@ -217,6 +227,7 @@ public class MobileVideoUploadService {
             if (snapshot.getStatus() == MobileVideoUploadStatus.UPLOADED
                     || snapshot.getStatus() == MobileVideoUploadStatus.PROCESSING
                     || snapshot.getStatus() == MobileVideoUploadStatus.READY
+                    || snapshot.getStatus() == MobileVideoUploadStatus.CONSUMING
                     || snapshot.getStatus() == MobileVideoUploadStatus.CONSUMED) {
                 return MobileVideoUploadResponse.from(snapshot);
             }
@@ -287,6 +298,7 @@ public class MobileVideoUploadService {
         if (snapshot.getStatus() == MobileVideoUploadStatus.UPLOADED
                 || snapshot.getStatus() == MobileVideoUploadStatus.PROCESSING
                 || snapshot.getStatus() == MobileVideoUploadStatus.READY
+                || snapshot.getStatus() == MobileVideoUploadStatus.CONSUMING
                 || snapshot.getStatus() == MobileVideoUploadStatus.CONSUMED) {
             return MobileVideoUploadResponse.from(snapshot);
         }
@@ -348,6 +360,8 @@ public class MobileVideoUploadService {
                 context.memberId(),
                 context.entityType(),
                 context.entityId(),
+                context.tenantId(),
+                context.bitrixUserId(),
                 "video/mp4",
                 MobileVideoSourceKind.MERGED,
                 null,
@@ -359,8 +373,18 @@ public class MobileVideoUploadService {
 
         long startedAt = System.nanoTime();
         try {
-            MobileVideoMerger.MergeResult result = merger.merge(paths, output);
             UUID mergedId = merged.getId();
+            MobileVideoMerger.MergeResult result;
+            try {
+                result = videoScheduler.submitAndWait(
+                        context.tenantId(),
+                        "mobile-merge:" + mergedId,
+                        () -> merger.merge(paths, output));
+            } catch (IOException | InterruptedException | RuntimeException error) {
+                throw error;
+            } catch (Exception error) {
+                throw new IOException("Не удалось объединить части записи", error);
+            }
             long mergedBytes = result.size();
             MobileVideoUpload ready = transactionTemplate.execute(status -> {
                 MobileVideoUpload current = repository.findByIdForUpdate(mergedId)
@@ -393,6 +417,9 @@ public class MobileVideoUploadService {
                 if (upload.getStatus() == MobileVideoUploadStatus.CONSUMED) {
                     throw new IllegalArgumentException("Готовый видеооффер уже создан и не может быть удалён этой операцией");
                 }
+                if (upload.getStatus() == MobileVideoUploadStatus.CONSUMING) {
+                    throw new IllegalArgumentException("Видеоофер уже создаётся. Дождитесь завершения операции");
+                }
                 repository.delete(upload);
                 repository.flush();
                 return upload;
@@ -413,61 +440,212 @@ public class MobileVideoUploadService {
             UUID uploadId,
             CreateMobileVideoOfferRequest request) throws IOException {
         BitrixPlacementContext context = contextSigner.verify(request.contextToken());
-        MobileVideoUpload upload = requireAuthorized(uploadId, request.uploadToken());
+        accessService.assertContextCanCreate(context);
+
+        ReentrantLock fileLock = lockFor(uploadId);
+        fileLock.lock();
+        try {
+            MobileVideoUpload snapshot = requireAuthorized(uploadId, request.uploadToken());
+            verifyUploadContext(snapshot, context);
+            if (snapshot.getStatus() == MobileVideoUploadStatus.CONSUMED && snapshot.getVideoOfferId() != null) {
+                return videoOfferService.response(videoOfferService.get(snapshot.getVideoOfferId()));
+            }
+            if (snapshot.getStatus() == MobileVideoUploadStatus.ERROR) {
+                throw new IllegalArgumentException("Видео не удалось обработать: " + snapshot.getErrorMessage());
+            }
+            if (snapshot.getStatus() != MobileVideoUploadStatus.READY
+                    && snapshot.getStatus() != MobileVideoUploadStatus.CONSUMING) {
+                throw new IllegalArgumentException("Видео ещё не готово. Дождитесь окончания обработки");
+            }
+            if (snapshot.getNormalizedFilePath() == null || snapshot.getNormalizedFilePath().isBlank()) {
+                throw new IllegalArgumentException("Готовый видеофайл не найден");
+            }
+
+            Path normalized = Path.of(snapshot.getNormalizedFilePath());
+            long finalBytes = Files.isRegularFile(normalized)
+                    ? Files.size(normalized)
+                    : Math.max(0L, snapshot.getBytesReceived() == null ? 0L : snapshot.getBytesReceived());
+            if (finalBytes <= 0) {
+                VideoOffer existing = videoOfferService.findOrNull(snapshot.getVideoOfferId());
+                if (existing == null || existing.getStatus() != ru.abs7.videooffer.offer.VideoOfferStatus.READY) {
+                    throw new IllegalArgumentException("Готовый видеофайл не найден");
+                }
+            }
+
+            MobileOfferClaim claim = claimMobileUploadForOffer(
+                    uploadId, request.uploadToken(), context, finalBytes);
+            if (claim.state() == MobileOfferClaimState.ALREADY_CONSUMED) {
+                VideoOffer existing = videoOfferService.get(claim.offerId());
+                videoOfferService.deliverReadyLinkAsync(existing.getId());
+                return videoOfferService.response(existing);
+            }
+            if (claim.state() == MobileOfferClaimState.IN_PROGRESS) {
+                throw new IllegalArgumentException("Создание видеооффера уже выполняется. Подождите несколько секунд");
+            }
+
+            VideoOffer offer;
+            try {
+                offer = videoOfferService.createReadyFromMobile(
+                        claim.offerId(),
+                        claim.entityType(),
+                        claim.entityId(),
+                        claim.memberId(),
+                        context.bitrixUserId(),
+                        context.tenantId(),
+                        normalized,
+                        request.accompanyingText(),
+                        request.clientMessage(),
+                        ViewNotificationGoal.orDefault(request.viewNotificationGoal()),
+                        switch (claim.sourceKind()) {
+                            case FILE -> "uploaded-file-h264";
+                            case MERGED -> "mixed-recording-h264";
+                            case RECORDING -> "recorded-h264";
+                        });
+            } catch (IOException | RuntimeException error) {
+                recoverFailedMobileOfferClaim(uploadId, request.uploadToken(), claim.offerId());
+                throw error;
+            }
+
+            MobileVideoUpload consumed = finalizeMobileOfferClaim(
+                    uploadId, request.uploadToken(), offer.getId(), context.tenantId());
+            log.info("Mobile video upload consumed by video offer: uploadId={}, offerId={}, entityType={}, entityId={}",
+                    consumed.getId(), offer.getId(), offer.getCrmEntityType(), offer.getCrmEntityId());
+
+            // Bitrix network delivery is deliberately outside the mobile claim transaction
+            // and outside the HTTP-critical file move. Retries remain durable in video_offer.
+            videoOfferService.deliverReadyLinkAsync(offer.getId());
+            return videoOfferService.response(offer);
+        } finally {
+            fileLock.unlock();
+        }
+    }
+
+    private MobileOfferClaim claimMobileUploadForOffer(
+            UUID uploadId,
+            String uploadToken,
+            BitrixPlacementContext context,
+            long finalBytes) {
+        return transactionTemplate.execute(status -> {
+            // Global lock order for storage-accounting paths: tenant -> upload -> user/offer.
+            // This keeps quota admission/finalization deterministic across concurrent requests.
+            storageQuotaService.lockTenantAccounting(context.tenantId());
+            MobileVideoUpload current = repository.findByIdForUpdate(uploadId)
+                    .orElseThrow(() -> new NoSuchElementException("Сессия записи видео не найдена"));
+            verifyToken(current, uploadToken);
+            verifyUploadContext(current, context);
+
+            if (current.getStatus() == MobileVideoUploadStatus.CONSUMED && current.getVideoOfferId() != null) {
+                return new MobileOfferClaim(
+                        MobileOfferClaimState.ALREADY_CONSUMED, current.getVideoOfferId(),
+                        current.getBitrixMemberId(), current.getCrmEntityType(), current.getCrmEntityId(), current.getSourceKind());
+            }
+            if (current.getStatus() == MobileVideoUploadStatus.CONSUMING) {
+                VideoOffer existing = videoOfferService.findOrNull(current.getVideoOfferId());
+                if (existing != null && existing.getStatus() == ru.abs7.videooffer.offer.VideoOfferStatus.READY) {
+                    current.markConsumed(existing.getId());
+                    repository.saveAndFlush(current);
+                    return new MobileOfferClaim(
+                            MobileOfferClaimState.ALREADY_CONSUMED, existing.getId(),
+                            current.getBitrixMemberId(), current.getCrmEntityType(), current.getCrmEntityId(), current.getSourceKind());
+                }
+
+                // A claim younger than two minutes belongs to a live request (possibly in
+                // another application instance). Older claims are safe to resume with the
+                // same stable offer UUID; no second quota unit is consumed.
+                if (current.getUpdatedAt() != null
+                        && current.getUpdatedAt().isAfter(OffsetDateTime.now().minusMinutes(2))) {
+                    return new MobileOfferClaim(
+                            MobileOfferClaimState.IN_PROGRESS, current.getVideoOfferId(),
+                            current.getBitrixMemberId(), current.getCrmEntityType(), current.getCrmEntityId(), current.getSourceKind());
+                }
+                current.renewConsumingClaim();
+                repository.saveAndFlush(current);
+                return new MobileOfferClaim(
+                        MobileOfferClaimState.CLAIMED, current.getVideoOfferId(),
+                        current.getBitrixMemberId(), current.getCrmEntityType(), current.getCrmEntityId(), current.getSourceKind());
+            }
+            if (current.getStatus() == MobileVideoUploadStatus.ERROR) {
+                throw new IllegalArgumentException("Видео не удалось обработать: " + current.getErrorMessage());
+            }
+            if (current.getStatus() != MobileVideoUploadStatus.READY) {
+                throw new IllegalArgumentException("Видео ещё не готово. Дождитесь окончания обработки");
+            }
+
+            current.bindTenantContext(context.tenantId(), context.bitrixUserId());
+            storageQuotaService.assertCanReserve(context.tenantId(), finalBytes, current.getStorageReservedBytes());
+            accessService.consumeOfferAfterAccessCheck(context);
+
+            UUID stableOfferId = UUID.randomUUID();
+            current.markConsuming(stableOfferId, finalBytes, context.tenantId(), context.bitrixUserId());
+            repository.saveAndFlush(current);
+            log.info("Mobile upload atomically claimed for offer creation: uploadId={}, offerId={}, tenantId={}, userId={}, reservedBytes={}",
+                    uploadId, stableOfferId, context.tenantId(), context.bitrixUserId(), finalBytes);
+            return new MobileOfferClaim(
+                    MobileOfferClaimState.CLAIMED, stableOfferId,
+                    current.getBitrixMemberId(), current.getCrmEntityType(), current.getCrmEntityId(), current.getSourceKind());
+        });
+    }
+
+    private MobileVideoUpload finalizeMobileOfferClaim(
+            UUID uploadId, String uploadToken, UUID offerId, Long tenantId) {
+        return transactionTemplate.execute(status -> {
+            // Clearing the upload reservation is an accounting mutation, therefore
+            // it is serialized by the same tenant row used by quota admission.
+            storageQuotaService.lockTenantAccounting(tenantId);
+            MobileVideoUpload current = repository.findByIdForUpdate(uploadId)
+                    .orElseThrow(() -> new NoSuchElementException("Сессия записи видео не найдена"));
+            verifyToken(current, uploadToken);
+            if (current.getStatus() == MobileVideoUploadStatus.CONSUMED) return current;
+            if (current.getStatus() != MobileVideoUploadStatus.CONSUMING
+                    || current.getVideoOfferId() == null
+                    || !current.getVideoOfferId().equals(offerId)) {
+                throw new IllegalStateException("Состояние мобильной загрузки изменилось во время создания видеооффера");
+            }
+            current.markConsumed(offerId);
+            return repository.saveAndFlush(current);
+        });
+    }
+
+    private void recoverFailedMobileOfferClaim(UUID uploadId, String uploadToken, UUID offerId) {
+        VideoOffer existing = videoOfferService.findOrNull(offerId);
+        if (existing != null && existing.getStatus() == ru.abs7.videooffer.offer.VideoOfferStatus.READY) {
+            finalizeMobileOfferClaim(uploadId, uploadToken, offerId, existing.getTenantId());
+            videoOfferService.deliverReadyLinkAsync(offerId);
+            return;
+        }
+
+        MobileVideoUpload claimSnapshot = repository.findById(uploadId).orElse(null);
+        Long tenantId = claimSnapshot == null ? null : claimSnapshot.getTenantId();
+        transactionTemplate.executeWithoutResult(status -> {
+            storageQuotaService.lockTenantAccounting(tenantId);
+            MobileVideoUpload current = repository.findByIdForUpdate(uploadId).orElse(null);
+            if (current == null) return;
+            verifyToken(current, uploadToken);
+            if (current.getStatus() != MobileVideoUploadStatus.CONSUMING
+                    || current.getVideoOfferId() == null
+                    || !current.getVideoOfferId().equals(offerId)) return;
+
+            accessService.releaseConsumedOffer(current.getTenantId(), current.getBitrixUserId());
+            String normalizedPath = current.getNormalizedFilePath();
+            if (normalizedPath != null && Files.isRegularFile(Path.of(normalizedPath))) {
+                current.releaseConsumingToReady();
+            } else {
+                current.markError("Не удалось создать видеооффер из подготовленного видео");
+            }
+            repository.saveAndFlush(current);
+        });
+    }
+
+    private void verifyUploadContext(MobileVideoUpload upload, BitrixPlacementContext context) {
         if (!context.memberId().equals(upload.getBitrixMemberId())
                 || context.entityType() != upload.getCrmEntityType()
                 || context.entityId() != upload.getCrmEntityId()) {
             throw new IllegalArgumentException("Видео относится к другому документу Bitrix24");
         }
-        if (upload.getStatus() == MobileVideoUploadStatus.CONSUMED && upload.getVideoOfferId() != null) {
-            return videoOfferService.response(videoOfferService.get(upload.getVideoOfferId()));
+        if (upload.getTenantId() != null && context.tenantId() != null
+                && !upload.getTenantId().equals(context.tenantId())) {
+            throw new IllegalArgumentException("Видео относится к другой компании Video Offer");
         }
-        if (upload.getStatus() == MobileVideoUploadStatus.ERROR) {
-            throw new IllegalArgumentException("Видео не удалось обработать: " + upload.getErrorMessage());
-        }
-        if (upload.getStatus() != MobileVideoUploadStatus.READY || upload.getNormalizedFilePath() == null) {
-            throw new IllegalArgumentException("Видео ещё не готово. Дождитесь окончания обработки");
-        }
-        Path normalized = Path.of(upload.getNormalizedFilePath());
-        long finalBytes = Files.size(normalized);
-        accessService.ensureStorageAvailable(context.tenantId(), finalBytes);
-        accessService.consumeOffer(context);
-
-        VideoOffer offer;
-        try {
-            offer = videoOfferService.createReadyFromMobile(
-                    upload.getCrmEntityType(),
-                    upload.getCrmEntityId(),
-                    upload.getBitrixMemberId(),
-                    context.bitrixUserId(),
-                    context.tenantId(),
-                    normalized,
-                    request.accompanyingText(),
-                    request.clientMessage(),
-                    ViewNotificationGoal.orDefault(request.viewNotificationGoal()),
-                    switch (upload.getSourceKind()) {
-                        case FILE -> "uploaded-file-h264";
-                        case MERGED -> "mixed-recording-h264";
-                        case RECORDING -> "recorded-h264";
-                    });
-        } catch (IOException | RuntimeException error) {
-            accessService.releaseConsumedOffer(context);
-            throw error;
-        }
-
-        MobileVideoUpload consumed = transactionTemplate.execute(status -> {
-            MobileVideoUpload current = repository.findByIdForUpdate(uploadId)
-                    .orElseThrow(() -> new NoSuchElementException("Сессия записи видео не найдена"));
-            verifyToken(current, request.uploadToken());
-            if (current.getStatus() != MobileVideoUploadStatus.CONSUMED) {
-                current.markConsumed(offer.getId());
-                repository.saveAndFlush(current);
-            }
-            return current;
-        });
-        log.info("Mobile video upload consumed by video offer: uploadId={}, offerId={}, entityType={}, entityId={}",
-                consumed.getId(), offer.getId(), offer.getCrmEntityType(), offer.getCrmEntityId());
-        return videoOfferService.response(offer);
     }
 
     public Path previewFile(UUID uploadId, String uploadToken) {
@@ -490,21 +668,86 @@ public class MobileVideoUploadService {
         return Path.of(path);
     }
 
-    public void cleanupExpired() {
-        for (MobileVideoUpload upload : repository.findAllByExpiresAtBefore(OffsetDateTime.now())) {
+    public void recoverStaleConsumingClaims() {
+        OffsetDateTime staleBefore = OffsetDateTime.now().minusMinutes(2);
+        for (MobileVideoUpload candidate : repository.findAllByStatusAndUpdatedAtBefore(
+                MobileVideoUploadStatus.CONSUMING, staleBefore)) {
+            ReentrantLock fileLock = lockFor(candidate.getId());
+            if (!fileLock.tryLock()) continue;
             try {
-                deleteIfPresent(upload.getSourceFilePath());
-                deletePartFiles(upload.getId());
-                uploadFileLocks.remove(upload.getId());
-                if (upload.getStatus() != MobileVideoUploadStatus.CONSUMED) {
-                    deleteIfPresent(upload.getNormalizedFilePath());
+                UUID[] readyOffer = new UUID[1];
+                transactionTemplate.executeWithoutResult(status -> {
+                    storageQuotaService.lockTenantAccounting(candidate.getTenantId());
+                    MobileVideoUpload current = repository.findByIdForUpdate(candidate.getId()).orElse(null);
+                    if (current == null || current.getStatus() != MobileVideoUploadStatus.CONSUMING
+                            || current.getUpdatedAt() == null || current.getUpdatedAt().isAfter(staleBefore)) return;
+
+                    VideoOffer existing = videoOfferService.findOrNull(current.getVideoOfferId());
+                    if (existing != null && existing.getStatus() == ru.abs7.videooffer.offer.VideoOfferStatus.READY) {
+                        current.markConsumed(existing.getId());
+                        repository.saveAndFlush(current);
+                        readyOffer[0] = existing.getId();
+                        return;
+                    }
+
+                    accessService.releaseConsumedOffer(current.getTenantId(), current.getBitrixUserId());
+                    UUID staleOfferId = current.getVideoOfferId();
+                    String normalizedPath = current.getNormalizedFilePath();
+                    if (normalizedPath != null && Files.isRegularFile(Path.of(normalizedPath))) {
+                        current.releaseConsumingToReady();
+                        log.warn("Recovered stale mobile offer claim back to READY: uploadId={}, offerId={}",
+                                current.getId(), staleOfferId);
+                    } else {
+                        current.markError("Прервано создание видеооффера; подготовленный файл не найден");
+                    }
+                    repository.saveAndFlush(current);
+                });
+                if (readyOffer[0] != null) videoOfferService.deliverReadyLinkAsync(readyOffer[0]);
+            } catch (Exception error) {
+                log.warn("Cannot recover stale mobile offer claim: uploadId={}, error={}",
+                        candidate.getId(), error.getMessage(), error);
+            } finally {
+                fileLock.unlock();
+            }
+        }
+    }
+
+    public void cleanupExpired() {
+        for (MobileVideoUpload candidate : repository.findAllByExpiresAtBefore(OffsetDateTime.now())) {
+            ReentrantLock fileLock = lockFor(candidate.getId());
+            if (!fileLock.tryLock()) continue;
+            try {
+                MobileVideoUpload removed = transactionTemplate.execute(status -> {
+                    storageQuotaService.lockTenantAccounting(candidate.getTenantId());
+                    MobileVideoUpload current = repository.findByIdForUpdate(candidate.getId()).orElse(null);
+                    if (current == null || current.getExpiresAt() == null
+                            || !current.getExpiresAt().isBefore(OffsetDateTime.now())) {
+                        return null;
+                    }
+                    if (current.getStatus() == MobileVideoUploadStatus.CONSUMING) {
+                        accessService.releaseConsumedOffer(current.getTenantId(), current.getBitrixUserId());
+                    }
+                    repository.delete(current);
+                    repository.flush();
+                    return current;
+                });
+                if (removed == null) continue;
+
+                // Delete physical files only after the durable row (and any active
+                // reservation) has been removed atomically.
+                deleteIfPresent(removed.getSourceFilePath());
+                deletePartFiles(removed.getId());
+                if (removed.getStatus() != MobileVideoUploadStatus.CONSUMED) {
+                    deleteIfPresent(removed.getNormalizedFilePath());
                 }
-                repository.delete(upload);
                 log.info("Expired mobile video upload removed: uploadId={}, status={}",
-                        upload.getId(), upload.getStatus());
+                        removed.getId(), removed.getStatus());
             } catch (Exception error) {
                 log.warn("Cannot clean expired mobile video upload: uploadId={}, error={}",
-                        upload.getId(), error.getMessage(), error);
+                        candidate.getId(), error.getMessage(), error);
+            } finally {
+                fileLock.unlock();
+                uploadFileLocks.remove(candidate.getId(), fileLock);
             }
         }
     }
@@ -615,6 +858,20 @@ public class MobileVideoUploadService {
             Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
         }
     }
+
+    private enum MobileOfferClaimState {
+        CLAIMED,
+        IN_PROGRESS,
+        ALREADY_CONSUMED
+    }
+
+    private record MobileOfferClaim(
+            MobileOfferClaimState state,
+            UUID offerId,
+            String memberId,
+            ru.abs7.videooffer.offer.CrmEntityType entityType,
+            long entityId,
+            MobileVideoSourceKind sourceKind) {}
 
     private long elapsedMillis(long startedAt) {
         return (System.nanoTime() - startedAt) / 1_000_000L;

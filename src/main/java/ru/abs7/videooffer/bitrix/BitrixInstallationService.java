@@ -166,7 +166,7 @@ public class BitrixInstallationService {
      * Non-destructive startup self-healing: only creates missing production
      * placements. Existing handlers are never unbound on restart.
      */
-    @Async
+    @Async("systemAsyncExecutor")
     @EventListener(ApplicationReadyEvent.class)
     public void ensureDesktopPlacementsAfterStartup() {
         List<BitrixInstallation> installations = repository.findAll();
