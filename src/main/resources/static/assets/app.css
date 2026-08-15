@@ -136,7 +136,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--b24-blue); box-s
 /* Update 044: public row/column layout and extended page-builder blocks */
 .public-builder-card{gap:14px}
 .vo-public-row{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px;align-items:stretch;width:100%;min-width:0}
-.vo-public-block{grid-column:span var(--vo-span,12);min-width:0;overflow-wrap:anywhere}
+.vo-public-block{grid-column:span var(--vo-span,12);min-width:0;overflow-wrap:anywhere}.vo-public-block.valign-top{align-self:start}.vo-public-block.valign-center{align-self:center}.vo-public-block.valign-bottom{align-self:end}
 .vo-public-block>*{max-width:100%}
 .vo-public-video-frame,.vo-public-video-frame video{width:100%;max-width:100%}
 .vo-public-image-frame{position:relative;overflow:hidden}

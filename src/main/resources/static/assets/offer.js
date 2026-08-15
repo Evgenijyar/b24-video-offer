@@ -116,7 +116,7 @@ function renderBlock(block, data, content) {
     const c = block.config || {};
     const visibility = block.visibility === 'DESKTOP' ? 'vo-public-desktop-only' : block.visibility === 'MOBILE' ? 'vo-public-mobile-only' : '';
     const span = normalizedSpan(block.span);
-    const wrap = inner => `<section class="vo-public-block ${visibility}" style="--vo-span:${span}" data-block-id="${escapeHtml(block.id || '')}" data-block-type="${escapeHtml(block.type || '')}">${inner}</section>`;
+    const wrap = inner => `<section class="vo-public-block ${visibility} ${verticalAlignmentClass(c.verticalAlignment, 'TOP')}" style="--vo-span:${span}" data-block-id="${escapeHtml(block.id || '')}" data-block-type="${escapeHtml(block.type || '')}">${inner}</section>`;
     switch (block.type) {
         case 'HEADER': {
             // Legacy offer snapshots keep their original header forever. New templates no longer create HEADER blocks.
@@ -279,6 +279,8 @@ function alignmentValue(value, fallback = 'LEFT') {
     return ['LEFT', 'CENTER', 'RIGHT'].includes(normalized) ? normalized : fallback;
 }
 function alignmentClass(value, fallback = 'LEFT') { return 'align-' + alignmentValue(value, fallback).toLowerCase(); }
+function verticalAlignmentValue(value, fallback = 'TOP') { const normalized = String(value || fallback).toUpperCase(); return ['TOP','CENTER','BOTTOM'].includes(normalized) ? normalized : fallback; }
+function verticalAlignmentClass(value, fallback = 'TOP') { return 'valign-' + verticalAlignmentValue(value, fallback).toLowerCase(); }
 function textInlineStyle(c, fallbackAlignment = 'LEFT') {
     const parts = [];
     const family = FONT_STACKS[String(c.fontFamily || 'DEFAULT').toUpperCase()];

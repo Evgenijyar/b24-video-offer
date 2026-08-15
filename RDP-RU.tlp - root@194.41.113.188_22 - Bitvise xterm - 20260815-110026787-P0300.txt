@@ -1,0 +1,461 @@
+﻿Welcome to Ubuntu 24.04.4 LTS (GNU/Linux 6.8.0-100-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+
+ System information as of Sat Aug 15 04:24:04 UTC 2026
+
+  System load:  0.02               Processes:             139
+  Usage of /:   28.3% of 57.08GB   Users logged in:       0
+  Memory usage: 72%                IPv4 address for eth0: 194.41.113.188
+  Swap usage:   25%
+
+  => There are 6 zombie processes.
+
+ * Strictly confined Kubernetes makes edge and IoT secure. Learn how MicroK8s
+   just raised the bar for easy, resilient and secure K8s cluster deployment.
+
+   https://ubuntu.com/engage/secure-kubernetes-at-the-edge
+
+Expanded Security Maintenance for Applications is not enabled.
+
+33 updates can be applied immediately.
+1 of these updates is a standard security update.
+To see these additional updates run: apt list --upgradable
+
+2 additional security updates can be applied with ESM Apps.
+Learn more about enabling ESM Apps service at https://ubuntu.com/esm
+
+
+*** System restart required ***
+Last login: Fri Aug 14 20:58:49 2026 from 216.57.105.22
+root@VM-988676:~# cd /opt/b24-video-offer
+root@VM-988676:/opt/b24-video-offer# python3 deploy.py
++ git fetch origin
+remote: Enumerating objects: 41, done.
+remote: Counting objects: 100% (41/41), done.
+remote: Compressing objects: 100% (3/3), done.
+remote: Total 21 (delta 15), reused 21 (delta 15), pack-reused 0 (from 0)
+Unpacking objects: 100% (21/21), 16.68 KiB | 569.00 KiB/s, done.
+From https://github.com/Evgenijyar/b24-video-offer
+   3c7f04b..5eaff79  main       -> origin/main
++ git reset --hard origin/main
+HEAD is now at 5eaff79 page constructor 4
++ docker compose build --pull
+[+] Building 28.4s (19/19) FINISHED
+ => [internal] load local bake definitions                                                     0.0s
+ => => reading from stdin 516B                                                                 0.0s
+ => [internal] load build definition from Dockerfile                                           0.0s
+ => => transferring dockerfile: 1.87kB                                                         0.0s
+ => [internal] load metadata for docker.io/library/eclipse-temurin:21-jre                      0.7s
+ => [internal] load metadata for docker.io/library/maven:3.9.16-eclipse-temurin-21             0.7s
+ => [internal] load .dockerignore                                                              0.0s
+ => => transferring context: 2B                                                                0.0s
+ => [build 1/6] FROM docker.io/library/maven:3.9.16-eclipse-temurin-21@sha256:c07f7ccfb8ca6c9  0.1s
+ => => resolve docker.io/library/maven:3.9.16-eclipse-temurin-21@sha256:c07f7ccfb8ca6c9fa29ee  0.1s
+ => [internal] load build context                                                              0.1s
+ => => transferring context: 200.81kB                                                          0.1s
+ => [stage-1 1/5] FROM docker.io/library/eclipse-temurin:21-jre@sha256:371da296b8cb74c7e53fbe  0.1s
+ => => resolve docker.io/library/eclipse-temurin:21-jre@sha256:371da296b8cb74c7e53fbe7083d537  0.1s
+ => CACHED [build 2/6] WORKDIR /workspace                                                      0.0s
+ => CACHED [build 3/6] COPY pom.xml pom.xml                                                    0.0s
+ => CACHED [build 4/6] RUN mvn -q -DskipTests dependency:go-offline                            0.0s
+ => [build 5/6] COPY src src                                                                   0.3s
+ => [build 6/6] RUN mvn -q -DskipTests package                                                16.0s
+ => CACHED [stage-1 2/5] WORKDIR /app                                                          0.0s
+ => CACHED [stage-1 3/5] RUN apt-get update     && apt-get install -y --no-install-recommends  0.0s
+ => [stage-1 4/5] COPY --from=build /workspace/target/b24-video-offer-*.jar app.jar            0.3s
+ => [stage-1 5/5] RUN mkdir -p /app/data/videos /app/data/mobile-uploads /app/data/external-i  0.4s
+ => exporting to image                                                                         4.6s
+ => => exporting layers                                                                        3.7s
+ => => exporting manifest sha256:3b793413937f35d49951df8b6ea8d319f26a94c9022742675abc56e3ba2b  0.0s
+ => => exporting config sha256:82496a1c565e43e0f106f123099a1ae3f943b4fc0f321da156e40c5fd8d494  0.0s
+ => => exporting attestation manifest sha256:b7f43677a4847d4f1a600adb153790d5461ab8218e37b1d2  0.0s
+ => => exporting manifest list sha256:80894f9409b1562c870f0d06c1b7055c5cb09f80a5594dff51c64d5  0.0s
+ => => naming to docker.io/library/b24-video-offer-app:latest                                  0.0s
+ => => unpacking to docker.io/library/b24-video-offer-app:latest                               0.7s
+ => resolving provenance for metadata file                                                     0.0s
+[+] build 1/1
+ ✔ Image b24-video-offer-app Built                                                             28.6s
++ docker compose up -d --remove-orphans
+WARN[0000] volume "b24-video-offer_video_offer_data" already exists but was not created by Docker Co
+mpose. Use `external: true` to use an existing volume
+[+] up 1/1
+ ✔ Container b24-video-offer Started                                                            3.6s
++ docker compose exec -T app sh -lc test -x /usr/bin/ffmpeg && test -x /usr/bin/ffprobe && /usr/bin/
+ffmpeg -version | head -n 1 && /usr/bin/ffprobe -version | head -n 1
+ffmpeg version 8.0.1-3ubuntu2 Copyright (c) 2000-2025 the FFmpeg developers
+ffprobe version 8.0.1-3ubuntu2 Copyright (c) 2007-2025 the FFmpeg developers
+Deployment completed successfully.
++ docker compose ps
+NAME              IMAGE                 COMMAND                  SERVICE   CREATED          STATUS
+        PORTS
+b24-video-offer   b24-video-offer-app   "java -jar /app/app.…"   app       27 seconds ago   Up 23 se
+conds   127.0.0.1:8080->8080/tcp
+root@VM-988676:/opt/b24-video-offer# docker logs -f --tail=200 b24-video-offer
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.0.5)
+
+2026-08-15T07:50:54.403Z INFO  [main] [requestId=] ru.abs7.videooffer.B24VideoOfferApplication - Sta
+rting B24VideoOfferApplication v0.1.0-SNAPSHOT using Java 21.0.11 with PID 1 (/app/app.jar started b
+y root in /app)
+2026-08-15T07:50:54.416Z INFO  [main] [requestId=] ru.abs7.videooffer.B24VideoOfferApplication - No
+active profile set, falling back to 1 default profile: "default"
+2026-08-15T07:50:56.247Z INFO  [main] [requestId=] o.s.d.r.config.RepositoryConfigurationDelegate -
+Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-08-15T07:50:56.370Z INFO  [main] [requestId=] o.s.d.r.config.RepositoryConfigurationDelegate -
+Finished Spring Data repository scanning in 108 ms. Found 7 JPA repository interfaces.
+2026-08-15T07:50:57.448Z INFO  [main] [requestId=] org.springframework.boot.tomcat.TomcatWebServer -
+ Tomcat initialized with port 8080 (http)
+2026-08-15T07:50:57.479Z INFO  [main] [requestId=] org.apache.catalina.core.StandardService - Starti
+ng service [Tomcat]
+2026-08-15T07:50:57.481Z INFO  [main] [requestId=] org.apache.catalina.core.StandardEngine - Startin
+g Servlet engine: [Apache Tomcat/11.0.20]
+2026-08-15T07:50:57.529Z INFO  [main] [requestId=] o.s.b.w.c.s.WebApplicationContextInitializer - Ro
+ot WebApplicationContext: initialization completed in 2919 ms
+2026-08-15T07:50:58.416Z INFO  [main] [requestId=] com.zaxxer.hikari.HikariDataSource - HikariPool-1
+ - Starting...
+2026-08-15T07:50:59.762Z INFO  [main] [requestId=] com.zaxxer.hikari.pool.HikariPool - HikariPool-1
+- Added connection org.postgresql.jdbc.PgConnection@7ab33ca8
+2026-08-15T07:50:59.766Z INFO  [main] [requestId=] com.zaxxer.hikari.HikariDataSource - HikariPool-1
+ - Start completed.
+2026-08-15T07:50:59.893Z INFO  [main] [requestId=] org.flywaydb.core.FlywayExecutor - Database: jdbc
+:postgresql://45.11.92.142:5433/b24_video_offer (PostgreSQL 16.14)
+2026-08-15T07:51:00.859Z INFO  [main] [requestId=] org.flywaydb.core.internal.command.DbValidate - S
+uccessfully validated 13 migrations (execution time 00:00.317s)
+2026-08-15T07:51:01.657Z INFO  [main] [requestId=] org.flywaydb.core.internal.command.DbMigrate - Cu
+rrent version of schema "public": 13
+2026-08-15T07:51:01.723Z INFO  [main] [requestId=] org.flywaydb.core.internal.command.DbMigrate - Sc
+hema "public" is up to date. No migration necessary.
+2026-08-15T07:51:02.317Z INFO  [main] [requestId=] org.hibernate.orm.jpa - HHH008540: Processing Per
+sistenceUnitInfo [name: default]
+2026-08-15T07:51:02.408Z INFO  [main] [requestId=] org.hibernate.orm.core - HHH000001: Hibernate ORM
+ core version 7.2.7.Final
+2026-08-15T07:51:03.206Z INFO  [main] [requestId=] o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTime
+Weaver setup: ignoring JPA class transformer
+2026-08-15T07:51:03.715Z INFO  [main] [requestId=] org.hibernate.orm.connections.pooling - HHH100010
+05: Database info:
+        Database JDBC URL [jdbc:postgresql://45.11.92.142:5433/b24_video_offer]
+        Database driver: PostgreSQL JDBC Driver
+        Database dialect: PostgreSQLDialect
+        Database version: 16.14
+        Default catalog/schema: b24_video_offer/public
+        Autocommit mode: undefined/unknown
+        Isolation level: READ_COMMITTED [default READ_COMMITTED]
+        JDBC fetch size: none
+        Pool: DataSourceConnectionProvider
+        Minimum pool size: undefined/unknown
+        Maximum pool size: undefined/unknown
+2026-08-15T07:51:05.231Z INFO  [main] [requestId=] org.hibernate.orm.core - HHH000489: No JTA platfo
+rm available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-08-15T07:51:05.571Z INFO  [main] [requestId=] o.s.o.jpa.LocalContainerEntityManagerFactoryBean
+- Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-08-15T07:51:05.719Z INFO  [main] [requestId=] o.s.d.j.repository.query.QueryEnhancerFactories -
+ Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-08-15T07:51:07.941Z INFO  [main] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader -
+ Kontur HTTP transport configured: mode=HTTP_PROXY, proxyHost=216.57.105.22, proxyPort=31289, authen
+ticationConfigured=true, connectTimeoutSeconds=15, readTimeoutSeconds=120
+2026-08-15T07:51:07.975Z INFO  [main] [requestId=] ru.abs7.videooffer.kontur.KonturVideoDownloader -
+ Kontur downloader initialized: baseUrl=https://rko7.ktalk.ru/, storageDir=./data/videos, connectTim
+eoutSeconds=15, readTimeoutSeconds=120, stallWarningSeconds=30, maxParallelParts=8, parallelThreshol
+dBytes=33554432, proxyEnabled=true, proxyHost=216.57.105.22, proxyPort=31289, proxyAuthenticationCon
+figured=true
+2026-08-15T07:51:08.738Z INFO  [main] [requestId=] r.a.v.bitrix.mobile.upload.MobileVideoTranscoder
+- Mobile media tools ready: ffmpeg=ffmpeg, ffprobe=ffprobe, ffmpegVersion=ffmpeg version 8.0.1-3ubun
+tu2 Copyright (c) 2000-2025 the FFmpeg developers, ffprobeVersion=ffprobe version 8.0.1-3ubuntu2 Cop
+yright (c) 2007-2025 the FFmpeg developers
+2026-08-15T07:51:10.725Z INFO  [main] [requestId=] ru.abs7.videooffer.source.YtDlpVideoDownloader -
+External video tools ready: ytDlp=yt-dlp, ytDlpVersion=2026.06.09, deno=deno, denoVersion=deno 2.8.1
+ (stable, release, x86_64-unknown-linux-gnu), maxDownloadBytes=1073741824
+2026-08-15T07:51:10.857Z INFO  [main] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestClient - Bitr
+ix HTTP transport configured: mode=HTTP_PROXY, proxySource=TALK_PROXY, proxyHost=216.57.105.22, prox
+yPort=31289, proxyAuthenticationConfigured=true, connectTimeoutSeconds=15, readTimeoutSeconds=45, pr
+oactiveRefreshAheadSeconds=120
+2026-08-15T07:51:11.083Z INFO  [main] [requestId=] ru.abs7.videooffer.tenant.BitrixWebhookClient - B
+itrix webhook HTTP transport configured: mode=HTTP_PROXY, proxySource=TALK_PROXY, proxyHost=216.57.1
+05.22, proxyPort=31289, proxyAuthenticationConfigured=true, connectTimeoutSeconds=10, readTimeoutSec
+onds=20
+2026-08-15T07:51:11.155Z INFO  [main] [requestId=] r.a.v.concurrency.TenantFairVideoScheduler - Tena
+nt-fair video scheduler initialized: globalLimit=3, perTenantLimit=2, queueCapacity=500
+2026-08-15T07:51:11.355Z INFO  [main] [requestId=] ru.abs7.videooffer.offer.VideoOfferService - Vide
+oOfferService initialized: publicBaseUrl=https://offer.abs7.ru, retentionDays=7, videoStorageDir=/ap
+p/data/videos
+2026-08-15T07:51:11.663Z INFO  [main] [requestId=] r.a.v.b.mobile.upload.MobileVideoUploadService -
+MobileVideoUploadService initialized: uploadDirectory=/app/data/mobile-uploads, maxUploadBytes=53687
+0912, maxChunkBytes=16777216, maxManualFileBytes=104857600, retentionHours=24
+2026-08-15T07:51:11.807Z INFO  [main] [requestId=] o.s.b.w.autoconfigure.WelcomePageHandlerMapping -
+ Adding welcome page: class path resource [static/index.html]
+2026-08-15T07:51:12.379Z INFO  [main] [requestId=] org.springframework.boot.tomcat.TomcatWebServer -
+ Tomcat started on port 8080 (http) with context path '/'
+2026-08-15T07:51:12.393Z INFO  [main] [requestId=] ru.abs7.videooffer.B24VideoOfferApplication - Sta
+rted B24VideoOfferApplication in 19.064 seconds (process running for 20.282)
+2026-08-15T07:51:12.740Z INFO  [main] [requestId=] r.a.videooffer.offer.VideoOfferLifecycleService -
+ Checking interrupted video offers after application startup
+2026-08-15T07:51:12.782Z INFO  [system-async-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallatio
+nService - Ensuring Bitrix desktop placements after startup: count=1
+2026-08-15T07:51:12.783Z INFO  [system-async-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestCli
+ent - Bitrix REST call started: memberId=419222a0c1725a38175958981810edd7, method=placement.get, par
+ameterNames=[]
+2026-08-15T07:51:12.807Z INFO  [main] [requestId=] ru.abs7.videooffer.offer.VideoOfferService - Pend
+ing video offers selected for recovery: count=0
+2026-08-15T07:51:12.864Z INFO  [system-async-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestCli
+ent - Executing Bitrix REST request: memberId=419222a0c1725a38175958981810edd7, domain=abs7.bitrix24
+.ru, method=placement.get, endpoint=https://abs7.bitrix24.ru/rest/placement.get.json, tokenExpiresAt
+=2026-08-15T08:15:22.730976Z
+2026-08-15T07:51:13.592Z INFO  [system-async-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestCli
+ent - Bitrix REST response received: memberId=419222a0c1725a38175958981810edd7, method=placement.get
+, durationMs=728, responseKeys=[result, time]
+2026-08-15T07:51:13.593Z INFO  [system-async-1] [requestId=] ru.abs7.videooffer.bitrix.BitrixRestCli
+ent - Bitrix REST call completed: memberId=419222a0c1725a38175958981810edd7, method=placement.get, d
+urationMs=810, responseKeys=[result, time]
+2026-08-15T07:51:13.594Z INFO  [system-async-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallatio
+nService - Bitrix placement already bound: memberId=419222a0c1725a38175958981810edd7, placement=CRM_
+DEAL_DETAIL_ACTIVITY
+2026-08-15T07:51:13.594Z INFO  [system-async-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallatio
+nService - Bitrix placement already bound: memberId=419222a0c1725a38175958981810edd7, placement=CRM_
+LEAD_DETAIL_ACTIVITY
+2026-08-15T07:51:13.594Z INFO  [system-async-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallatio
+nService - Bitrix placement already bound: memberId=419222a0c1725a38175958981810edd7, placement=CRM_
+CONTACT_DETAIL_ACTIVITY
+2026-08-15T07:51:13.594Z INFO  [system-async-1] [requestId=] r.a.videooffer.bitrix.BitrixInstallatio
+nService - Bitrix desktop placement startup check completed: domain=abs7.bitrix24.ru, memberId=41922
+2a0c1725a38175958981810edd7, placements={CRM_DEAL_DETAIL_ACTIVITY=ALREADY_BOUND, CRM_LEAD_DETAIL_ACT
+IVITY=ALREADY_BOUND, CRM_CONTACT_DETAIL_ACTIVITY=ALREADY_BOUND}
+2026-08-15T07:51:14.400Z INFO  [http-nio-8080-exec-1] [requestId=] o.a.c.c.ContainerBase.[Tomcat].[l
+ocalhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-08-15T07:51:14.400Z INFO  [http-nio-8080-exec-1] [requestId=] o.springframework.web.servlet.Dis
+patcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-08-15T07:51:14.404Z INFO  [http-nio-8080-exec-1] [requestId=] o.springframework.web.servlet.Dis
+patcherServlet - Completed initialization in 4 ms
+2026-08-15T07:51:14.412Z INFO  [http-nio-8080-exec-1] [requestId=f5fa75ac-27ca-499d-8863-04999aae46a
+e] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/heal
+th, remoteAddress=172.18.0.1, userAgent=Python-urllib/3.12
+2026-08-15T07:51:14.471Z INFO  [http-nio-8080-exec-1] [requestId=f5fa75ac-27ca-499d-8863-04999aae46a
+e] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/he
+alth, status=200, durationMs=60
+2026-08-15T07:53:09.349Z INFO  [http-nio-8080-exec-2] [requestId=b17065b6-9f93-4fa5-a9e8-d556529ede2
+0] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/backoffi
+ce, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537
+.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-15T07:53:09.396Z INFO  [http-nio-8080-exec-2] [requestId=b17065b6-9f93-4fa5-a9e8-d556529ede2
+0] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/backof
+fice, status=200, durationMs=46
+2026-08-15T07:53:09.499Z INFO  [http-nio-8080-exec-4] [requestId=4e8835cf-5a69-4879-82f2-d9e58cf0937
+8] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/assets/b
+ackoffice.css, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) Appl
+eWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-15T07:53:09.520Z INFO  [http-nio-8080-exec-4] [requestId=4e8835cf-5a69-4879-82f2-d9e58cf0937
+8] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/assets
+/backoffice.css, status=200, durationMs=21
+2026-08-15T07:53:11.174Z INFO  [http-nio-8080-exec-5] [requestId=891543c0-44ef-4651-9abf-02f475b21e8
+1] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/api/bac
+koffice/login, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) Appl
+eWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-15T07:53:11.300Z INFO  [http-nio-8080-exec-5] [requestId=891543c0-44ef-4651-9abf-02f475b21e8
+1] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/api/b
+ackoffice/login, status=200, durationMs=125
+2026-08-15T07:53:11.392Z INFO  [http-nio-8080-exec-6] [requestId=7853fb40-6de3-425c-8b65-79a89eb6639
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/backoffi
+ce, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537
+.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-15T07:53:11.399Z INFO  [http-nio-8080-exec-6] [requestId=7853fb40-6de3-425c-8b65-79a89eb6639
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/backof
+fice, status=200, durationMs=6
+2026-08-15T07:53:11.604Z INFO  [http-nio-8080-exec-7] [requestId=2dae0009-be2d-4b0d-9150-fdeadb49e11
+8] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/assets/p
+age-builder.css, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) Ap
+pleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-15T07:53:11.605Z INFO  [http-nio-8080-exec-10] [requestId=a2aa56b1-c3ab-48d3-b010-a43616e1cf
+17] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/assets/
+page-builder.js, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) Ap
+pleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-15T07:53:11.607Z INFO  [http-nio-8080-exec-8] [requestId=8da7c36b-51b2-4aa4-a4e4-c5dcb5aafe7
+4] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/assets/b
+ackoffice.js, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) Apple
+WebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-15T07:53:11.603Z INFO  [http-nio-8080-exec-9] [requestId=771e974a-dbd9-4a3f-abd1-ff17d44b340
+4] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/assets/b
+ackoffice.css, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) Appl
+eWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-15T07:53:11.618Z INFO  [http-nio-8080-exec-7] [requestId=2dae0009-be2d-4b0d-9150-fdeadb49e11
+8] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/assets
+/page-builder.css, status=200, durationMs=13
+2026-08-15T07:53:11.620Z INFO  [http-nio-8080-exec-10] [requestId=a2aa56b1-c3ab-48d3-b010-a43616e1cf
+17] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/asset
+s/page-builder.js, status=200, durationMs=15
+2026-08-15T07:53:11.622Z INFO  [http-nio-8080-exec-8] [requestId=8da7c36b-51b2-4aa4-a4e4-c5dcb5aafe7
+4] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/assets
+/backoffice.js, status=200, durationMs=15
+2026-08-15T07:53:11.623Z INFO  [http-nio-8080-exec-9] [requestId=771e974a-dbd9-4a3f-abd1-ff17d44b340
+4] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/assets
+/backoffice.css, status=200, durationMs=19
+2026-08-15T07:53:12.566Z INFO  [http-nio-8080-exec-3] [requestId=bbda1f8d-5960-4c25-9782-f9aab6221ab
+6] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/back
+office/tenants, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) App
+leWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-15T07:53:13.198Z INFO  [http-nio-8080-exec-3] [requestId=bbda1f8d-5960-4c25-9782-f9aab6221ab
+6] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/ba
+ckoffice/tenants, status=200, durationMs=631
+2026-08-15T07:53:13.269Z INFO  [http-nio-8080-exec-1] [requestId=4bf88575-d6bb-45c6-a6bb-3398ef8714a
+3] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/back
+office/tenants/2, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) A
+ppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-15T07:53:13.801Z INFO  [http-nio-8080-exec-1] [requestId=4bf88575-d6bb-45c6-a6bb-3398ef8714a
+3] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/ba
+ckoffice/tenants/2, status=200, durationMs=532
+2026-08-15T07:53:14.995Z INFO  [http-nio-8080-exec-2] [requestId=2765e71b-afc9-41c7-b7b3-520cb5e2d63
+9] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/api/back
+office/tenants/2/page-template, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows NT 10.0;
+ Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-15T07:53:15.220Z INFO  [http-nio-8080-exec-2] [requestId=2765e71b-afc9-41c7-b7b3-520cb5e2d63
+9] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/api/ba
+ckoffice/tenants/2/page-template, status=200, durationMs=224
+2026-08-15T07:53:15.312Z INFO  [http-nio-8080-exec-4] [requestId=d92f0126-af65-425b-a3aa-9f751f8d842
+3] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/page-ass
+ets/2/d05b533443e04803bd85bd603ea99684, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows
+NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-15T07:53:15.321Z INFO  [http-nio-8080-exec-5] [requestId=58c17bea-ff94-48d6-a160-abefd53897e
+4] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/page-ass
+ets/2/102b0b7f06e64e0989e7313807958bfa, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows
+NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-15T07:53:15.325Z INFO  [http-nio-8080-exec-6] [requestId=ff96b309-8594-4997-8f4e-26e9ca47a95
+8] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/page-ass
+ets/2/e09d8554c4894fec94b2c3da324811bf, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows
+NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-15T07:53:15.358Z INFO  [http-nio-8080-exec-6] [requestId=ff96b309-8594-4997-8f4e-26e9ca47a95
+8] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/page-a
+ssets/2/e09d8554c4894fec94b2c3da324811bf, status=200, durationMs=33
+2026-08-15T07:53:15.370Z INFO  [http-nio-8080-exec-4] [requestId=d92f0126-af65-425b-a3aa-9f751f8d842
+3] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/page-a
+ssets/2/d05b533443e04803bd85bd603ea99684, status=200, durationMs=57
+2026-08-15T07:53:15.383Z INFO  [http-nio-8080-exec-5] [requestId=58c17bea-ff94-48d6-a160-abefd53897e
+4] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/page-a
+ssets/2/102b0b7f06e64e0989e7313807958bfa, status=200, durationMs=62
+2026-08-15T07:55:49.958Z INFO  [http-nio-8080-exec-7] [requestId=84538efa-c1bc-4f1f-9cce-61f4f837b02
+0] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=POST, path=/api/bac
+koffice/tenants/2/page-template/assets, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows
+NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-15T07:55:50.609Z INFO  [http-nio-8080-exec-7] [requestId=84538efa-c1bc-4f1f-9cce-61f4f837b02
+0] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=POST, path=/api/b
+ackoffice/tenants/2/page-template/assets, status=200, durationMs=650
+2026-08-15T07:55:50.699Z INFO  [http-nio-8080-exec-10] [requestId=c99ffa73-232d-4516-abe9-30ea546b90
+f6] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/page-as
+sets/2/49576afc1f6542eaac286e3067bf9f00, remoteAddress=216.57.105.22, userAgent=Mozilla/5.0 (Windows
+ NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+2026-08-15T07:55:50.705Z INFO  [http-nio-8080-exec-10] [requestId=c99ffa73-232d-4516-abe9-30ea546b90
+f6] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/page-
+assets/2/49576afc1f6542eaac286e3067bf9f00, status=200, durationMs=6
+2026-08-15T07:56:19.199Z INFO  [http-nio-8080-exec-9] [requestId=9b4e1766-6180-4c61-af12-be510b70c70
+b] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/, remote
+Address=3.95.176.169, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
+ like Gecko) Chrome/136.0.0.0 Safari/537.36
+2026-08-15T07:56:19.224Z INFO  [http-nio-8080-exec-9] [requestId=9b4e1766-6180-4c61-af12-be510b70c70
+b] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/, stat
+us=200, durationMs=25
+2026-08-15T07:56:20.855Z INFO  [http-nio-8080-exec-8] [requestId=0ac2aca8-a543-4500-90a5-14678b48404
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request started: method=GET, path=/robots.t
+xt, remoteAddress=54.167.97.12, userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.
+36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36
+2026-08-15T07:56:20.864Z ERROR [http-nio-8080-exec-8] [requestId=0ac2aca8-a543-4500-90a5-14678b48404
+2] ru.abs7.videooffer.common.ApiExceptionHandler - Unhandled application error: error=No static reso
+urce robots.txt for request '/robots.txt'.
+
+org.springframework.web.servlet.resource.NoResourceFoundException: No static resource robots.txt for
+ request '/robots.txt'.
+        at org.springframework.web.servlet.resource.ResourceHttpRequestHandler.handleRequest(Resourc
+eHttpRequestHandler.java:527) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.mvc.HttpRequestHandlerAdapter.handle(HttpRequestHandlerAd
+apter.java:50) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963)
+~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~
+[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:100
+0) ~[spring-webmvc-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:892) ~[sprin
+g-webmvc-7.0.6.jar!/:7.0.6]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:622) ~[tomcat-embed-core-11.0.2
+0.jar!/:na]
+        at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spr
+ing-webmvc-7.0.6.jar!/:7.0.6]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.2
+0.jar!/:na]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53) ~[tomcat-embed-web
+socket-11.0.20.jar!/:na]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at ru.abs7.videooffer.common.RequestLoggingFilter.doFilterInternal(RequestLoggingFilter.java
+:40) ~[!/:0.1.0-SNAPSHOT]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter
+.java:100) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:
+93) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncoding
+Filter.java:199) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.springframework.web.filter.ForwardedHeaderFilter.doFilterInternal(ForwardedHeaderFilt
+er.java:174) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:11
+6) ~[spring-web-7.0.6.jar!/:7.0.6]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tom
+cat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomc
+at-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:492) ~[
+tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113) ~[tomcat-em
+bed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83) ~[tomcat-emb
+ed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72) ~[tomcat
+-embed-core-11.0.20.jar!/:na]
+        at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341) ~[tomcat-embe
+d-core-11.0.20.jar!/:na]
+        at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed
+-core-11.0.20.jar!/:na]
+        at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat
+-embed-core-11.0.20.jar!/:na]
+        at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~
+[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1779) ~[tom
+cat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-
+embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:946)
+~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:480)
+ ~[tomcat-embed-core-11.0.20.jar!/:na]
+        at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:57) ~[tomc
+at-embed-core-11.0.20.jar!/:na]
+        at java.base/java.lang.Thread.run(Unknown Source) ~[na:na]
+
+2026-08-15T07:56:20.878Z INFO  [http-nio-8080-exec-8] [requestId=0ac2aca8-a543-4500-90a5-14678b48404
+2] ru.abs7.videooffer.common.RequestLoggingFilter - HTTP request completed: method=GET, path=/robots
+.txt, status=500, durationMs=23

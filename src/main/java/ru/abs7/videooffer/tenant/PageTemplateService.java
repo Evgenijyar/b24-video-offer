@@ -35,6 +35,7 @@ public class PageTemplateService {
     private static final Set<String> TYPES = Set.of("VIDEO", "TEXT", "IMAGE", "FILE", "BUTTON", "ICON_TEXT", "DIVIDER", "EMBED");
     private static final Set<String> VISIBILITY = Set.of("ALL", "DESKTOP", "MOBILE");
     private static final Set<String> ALIGNMENT = Set.of("LEFT", "CENTER", "RIGHT");
+    private static final Set<String> VERTICAL_ALIGNMENT = Set.of("TOP", "CENTER", "BOTTOM");
     private static final Set<String> FONT_FAMILIES = Set.of("DEFAULT", "ARIAL", "VERDANA", "GEORGIA", "TIMES_NEW_ROMAN", "TREBUCHET_MS", "COURIER_NEW");
     private static final Set<String> IMAGE_EXT = Set.of("png", "jpg", "jpeg", "webp");
     private static final Set<String> VIDEO_EXT = Set.of("mp4", "webm");
@@ -488,6 +489,7 @@ public class PageTemplateService {
     private Map<String, Object> normalizeConfig(String type, Map<String, Object> raw, Long tenantId, String companyName) {
         Map<String, Object> c = raw == null ? Map.of() : raw;
         Map<String, Object> out = new LinkedHashMap<>();
+        out.put("verticalAlignment", verticalAlignment(c.get("verticalAlignment"), "TOP"));
         switch (type) {
             case "VIDEO" -> {
                 String source = string(c.get("source"), "MAIN").toUpperCase(Locale.ROOT);
@@ -625,6 +627,11 @@ public class PageTemplateService {
     private String alignment(Object value, String fallback) {
         String normalized = string(value, fallback).toUpperCase(Locale.ROOT);
         return ALIGNMENT.contains(normalized) ? normalized : fallback;
+    }
+
+    private String verticalAlignment(Object value, String fallback) {
+        String normalized = string(value, fallback).toUpperCase(Locale.ROOT);
+        return VERTICAL_ALIGNMENT.contains(normalized) ? normalized : fallback;
     }
 
     private String fontFamily(Object value) {
