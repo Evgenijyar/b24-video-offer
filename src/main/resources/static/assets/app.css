@@ -132,3 +132,29 @@ input:focus, select:focus, textarea:focus { border-color: var(--b24-blue); box-s
 
 /* Update 043: configurable alignment, image sizing and text typography */
 .vo-public-image-row,.vo-public-file-row,.vo-public-button-row{display:flex;width:100%}.vo-public-image-row.align-left,.vo-public-file-row.align-left,.vo-public-button-row.align-left{justify-content:flex-start}.vo-public-image-row.align-center,.vo-public-file-row.align-center,.vo-public-button-row.align-center{justify-content:center}.vo-public-image-row.align-right,.vo-public-file-row.align-right,.vo-public-button-row.align-right{justify-content:flex-end}.vo-public-image-link{display:block;width:100%;height:100%;text-decoration:none}.vo-public-image-frame{display:block;max-width:100%;overflow:hidden}.vo-public-image{display:block;max-width:100%;max-height:none}.vo-public-file{max-width:100%;width:auto}.vo-public-button{width:auto;max-width:100%}
+
+/* Update 044: public row/column layout and extended page-builder blocks */
+.public-builder-card{gap:14px}
+.vo-public-row{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px;align-items:stretch;width:100%;min-width:0}
+.vo-public-block{grid-column:span var(--vo-span,12);min-width:0;overflow-wrap:anywhere}
+.vo-public-block>*{max-width:100%}
+.vo-public-video-frame,.vo-public-video-frame video{width:100%;max-width:100%}
+.vo-public-image-frame{position:relative;overflow:hidden}
+.vo-public-icon-text{display:flex;align-items:center;width:100%;min-width:0}
+.vo-public-icon-text.align-left{justify-content:flex-start}.vo-public-icon-text.align-center{justify-content:center}.vo-public-icon-text.align-right{justify-content:flex-end}
+.vo-public-icon-link{display:inline-flex;align-items:center;gap:9px;min-width:0;max-width:100%;color:inherit;text-decoration:none}
+.vo-public-icon{display:inline-flex;flex:0 0 auto}.vo-public-icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.vo-public-icon-copy{min-width:0;white-space:normal;overflow-wrap:anywhere}
+.vo-public-embed{width:100%;min-width:0}
+.vo-public-button{white-space:normal;overflow-wrap:anywhere;text-align:center;transform-origin:center;transition:transform .16s ease,filter .16s ease,box-shadow .16s ease}
+.vo-public-button.depth-subtle{box-shadow:inset 0 -2px rgba(0,0,0,.12)}.vo-public-button.depth-raised{box-shadow:inset 0 -4px rgba(0,0,0,.17)}.vo-public-button.depth-deep{box-shadow:inset 0 -6px rgba(0,0,0,.24)}
+.vo-public-button.shadow-soft{box-shadow:0 5px 12px rgba(35,73,96,.14)}.vo-public-button.shadow-medium{box-shadow:0 8px 18px rgba(35,73,96,.22)}.vo-public-button.shadow-strong{box-shadow:0 12px 28px rgba(35,73,96,.3)}
+.vo-public-button.depth-subtle.shadow-soft{box-shadow:inset 0 -2px rgba(0,0,0,.12),0 5px 12px rgba(35,73,96,.14)}
+.vo-public-button.depth-raised.shadow-medium{box-shadow:inset 0 -4px rgba(0,0,0,.17),0 8px 18px rgba(35,73,96,.22)}
+.vo-public-button.depth-deep.shadow-strong{box-shadow:inset 0 -6px rgba(0,0,0,.24),0 12px 28px rgba(35,73,96,.3)}
+.vo-public-button.hover-none:hover{filter:none;transform:none}.vo-public-button.hover-lift:hover{filter:none;transform:translateY(-3px)}.vo-public-button.hover-grow:hover{filter:none;transform:scale(1.045)}.vo-public-button.hover-glow:hover{filter:none;box-shadow:0 0 0 4px color-mix(in srgb,var(--vo-button) 22%,transparent),0 0 22px color-mix(in srgb,var(--vo-button) 45%,transparent)}.vo-public-button.hover-brighten:hover{filter:brightness(1.12);transform:none}
+.vo-public-button.press-none:active{transform:none}.vo-public-button.press-press:active{transform:translateY(2px)}.vo-public-button.press-shrink:active{transform:scale(.95)}.vo-public-button.press-bounce:active{transform:scale(.91);transition-duration:.07s}
+@media(max-width:700px){.vo-public-row{grid-template-columns:repeat(12,minmax(0,1fr));gap:8px}.vo-public-block{grid-column:span var(--vo-span,12)}.vo-public-button{width:auto;max-width:100%}.vo-public-file{min-width:0;width:100%}}
+.vo-public-button{--vo-depth-shadow:0 0 0 transparent;--vo-outer-shadow:0 0 0 transparent;box-shadow:var(--vo-depth-shadow),var(--vo-outer-shadow)}
+.vo-public-button.depth-subtle{--vo-depth-shadow:inset 0 -2px rgba(0,0,0,.12)}.vo-public-button.depth-raised{--vo-depth-shadow:inset 0 -4px rgba(0,0,0,.17)}.vo-public-button.depth-deep{--vo-depth-shadow:inset 0 -6px rgba(0,0,0,.24)}
+.vo-public-button.shadow-soft{--vo-outer-shadow:0 5px 12px rgba(35,73,96,.14)}.vo-public-button.shadow-medium{--vo-outer-shadow:0 8px 18px rgba(35,73,96,.22)}.vo-public-button.shadow-strong{--vo-outer-shadow:0 12px 28px rgba(35,73,96,.3)}

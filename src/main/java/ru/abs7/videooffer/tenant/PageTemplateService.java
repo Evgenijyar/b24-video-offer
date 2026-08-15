@@ -24,15 +24,15 @@ import java.util.stream.Stream;
 @Service
 public class PageTemplateService {
     private static final Logger log = LoggerFactory.getLogger(PageTemplateService.class);
-    private static final int TEMPLATE_VERSION = 1;
-    private static final int MAX_BLOCKS_PER_TYPE = 3;
-    private static final int MAX_BLOCKS_TOTAL = 19;
+    private static final int TEMPLATE_VERSION = 2;
+    private static final int MAX_BLOCKS_PER_TYPE = 5;
+    private static final int MAX_BLOCKS_TOTAL = 40;
     private static final long IMAGE_MAX = 10L * 1024 * 1024;
     private static final long VIDEO_MAX = 100L * 1024 * 1024;
     private static final long FILE_MAX = 25L * 1024 * 1024;
     private static final Pattern SAFE_ID = Pattern.compile("[A-Za-z0-9_-]{1,100}");
     private static final Pattern HEX_COLOR = Pattern.compile("#[0-9a-fA-F]{6}");
-    private static final Set<String> TYPES = Set.of("HEADER", "VIDEO", "TEXT", "IMAGE", "FILE", "BUTTON", "DIVIDER");
+    private static final Set<String> TYPES = Set.of("VIDEO", "TEXT", "IMAGE", "FILE", "BUTTON", "ICON_TEXT", "DIVIDER", "EMBED");
     private static final Set<String> VISIBILITY = Set.of("ALL", "DESKTOP", "MOBILE");
     private static final Set<String> ALIGNMENT = Set.of("LEFT", "CENTER", "RIGHT");
     private static final Set<String> FONT_FAMILIES = Set.of("DEFAULT", "ARIAL", "VERDANA", "GEORGIA", "TIMES_NEW_ROMAN", "TREBUCHET_MS", "COURIER_NEW");
@@ -389,44 +389,106 @@ public class PageTemplateService {
     private PageTemplateView validateAndNormalize(PageTemplateView request, Long tenantId, String companyName) {
         if (request == null || request.blocks() == null) throw new IllegalArgumentException("Шаблон страницы пуст");
         if (request.blocks().isEmpty()) throw new IllegalArgumentException("Добавьте хотя бы один блок страницы");
-        if (request.blocks().size() > MAX_BLOCKS_TOTAL) throw new IllegalArgumentException("Слишком много блоков на странице");
-        Set<String> ids = new HashSet<>();
-        Map<String, Integer> counts = new HashMap<>();
-        List<PageBlockView> blocks = new ArrayList<>();
-        int mainVideos = 0;
-        int headers = 0;
+
+        List<PageBlockView> sourceBlocks = new ArrayList<>();
         for (PageBlockView raw : request.blocks()) {
             if (raw == null) continue;
+            if ("HEADER".equalsIgnoreCase(string(raw.type(), ""))) sourceBlocks.addAll(migrateLegacyHeader(raw, companyName));
+            else sourceBlocks.add(raw);
+        }
+        if (sourceBlocks.isEmpty()) throw new IllegalArgumentException("Добавьте хотя бы один блок страницы");
+        if (sourceBlocks.size() > MAX_BLOCKS_TOTAL) throw new IllegalArgumentException("Слишком много блоков на странице");
+
+        Set<String> ids = new HashSet<>();
+        Map<String, Integer> counts = new HashMap<>();
+        Map<String, Integer> rowUsage = new LinkedHashMap<>();
+        List<PageBlockView> blocks = new ArrayList<>();
+        int mainVideos = 0;
+        int generatedRow = 0;
+
+        for (PageBlockView raw : sourceBlocks) {
             String id = string(raw.id(), null);
             if (id == null || !SAFE_ID.matcher(id).matches() || !ids.add(id)) throw new IllegalArgumentException("Некорректный идентификатор блока");
             String type = string(raw.type(), "").toUpperCase(Locale.ROOT);
             if (!TYPES.contains(type)) throw new IllegalArgumentException("Неизвестный тип блока: " + type);
             int count = counts.merge(type, 1, Integer::sum);
-            if ("HEADER".equals(type) && count > 1) throw new IllegalArgumentException("Верхний блок можно добавить только один раз");
-            if (!"HEADER".equals(type) && count > MAX_BLOCKS_PER_TYPE) throw new IllegalArgumentException("Блок «" + type + "» можно добавить не более трёх раз");
+            if (count > MAX_BLOCKS_PER_TYPE) throw new IllegalArgumentException("Блок «" + type + "» можно добавить не более пяти раз");
+
             String visibility = string(raw.visibility(), "ALL").toUpperCase(Locale.ROOT);
             if (!VISIBILITY.contains(visibility)) visibility = "ALL";
             Map<String, Object> config = normalizeConfig(type, raw.config(), tenantId, companyName);
+
+            String rowId = normalizeRowId(raw.rowId(), id, generatedRow++);
+            int span = Optional.ofNullable(raw.span()).map(value -> Math.max(3, Math.min(12, value))).orElse(12);
+            int used = rowUsage.getOrDefault(rowId, 0);
+            if (used + span > 12) {
+                rowId = generatedRowId(id, generatedRow++);
+                used = 0;
+            }
+            rowUsage.put(rowId, used + span);
+
             if ("VIDEO".equals(type) && "MAIN".equals(config.get("source"))) mainVideos++;
-            if ("HEADER".equals(type)) headers++;
-            blocks.add(new PageBlockView(id, type, visibility, config));
+            blocks.add(new PageBlockView(id, type, visibility, rowId, span, config));
         }
-        if (headers != 1) throw new IllegalArgumentException("На странице должен быть один верхний блок");
         if (mainVideos != 1) throw new IllegalArgumentException("На странице должен быть ровно один блок с основным видеооффером");
         return new PageTemplateView(TEMPLATE_VERSION, blocks);
+    }
+
+    private List<PageBlockView> migrateLegacyHeader(PageBlockView header, String companyName) {
+        Map<String, Object> c = header.config() == null ? Map.of() : header.config();
+        String visibility = string(header.visibility(), "ALL").toUpperCase(Locale.ROOT);
+        if (!VISIBILITY.contains(visibility)) visibility = "ALL";
+        String base = string(header.id(), "legacy-header").replaceAll("[^A-Za-z0-9_-]", "-");
+        if (base.length() > 70) base = base.substring(0, 70);
+        String rowId = generatedRowId(base, Math.abs(base.hashCode()));
+        boolean hasLogo = trimToNull(string(c.get("logoUrl"), null)) != null;
+        String company = trimToNull(string(c.get("companyName"), companyName));
+        String phone = trimToNull(string(c.get("phoneText"), null));
+        int parts = (hasLogo ? 1 : 0) + (company != null ? 1 : 0) + (phone != null ? 1 : 0);
+        if (parts == 0) return List.of();
+
+        List<PageBlockView> out = new ArrayList<>();
+        if (hasLogo) {
+            int span = parts == 1 ? 12 : parts == 2 ? 4 : 3;
+            out.add(new PageBlockView(base + "-logo", "IMAGE", visibility, rowId, span, mapOf(
+                    "assetUrl", c.get("logoUrl"), "assetName", string(c.get("logoName"), ""),
+                    "alt", string(c.get("logoName"), "Логотип"), "href", "", "radius", "NONE",
+                    "alignment", "LEFT", "width", 150, "height", 64, "keepAspectRatio", true,
+                    "aspectRatio", null, "viewportHeight", null)));
+        }
+        if (company != null) {
+            int span = parts == 1 ? 12 : parts == 2 ? (hasLogo && phone == null ? 8 : 8) : 6;
+            out.add(new PageBlockView(base + "-company", "TEXT", visibility, rowId, span, mapOf(
+                    "mode", "STATIC", "style", "HEADING", "text", company, "label", "Название компании",
+                    "placeholder", "", "required", false, "alignment", "CENTER", "fontFamily", "DEFAULT",
+                    "fontSize", 24, "bold", true, "italic", false, "underline", false)));
+        }
+        if (phone != null) {
+            int used = out.stream().mapToInt(block -> block.span() == null ? 0 : block.span()).sum();
+            int span = parts == 1 ? 12 : Math.max(3, 12 - used);
+            out.add(new PageBlockView(base + "-phone", "ICON_TEXT", visibility, rowId, span, mapOf(
+                    "icon", "PHONE", "text", phone, "href", string(c.get("phoneHref"), ""),
+                    "iconColor", "#2f80ed", "iconSize", 22, "textColor", "#344f5f", "alignment", "RIGHT",
+                    "fontFamily", "DEFAULT", "fontSize", 14, "bold", true, "italic", false, "underline", false)));
+        }
+        return out;
+    }
+
+    private String normalizeRowId(String value, String blockId, int sequence) {
+        String candidate = trimToNull(value);
+        if (candidate != null && SAFE_ID.matcher(candidate).matches()) return candidate;
+        return generatedRowId(blockId, sequence);
+    }
+
+    private String generatedRowId(String blockId, int sequence) {
+        String hash = Integer.toUnsignedString(Objects.hash(blockId, sequence), 36);
+        return "row-" + hash + "-" + Math.abs(sequence % 100000);
     }
 
     private Map<String, Object> normalizeConfig(String type, Map<String, Object> raw, Long tenantId, String companyName) {
         Map<String, Object> c = raw == null ? Map.of() : raw;
         Map<String, Object> out = new LinkedHashMap<>();
         switch (type) {
-            case "HEADER" -> {
-                out.put("logoUrl", assetUrl(c.get("logoUrl"), tenantId));
-                out.put("logoName", limit(string(c.get("logoName"), ""), 255));
-                out.put("companyName", limit(string(c.get("companyName"), companyName), 255));
-                out.put("phoneText", limit(string(c.get("phoneText"), ""), 120));
-                out.put("phoneHref", safeHref(string(c.get("phoneHref"), "")));
-            }
             case "VIDEO" -> {
                 String source = string(c.get("source"), "MAIN").toUpperCase(Locale.ROOT);
                 if (!Set.of("MAIN", "STATIC").contains(source)) source = "MAIN";
@@ -446,12 +508,7 @@ public class PageTemplateService {
                 out.put("label", limit(string(c.get("label"), "Текст"), 255));
                 out.put("placeholder", limit(string(c.get("placeholder"), ""), 500));
                 out.put("required", bool(c.get("required"), false));
-                out.put("alignment", alignment(c.get("alignment"), "LEFT"));
-                out.put("fontFamily", fontFamily(c.get("fontFamily")));
-                out.put("fontSize", boundedInteger(c.get("fontSize"), 8, 120));
-                out.put("bold", bool(c.get("bold"), "HEADING".equals(style)));
-                out.put("italic", bool(c.get("italic"), false));
-                out.put("underline", bool(c.get("underline"), false));
+                putTypography(out, c, "HEADING".equals(style), "LEFT");
                 String fieldKey = string(c.get("fieldKey"), null);
                 if (fieldKey != null) out.put("fieldKey", limit(fieldKey, 100));
             }
@@ -460,12 +517,14 @@ public class PageTemplateService {
                 out.put("assetName", limit(string(c.get("assetName"), ""), 255));
                 out.put("alt", limit(string(c.get("alt"), ""), 500));
                 out.put("href", safeHref(string(c.get("href"), "")));
-                out.put("radius", Set.of("NONE", "SMALL", "LARGE").contains(string(c.get("radius"), "LARGE").toUpperCase(Locale.ROOT)) ? string(c.get("radius"), "LARGE").toUpperCase(Locale.ROOT) : "LARGE");
+                String radius = string(c.get("radius"), "LARGE").toUpperCase(Locale.ROOT);
+                out.put("radius", Set.of("NONE", "SMALL", "LARGE").contains(radius) ? radius : "LARGE");
                 out.put("alignment", alignment(c.get("alignment"), "CENTER"));
                 out.put("width", boundedInteger(c.get("width"), 1, 5000));
                 out.put("height", boundedInteger(c.get("height"), 1, 5000));
                 out.put("keepAspectRatio", bool(c.get("keepAspectRatio"), true));
                 out.put("aspectRatio", boundedDouble(c.get("aspectRatio"), 0.02d, 50d));
+                out.put("viewportHeight", boundedInteger(c.get("viewportHeight"), 40, 3000));
             }
             case "FILE" -> {
                 String mode = string(c.get("mode"), "STATIC").toUpperCase(Locale.ROOT);
@@ -478,35 +537,75 @@ public class PageTemplateService {
                 out.put("alignment", alignment(c.get("alignment"), "LEFT"));
             }
             case "BUTTON" -> {
-                out.put("text", limit(string(c.get("text"), "Подробнее"), 120));
+                out.put("text", limit(string(c.get("text"), "Подробнее"), 500));
                 out.put("href", safeHref(string(c.get("href"), "")));
-                String color = string(c.get("color"), "#2f80ed");
-                out.put("color", HEX_COLOR.matcher(color).matches() ? color : "#2f80ed");
+                out.put("color", hexColor(c.get("color"), "#2f80ed"));
                 String shape = string(c.get("shape"), "PILL").toUpperCase(Locale.ROOT);
                 out.put("shape", Set.of("SQUARE", "ROUNDED", "PILL").contains(shape) ? shape : "PILL");
+                String depth = string(c.get("depth"), "FLAT").toUpperCase(Locale.ROOT);
+                out.put("depth", Set.of("FLAT", "SUBTLE", "RAISED", "DEEP").contains(depth) ? depth : "FLAT");
+                String shadow = string(c.get("shadow"), "NONE").toUpperCase(Locale.ROOT);
+                out.put("shadow", Set.of("NONE", "SOFT", "MEDIUM", "STRONG").contains(shadow) ? shadow : "NONE");
+                String hover = string(c.get("hoverAnimation"), "LIFT").toUpperCase(Locale.ROOT);
+                out.put("hoverAnimation", Set.of("NONE", "LIFT", "GROW", "GLOW", "BRIGHTEN").contains(hover) ? hover : "LIFT");
+                String click = string(c.get("clickAnimation"), "PRESS").toUpperCase(Locale.ROOT);
+                out.put("clickAnimation", Set.of("NONE", "PRESS", "SHRINK", "BOUNCE").contains(click) ? click : "PRESS");
                 out.put("newTab", bool(c.get("newTab"), false));
-                out.put("alignment", alignment(c.get("alignment"), "CENTER"));
+                putTypography(out, c, true, "CENTER");
+            }
+            case "ICON_TEXT" -> {
+                String icon = string(c.get("icon"), "PHONE").toUpperCase(Locale.ROOT);
+                if (!Set.of("PHONE", "MAIL", "LOCATION", "LINK", "MESSAGE", "CLOCK", "USER", "CHECK", "INFO").contains(icon)) icon = "PHONE";
+                out.put("icon", icon);
+                out.put("text", limit(string(c.get("text"), "Телефон или подпись"), 1000));
+                out.put("href", safeHref(string(c.get("href"), "")));
+                out.put("iconColor", hexColor(c.get("iconColor"), "#2f80ed"));
+                out.put("iconSize", Optional.ofNullable(boundedInteger(c.get("iconSize"), 12, 96)).orElse(24));
+                out.put("textColor", hexColor(c.get("textColor"), "#344f5f"));
+                putTypography(out, c, false, "LEFT");
             }
             case "DIVIDER" -> {
-                out.put("style", Set.of("SOLID", "DASHED", "DOTTED").contains(string(c.get("style"), "SOLID").toUpperCase(Locale.ROOT)) ? string(c.get("style"), "SOLID").toUpperCase(Locale.ROOT) : "SOLID");
+                String style = string(c.get("style"), "SOLID").toUpperCase(Locale.ROOT);
+                out.put("style", Set.of("SOLID", "DASHED", "DOTTED").contains(style) ? style : "SOLID");
+            }
+            case "EMBED" -> {
+                String codeType = string(c.get("codeType"), "HTML").toUpperCase(Locale.ROOT);
+                out.put("codeType", Set.of("HTML", "JAVASCRIPT").contains(codeType) ? codeType : "HTML");
+                out.put("code", limit(string(c.get("code"), ""), 100_000));
             }
         }
         return out;
     }
 
+    private void putTypography(Map<String, Object> out, Map<String, Object> c, boolean boldDefault, String alignmentDefault) {
+        out.put("alignment", alignment(c.get("alignment"), alignmentDefault));
+        out.put("fontFamily", fontFamily(c.get("fontFamily")));
+        out.put("fontSize", boundedInteger(c.get("fontSize"), 8, 120));
+        out.put("bold", bool(c.get("bold"), boldDefault));
+        out.put("italic", bool(c.get("italic"), false));
+        out.put("underline", bool(c.get("underline"), false));
+    }
+
+    private String hexColor(Object value, String fallback) {
+        String color = string(value, fallback);
+        return HEX_COLOR.matcher(color).matches() ? color : fallback;
+    }
+
     private PageTemplateView defaultTemplate(String companyName) {
         List<PageBlockView> blocks = List.of(
-                new PageBlockView("header-default", "HEADER", "ALL", mapOf(
-                        "logoUrl", null, "logoName", "", "companyName", companyName == null ? "Video Offer" : companyName,
-                        "phoneText", "", "phoneHref", "")),
-                new PageBlockView("title-default", "TEXT", "ALL", mapOf(
+                new PageBlockView("company-default", "TEXT", "ALL", "row-company-default", 12, mapOf(
+                        "mode", "STATIC", "style", "HEADING", "text", companyName == null ? "Video Offer" : companyName,
+                        "label", "Название компании", "placeholder", "", "required", false,
+                        "alignment", "CENTER", "fontFamily", "DEFAULT", "fontSize", 28,
+                        "bold", true, "italic", false, "underline", false)),
+                new PageBlockView("title-default", "TEXT", "ALL", "row-title-default", 12, mapOf(
                         "mode", "STATIC", "style", "HEADING", "text", "Материалы по итогам разговора",
                         "label", "Заголовок", "placeholder", "", "required", false,
                         "alignment", "LEFT", "fontFamily", "DEFAULT", "fontSize", null,
                         "bold", true, "italic", false, "underline", false)),
-                new PageBlockView("main-video-default", "VIDEO", "ALL", mapOf(
+                new PageBlockView("main-video-default", "VIDEO", "ALL", "row-main-video-default", 12, mapOf(
                         "source", "MAIN", "title", "", "assetUrl", null, "assetName", "")),
-                new PageBlockView("accompanying-default", "TEXT", "ALL", mapOf(
+                new PageBlockView("accompanying-default", "TEXT", "ALL", "row-accompanying-default", 12, mapOf(
                         "mode", "MANAGER", "style", "NOTE", "text", "", "label", "Сопроводительный текст",
                         "placeholder", "Например: направляю короткую презентацию по итогам разговора.",
                         "required", false, "fieldKey", "accompanyingText", "alignment", "LEFT",
@@ -662,7 +761,11 @@ public class PageTemplateService {
     }
 
     public record PageTemplateView(int version, List<PageBlockView> blocks) {}
-    public record PageBlockView(String id, String type, String visibility, Map<String, Object> config) {}
+    public record PageBlockView(String id, String type, String visibility, String rowId, Integer span, Map<String, Object> config) {
+        public PageBlockView(String id, String type, String visibility, Map<String, Object> config) {
+            this(id, type, visibility, null, null, config);
+        }
+    }
     public record OfferPagePrepared(String templateJson, String contentJson) {}
     public record OfferPageContent(Map<String, String> text, Map<String, OfferAttachmentView> files) {
         public OfferPageContent {
